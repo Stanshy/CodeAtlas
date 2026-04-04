@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeAtlas — Hover Highlight</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0f;
+      font-family: 'Inter', system-ui, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #canvas {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at 50% 50%, #0f0f1a 0%, #0a0a0f 60%, #070710 100%);
+    }
+    #canvas::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+    }
+    #canvas::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(7,7,16,0.6) 100%);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* ── SVG edges ── */
+    #edges-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* ── Nodes layer ── */
+    #nodes {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+    }
+
+    /* ── Node base ── */
+    .node {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: transform 150ms ease-out,
+                  box-shadow 150ms ease-out,
+                  border-color 150ms ease-out,
+                  background 150ms ease-out,
+                  opacity 200ms ease-out;
+      user-select: none;
+    }
+
+    .node-file {
+      min-width: 140px;
+      max-width: 220px;
+      height: 48px;
+      border-radius: 8px;
+      border: 1.5px solid #00d4ff;
+      background: rgba(0,212,255,0.07);
+      box-shadow: 0 0 8px rgba(0,212,255,0.25), 0 0 16px rgba(0,212,255,0.10);
+    }
+
+    .node-dir {
+      min-width: 160px;
+      max-width: 280px;
+      height: 56px;
+      border-radius: 10px;
+      border: 1.5px solid #8855ff;
+      background: rgba(136,85,255,0.08);
+      box-shadow: 0 0 8px rgba(189,0,255,0.25), 0 0 16px rgba(189,0,255,0.10);
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .node-dir-accent {
+      width: 100%;
+      height: 3px;
+      background: #bd00ff;
+      flex-shrink: 0;
+    }
+    .node-dir-body {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      width: 100%;
+      flex: 1;
+    }
+
+    .node-icon { flex-shrink: 0; width: 14px; height: 14px; }
+    .node-icon-file { color: #00d4ff; }
+    .node-icon-dir  { color: #bd00ff; }
+
+    .node-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: #e8eaf6;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .node-sublabel {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 400;
+      color: #9e9ec8;
+    }
+    .node-label-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+    }
+
+    /* ── Toolbar ── */
+    #toolbar {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(26,26,46,0.90);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 6px;
+      backdrop-filter: blur(8px);
+    }
+    .toolbar-title { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 700; color: #e8eaf6; padding: 0 10px 0 6px; }
+    .toolbar-title span { color: #00d4ff; }
+    .toolbar-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.10); margin: 0 4px; }
+    .toolbar-btn {
+      width: 32px; height: 32px; border: none; background: transparent;
+      border-radius: 6px; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; color: #9e9ec8; font-size: 16px; font-weight: 600;
+      transition: background 100ms, color 100ms;
+    }
+    .toolbar-btn:hover { background: rgba(255,255,255,0.06); color: #e8eaf6; }
+
+    /* ── Hint label ── */
+    #hint {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 30;
+      background: rgba(26,26,46,0.90);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 8px 14px;
+      backdrop-filter: blur(8px);
+      font-size: 12px;
+      color: #9e9ec8;
+    }
+    #hint strong { color: #00d4ff; }
+
+    /* ══════════════════════════════════════════
+       HOVER HIGHLIGHT SYSTEM
+       Uses the "graph has-hover" class approach:
+       when any node is hovered, all non-related
+       nodes and edges fade out.
+    ══════════════════════════════════════════ */
+
+    /* When a node group is hovered, canvas gets class "hovering" */
+    /* Non-highlighted nodes fade */
+    #nodes.hovering .node:not(.highlight) {
+      opacity: 0.35;
+    }
+    #nodes.hovering .node.highlight.node-file {
+      border-color: #00ffff;
+      border-width: 2px;
+      background: rgba(0,212,255,0.12);
+      box-shadow: 0 0 12px rgba(0,212,255,0.50), 0 0 24px rgba(0,212,255,0.25), 0 0 40px rgba(0,212,255,0.10);
+      transform: scale(1.04);
+      z-index: 20;
+      opacity: 1;
+    }
+    #nodes.hovering .node.highlight.node-dir {
+      border-color: #bd00ff;
+      border-width: 2px;
+      background: rgba(189,0,255,0.13);
+      box-shadow: 0 0 12px rgba(189,0,255,0.50), 0 0 24px rgba(189,0,255,0.25), 0 0 40px rgba(189,0,255,0.10);
+      transform: scale(1.02);
+      z-index: 20;
+      opacity: 1;
+    }
+    /* The primary hovered node gets intense glow */
+    #nodes.hovering .node.hovered.node-file {
+      box-shadow: 0 0 16px rgba(0,255,255,0.70), 0 0 32px rgba(0,212,255,0.40), 0 0 60px rgba(0,212,255,0.20);
+      transform: scale(1.07);
+    }
+    #nodes.hovering .node.hovered.node-dir {
+      box-shadow: 0 0 16px rgba(255,0,255,0.70), 0 0 32px rgba(189,0,255,0.40), 0 0 60px rgba(189,0,255,0.20);
+      transform: scale(1.04);
+    }
+
+    /* SVG edge highlight classes (toggled via JS) */
+    .edge-line {
+      transition: stroke 100ms ease-out, stroke-width 100ms ease-out, opacity 200ms ease-out, filter 100ms ease-out;
+    }
+    .edge-line.faded {
+      opacity: 0.12 !important;
+    }
+    .edge-line.highlighted {
+      stroke: #00ff88 !important;
+      stroke-width: 2.5 !important;
+      opacity: 1 !important;
+      filter: drop-shadow(0 0 6px rgba(0,255,136,0.80));
+    }
+
+    /* Minimap */
+    #minimap {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      width: 160px;
+      height: 120px;
+      background: rgba(10,10,15,0.85);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      backdrop-filter: blur(4px);
+      z-index: 30;
+      overflow: hidden;
+    }
+    #minimap-svg { width: 100%; height: 100%; }
+    #minimap-label {
+      position: absolute;
+      top: 6px;
+      left: 8px;
+      font-size: 9px;
+      font-weight: 500;
+      color: #5c5c88;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+<div id="canvas">
+
+  <svg id="edges-svg" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrow-normal" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L6,3 z" fill="#00cc66" opacity="0.7"/>
+      </marker>
+      <marker id="arrow-hl" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L6,3 z" fill="#00ff88"/>
+      </marker>
+    </defs>
+  </svg>
+
+  <div id="nodes">
+
+    <!-- Directory: core/ -->
+    <div class="node node-dir" id="n-core" style="left:310px;top:180px;width:180px;"
+         data-neighbors='["n-index","n-cli","n-web","n-shared","n-graph-builder","n-types"]'>
+      <div class="node-dir-accent"></div>
+      <div class="node-dir-body">
+        <svg class="node-icon node-icon-dir" viewBox="0 0 14 14" fill="none">
+          <path d="M1 3.5A1.5 1.5 0 012.5 2H5.38l1.4 1.5H11.5A1.5 1.5 0 0113 5v5.5A1.5 1.5 0 0111.5 12h-9A1.5 1.5 0 011 10.5v-7z" stroke="currentColor" stroke-width="1.2" fill="rgba(136,85,255,0.15)"/>
+        </svg>
+        <div class="node-label-stack">
+          <span class="node-label">core/</span>
+          <span class="node-sublabel">5 files</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Directory: cli/ -->
+    <div class="node node-dir" id="n-cli" style="left:620px;top:130px;width:160px;"
+         data-neighbors='["n-core","n-server","n-main"]'>
+      <div class="node-dir-accent"></div>
+      <div class="node-dir-body">
+        <svg class="node-icon node-icon-dir" viewBox="0 0 14 14" fill="none">
+          <path d="M1 3.5A1.5 1.5 0 012.5 2H5.38l1.4 1.5H11.5A1.5 1.5 0 0113 5v5.5A1.5 1.5 0 0111.5 12h-9A1.5 1.5 0 011 10.5v-7z" stroke="currentColor" stroke-width="1.2" fill="rgba(136,85,255,0.15)"/>
+        </svg>
+        <div class="node-label-stack">
+          <span class="node-label">cli/</span>
+          <span class="node-sublabel">3 files</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Directory: web/ -->
+    <div class="node node-dir" id="n-web" style="left:620px;top:390px;width:160px;"
+         data-neighbors='["n-core","n-app"]'>
+      <div class="node-dir-accent"></div>
+      <div class="node-dir-body">
+        <svg class="node-icon node-icon-dir" viewBox="0 0 14 14" fill="none">
+          <path d="M1 3.5A1.5 1.5 0 012.5 2H5.38l1.4 1.5H11.5A1.5 1.5 0 0113 5v5.5A1.5 1.5 0 0111.5 12h-9A1.5 1.5 0 011 10.5v-7z" stroke="currentColor" stroke-width="1.2" fill="rgba(136,85,255,0.15)"/>
+        </svg>
+        <div class="node-label-stack">
+          <span class="node-label">web/</span>
+          <span class="node-sublabel">6 files</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Directory: shared/ -->
+    <div class="node node-dir" id="n-shared" style="left:110px;top:300px;width:175px;"
+         data-neighbors='["n-core","n-types","n-utils"]'>
+      <div class="node-dir-accent"></div>
+      <div class="node-dir-body">
+        <svg class="node-icon node-icon-dir" viewBox="0 0 14 14" fill="none">
+          <path d="M1 3.5A1.5 1.5 0 012.5 2H5.38l1.4 1.5H11.5A1.5 1.5 0 0113 5v5.5A1.5 1.5 0 0111.5 12h-9A1.5 1.5 0 011 10.5v-7z" stroke="currentColor" stroke-width="1.2" fill="rgba(136,85,255,0.15)"/>
+        </svg>
+        <div class="node-label-stack">
+          <span class="node-label">shared/</span>
+          <span class="node-sublabel">4 files</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- File: index.ts -->
+    <div class="node node-file" id="n-index" style="left:345px;top:80px;width:155px;"
+         data-neighbors='["n-core"]'>
+      <svg class="node-icon node-icon-file" viewBox="0 0 14 14" fill="none">
+        <rect x="2" y="1" width="10" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="rgba(0,212,255,0.10)"/>
+        <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="currentColor" stroke-width="1"/>
+      </svg>
+      <div class="node-label-stack">
+        <span class="node-label">index.ts</span>
+        <span class="node-sublabel">entry point</span>
+      </div>
+    </div>
+
+    <!-- File: graph-builder.ts  ← PRIMARY HOVER TARGET -->
+    <div class="node node-file" id="n-graph-builder" style="left:240px;top:310px;width:200px;"
+         data-neighbors='["n-core","n-scanner","n-types"]'>
+      <svg class="node-icon node-icon-file" viewBox="0 0 14 14" fill="none">
+        <rect x="2" y="1" width="10" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="rgba(0,212,255,0.10)"/>
+        <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="currentColor" stroke-width="1"/>
+      </svg>
+      <div class="node-label-stack">
+        <span class="node-label">graph-builder.ts</span>
+        <span class="node-sublabel">core/</span>
+      </div>
+    </div>
+
+    <!-- File: scanner.ts -->
+    <div class="node node-file" id="n-scanner" style="left:230px;top:420px;width:155px;"
+         data-neighbors='["n-graph-builder","n-parser","n-utils"]'>
+      <svg class="node-icon node-icon-file" viewBox="0 0 14 14" fill="none">
+        <rect x="2" y="1" width="10" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="rgba(0,212,255,0.10)"/>
+        <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="currentColor" stroke-width="1"/>
+      </svg>
+      <div class="node-label-stack">
+        <span class="node-label">scanner.ts</span>
+        <span class="node-sublabel">core/</span>
+      </div>
+    </div>
+
+    <!-- File: parser.ts -->
+    <div class="node node-file" id="n-parser" style="left:390px;top:490px;width:145px;"
+         data-neighbors='["n-scanner","n-types"]'>
+      <svg class="node-icon node-icon-file" viewBox="0 0 14 14" fill="none">
+        <rect x="2" y="1" width="10" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="rgba(0,212,255,0.10)"/>
+        <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="currentColor" stroke-width="1"/>
+      </svg>
+      <div class="node-label-stack">
+        <span class="node-label">parser.ts</span>
+        <span class="node-sublabel">core/</span>
+      </div>
+    </div>
+
+    <!-- File: server.ts -->
+    <div class="node node-file" id="n-server" style="left:650px;top:260px;width:145px;"
+         data-neighbors='["n-cli","n-main"]'>
+      <svg class="node-icon node-icon-file" viewBox="0 0 14 14" fill="none">
+        <rect x="2" y="1" width="10" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="rgba(0,212,255,0.10)"/>
+        <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="currentColor" stroke-width="1"/>
+      </svg>
+      <div class="node-label-stack">
+        <span class="node-label">server.ts</span>
+        <span class="node-sublabel">cli/</span>
+      </div>
+    </div>
+
+    <!-- File: main.ts -->
+    <div class="node node-file" id="n-main" style="left:840px;top:180px;width:130px;"
+         data-neighbors='["n-cli","n-server"]'>
+      <svg class="node-icon node-icon-file" viewBox="0 0 14 14" fill="none">
+        <rect x="2" y="1" width="10" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="rgba(0,212,255,0.10)"/>
+        <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="currentColor" stroke-width="1"/>
+      </svg>
+      <div class="node-label-stack">
+        <span class="node-label">main.ts</span>
+        <span class="node-sublabel">cli/</span>
+      </div>
+    </div>
+
+    <!-- File: App.tsx -->
+    <div class="node node-file" id="n-app" style="left:840px;top:360px;width:130px;"
+         data-neighbors='["n-web"]'>
+      <svg class="node-icon node-icon-file" viewBox="0 0 14 14" fill="none">
+        <rect x="2" y="1" width="10" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="rgba(0,212,255,0.10)"/>
+        <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="currentColor" stroke-width="1"/>
+      </svg>
+      <div class="node-label-stack">
+        <span class="node-label">App.tsx</span>
+        <span class="node-sublabel">web/</span>
+      </div>
+    </div>
+
+    <!-- File: types.ts -->
+    <div class="node node-file" id="n-types" style="left:100px;top:150px;width:140px;"
+         data-neighbors='["n-core","n-shared","n-parser","n-graph-builder"]'>
+      <svg class="node-icon node-icon-file" viewBox="0 0 14 14" fill="none">
+        <rect x="2" y="1" width="10" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="rgba(0,212,255,0.10)"/>
+        <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="currentColor" stroke-width="1"/>
+      </svg>
+      <div class="node-label-stack">
+        <span class="node-label">types.ts</span>
+        <span class="node-sublabel">shared/</span>
+      </div>
+    </div>
+
+    <!-- File: utils.ts -->
+    <div class="node node-file" id="n-utils" style="left:85px;top:470px;width:140px;"
+         data-neighbors='["n-shared","n-scanner"]'>
+      <svg class="node-icon node-icon-file" viewBox="0 0 14 14" fill="none">
+        <rect x="2" y="1" width="10" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="rgba(0,212,255,0.10)"/>
+        <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="currentColor" stroke-width="1"/>
+        <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="currentColor" stroke-width="1"/>
+      </svg>
+      <div class="node-label-stack">
+        <span class="node-label">utils.ts</span>
+        <span class="node-sublabel">shared/</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toolbar -->
+  <div id="toolbar">
+    <span class="toolbar-title">Code<span>Atlas</span></span>
+    <div class="toolbar-divider"></div>
+    <button class="toolbar-btn">+</button>
+    <button class="toolbar-btn">−</button>
+    <div class="toolbar-divider"></div>
+    <button class="toolbar-btn" style="font-size:13px;">⌂</button>
+  </div>
+
+  <!-- Hint -->
+  <div id="hint">Hover any node to highlight its <strong>dependency path</strong></div>
+
+  <!-- Minimap -->
+  <div id="minimap">
+    <span id="minimap-label">Minimap</span>
+    <svg id="minimap-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 600">
+      <line x1="400" y1="208" x2="700" y2="158" stroke="#00cc66" stroke-width="1.5" opacity="0.5"/>
+      <line x1="400" y1="208" x2="700" y2="418" stroke="#00cc66" stroke-width="1.5" opacity="0.5"/>
+      <line x1="200" y1="328" x2="400" y2="208" stroke="#00cc66" stroke-width="1.5" opacity="0.5"/>
+      <line x1="400" y1="208" x2="290" y2="334" stroke="#00cc66" stroke-width="1.5" opacity="0.5"/>
+      <line x1="700" y1="158" x2="905" y2="208" stroke="#00cc66" stroke-width="1.5" opacity="0.5"/>
+      <line x1="700" y1="418" x2="905" y2="388" stroke="#00cc66" stroke-width="1.5" opacity="0.5"/>
+      <rect x="370" y="194" width="18" height="12" rx="2" fill="rgba(136,85,255,0.70)"/>
+      <rect x="670" y="144" width="15" height="12" rx="2" fill="rgba(136,85,255,0.70)"/>
+      <rect x="670" y="404" width="15" height="12" rx="2" fill="rgba(136,85,255,0.70)"/>
+      <rect x="170" y="314" width="18" height="12" rx="2" fill="rgba(136,85,255,0.70)"/>
+      <rect x="395" y="86" width="14" height="8" rx="1" fill="rgba(0,212,255,0.70)"/>
+      <rect x="286" y="320" width="14" height="8" rx="1" fill="rgba(0,212,255,0.70)"/>
+      <rect x="276" y="432" width="14" height="8" rx="1" fill="rgba(0,212,255,0.70)"/>
+      <rect x="437" y="502" width="14" height="8" rx="1" fill="rgba(0,212,255,0.70)"/>
+      <rect x="698" y="272" width="14" height="8" rx="1" fill="rgba(0,212,255,0.70)"/>
+      <rect x="890" y="192" width="12" height="8" rx="1" fill="rgba(0,212,255,0.70)"/>
+      <rect x="890" y="372" width="12" height="8" rx="1" fill="rgba(0,212,255,0.70)"/>
+      <rect x="148" y="166" width="14" height="8" rx="1" fill="rgba(0,212,255,0.70)"/>
+      <rect x="134" y="484" width="14" height="8" rx="1" fill="rgba(0,212,255,0.70)"/>
+      <rect x="10" y="10" width="1080" height="580" rx="4" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+    </svg>
+  </div>
+
+</div>
+
+<script>
+  // ── Edge definitions ──
+  const EDGES = [
+    { id:'e1', from:'n-index', to:'n-core' },
+    { id:'e2', from:'n-core', to:'n-cli' },
+    { id:'e3', from:'n-core', to:'n-web' },
+    { id:'e4', from:'n-shared', to:'n-core' },
+    { id:'e5', from:'n-core', to:'n-graph-builder' },
+    { id:'e6', from:'n-graph-builder', to:'n-scanner' },
+    { id:'e7', from:'n-scanner', to:'n-parser' },
+    { id:'e8', from:'n-cli', to:'n-server' },
+    { id:'e9', from:'n-cli', to:'n-main' },
+    { id:'e10', from:'n-main', to:'n-server' },
+    { id:'e11', from:'n-web', to:'n-app' },
+    { id:'e12', from:'n-types', to:'n-core' },
+    { id:'e13', from:'n-types', to:'n-shared' },
+    { id:'e14', from:'n-utils', to:'n-shared' },
+    { id:'e15', from:'n-utils', to:'n-scanner' },
+    { id:'e16', from:'n-parser', to:'n-types' },
+    { id:'e17', from:'n-graph-builder', to:'n-types' },
+  ];
+
+  const svg = document.getElementById('edges-svg');
+  const nodesLayer = document.getElementById('nodes');
+  const canvas = document.getElementById('canvas');
+
+  // Build adjacency
+  const adj = {};
+  EDGES.forEach(e => {
+    if(!adj[e.from]) adj[e.from] = new Set();
+    if(!adj[e.to])   adj[e.to]   = new Set();
+    adj[e.from].add(e.to);
+    adj[e.to].add(e.from);
+  });
+
+  function nc(id) {
+    const el = document.getElementById(id);
+    const r = el.getBoundingClientRect();
+    const cr = canvas.getBoundingClientRect();
+    return { x: r.left - cr.left + r.width/2, y: r.top - cr.top + r.height/2 };
+  }
+
+  function bezier(x1,y1,x2,y2) {
+    const dx = x2-x1;
+    return `M${x1},${y1} C${x1+dx*0.5},${y1} ${x1+dx*0.5},${y2} ${x2},${y2}`;
+  }
+
+  const pathMap = {};
+
+  function init() {
+    EDGES.forEach(e => {
+      const p = nc(e.from), q = nc(e.to);
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', bezier(p.x,p.y,q.x,q.y));
+      path.setAttribute('stroke','#00cc66');
+      path.setAttribute('stroke-width','1.5');
+      path.setAttribute('opacity','0.7');
+      path.setAttribute('fill','none');
+      path.setAttribute('marker-end','url(#arrow-normal)');
+      path.setAttribute('id', e.id);
+      path.classList.add('edge-line');
+      svg.appendChild(path);
+      pathMap[e.id] = { el: path, from: e.from, to: e.to };
+    });
+
+    // Hover logic
+    document.querySelectorAll('.node').forEach(node => {
+      const id = node.id;
+
+      node.addEventListener('mouseenter', () => {
+        const neighbors = new Set(adj[id] || []);
+        neighbors.add(id);
+        nodesLayer.classList.add('hovering');
+
+        // Mark nodes
+        document.querySelectorAll('.node').forEach(n => {
+          n.classList.remove('highlight','hovered');
+          if(neighbors.has(n.id)) {
+            n.classList.add('highlight');
+            if(n.id === id) n.classList.add('hovered');
+          }
+        });
+
+        // Mark edges
+        Object.values(pathMap).forEach(({el, from, to}) => {
+          el.classList.remove('highlighted','faded');
+          if((from === id || to === id) || (neighbors.has(from) && neighbors.has(to))) {
+            el.classList.add('highlighted');
+          } else {
+            el.classList.add('faded');
+          }
+        });
+      });
+
+      node.addEventListener('mouseleave', () => {
+        nodesLayer.classList.remove('hovering');
+        document.querySelectorAll('.node').forEach(n => n.classList.remove('highlight','hovered'));
+        Object.values(pathMap).forEach(({el}) => el.classList.remove('highlighted','faded'));
+      });
+    });
+  }
+
+  window.addEventListener('load', init);
+</script>
+</body>
+</html>

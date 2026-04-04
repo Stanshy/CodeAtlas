@@ -1,0 +1,1840 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeAtlas Sprint 11 — 業界視覺參考圖集</title>
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:       #0a0a0f;
+      --bg-surface:    #12121a;
+      --bg-card:       #1a1a26;
+      --bg-card-hover: #1f1f30;
+      --border:        #2a2a3d;
+      --border-bright: #3d3d5c;
+      --text-primary:  #e8eaf6;
+      --text-secondary:#9fa8c7;
+      --text-muted:    #5c6080;
+      --accent-cyan:   #00e5ff;
+      --accent-violet: #7c3aed;
+      --accent-purple: #a855f7;
+      --accent-pink:   #ec4899;
+      --accent-green:  #10b981;
+      --accent-amber:  #f59e0b;
+      --accent-red:    #ef4444;
+      --glow-cyan:     rgba(0, 229, 255, 0.18);
+      --glow-violet:   rgba(124, 58, 237, 0.18);
+      --glow-purple:   rgba(168, 85, 247, 0.15);
+      --radius-sm:     6px;
+      --radius-md:     10px;
+      --radius-lg:     14px;
+      --font-sans:     -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-mono:     'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ─── Background texture ────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 10%, rgba(124,58,237,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,229,255,0.05) 0%, transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── Header ────────────────────────────────────────────────────── */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 10, 15, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      gap: 24px;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent-violet), var(--accent-cyan));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin-top: 1px;
+    }
+
+    /* ─── Nav tabs ──────────────────────────────────────────────────── */
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+      list-style: none;
+      flex-wrap: wrap;
+    }
+
+    .nav-tabs a {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.18s ease;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .nav-tabs a:hover {
+      color: var(--text-primary);
+      background: var(--bg-card);
+      border-color: var(--border);
+    }
+
+    .nav-tabs a.active {
+      color: var(--accent-cyan);
+      background: rgba(0,229,255,0.08);
+      border-color: rgba(0,229,255,0.25);
+    }
+
+    .nav-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.7;
+    }
+
+    /* ─── Hero ──────────────────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      z-index: 1;
+      padding: 72px 32px 56px;
+      text-align: center;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: rgba(124,58,237,0.12);
+      border: 1px solid rgba(124,58,237,0.3);
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--accent-purple);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .hero-title {
+      font-size: clamp(28px, 5vw, 48px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #e8eaf6 30%, var(--accent-cyan) 70%, var(--accent-purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 680px;
+      margin: 0 auto 32px;
+      line-height: 1.7;
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .meta-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+
+    .meta-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+    }
+
+    /* ─── Main layout ───────────────────────────────────────────────── */
+    .main {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 32px 80px;
+    }
+
+    /* ─── Section ───────────────────────────────────────────────────── */
+    .section {
+      margin-bottom: 80px;
+      scroll-margin-top: 80px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .section-icon.cyan  { background: rgba(0,229,255,0.1);  box-shadow: 0 0 0 1px rgba(0,229,255,0.2); }
+    .section-icon.violet{ background: rgba(124,58,237,0.1); box-shadow: 0 0 0 1px rgba(124,58,237,0.25); }
+    .section-icon.pink  { background: rgba(236,72,153,0.1); box-shadow: 0 0 0 1px rgba(236,72,153,0.2); }
+    .section-icon.amber { background: rgba(245,158,11,0.1); box-shadow: 0 0 0 1px rgba(245,158,11,0.2); }
+
+    .section-text {}
+
+    .section-num {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .section-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-width: 800px;
+    }
+
+    /* ─── Card Grid ─────────────────────────────────────────────────── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    .card-grid.wide {
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    }
+
+    /* ─── Image Card ────────────────────────────────────────────────── */
+    .img-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: all 0.22s ease;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .img-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-bright);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    }
+
+    .img-wrapper {
+      position: relative;
+      overflow: hidden;
+      background: #0d0d15;
+      aspect-ratio: 16/9;
+    }
+
+    .img-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+      transition: transform 0.35s ease;
+    }
+
+    .img-card:hover .img-wrapper img {
+      transform: scale(1.03);
+    }
+
+    .img-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #12121e 0%, #0d0d18 100%);
+      font-family: var(--font-mono);
+    }
+
+    .placeholder-icon {
+      font-size: 36px;
+      opacity: 0.5;
+    }
+
+    .placeholder-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 0 16px;
+      line-height: 1.5;
+    }
+
+    .placeholder-url {
+      font-size: 11px;
+      color: var(--accent-cyan);
+      opacity: 0.7;
+      text-decoration: none;
+      padding: 0 16px;
+      text-align: center;
+      word-break: break-all;
+    }
+
+    .zoom-hint {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 4px 8px;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: rgba(255,255,255,0.5);
+      opacity: 0;
+      transition: opacity 0.18s;
+      pointer-events: none;
+    }
+
+    .img-card:hover .zoom-hint {
+      opacity: 1;
+    }
+
+    .card-body {
+      padding: 16px 18px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .card-header-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tool-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .badge-cyan   { background: rgba(0,229,255,0.1);  color: var(--accent-cyan);   border: 1px solid rgba(0,229,255,0.2); }
+    .badge-violet { background: rgba(124,58,237,0.1); color: var(--accent-purple);  border: 1px solid rgba(124,58,237,0.2); }
+    .badge-pink   { background: rgba(236,72,153,0.1); color: var(--accent-pink);   border: 1px solid rgba(236,72,153,0.2); }
+    .badge-amber  { background: rgba(245,158,11,0.1); color: var(--accent-amber);  border: 1px solid rgba(245,158,11,0.2); }
+    .badge-green  { background: rgba(16,185,129,0.1); color: var(--accent-green);  border: 1px solid rgba(16,185,129,0.2); }
+    .badge-muted  { background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border); }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .card-ref {
+      margin-top: auto;
+      padding: 10px 12px;
+      background: rgba(0,229,255,0.04);
+      border: 1px solid rgba(0,229,255,0.12);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .card-ref strong {
+      display: block;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-cyan);
+      margin-bottom: 4px;
+    }
+
+    /* ─── Text-only Card (no image) ─────────────────────────────────── */
+    .text-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.22s ease;
+    }
+
+    .text-card:hover {
+      border-color: var(--border-bright);
+      background: var(--bg-card-hover);
+    }
+
+    .text-card .visual-mock {
+      height: 120px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      border: 1px dashed var(--border);
+      background: rgba(255,255,255,0.015);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Force-directed mock nodes */
+    .mock-fd .node {
+      position: absolute;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+    }
+    .mock-fd .edge {
+      position: absolute;
+      background: rgba(0,229,255,0.25);
+      transform-origin: left center;
+      height: 1px;
+    }
+
+    /* Hierarchical mock */
+    .mock-hier {
+      flex-direction: column;
+      gap: 6px;
+      padding: 14px 20px;
+    }
+    .mock-hier .level {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .mock-hier .hnode {
+      padding: 3px 10px;
+      border-radius: 4px;
+      background: rgba(124,58,237,0.2);
+      border: 1px solid rgba(124,58,237,0.3);
+      font-size: 10px;
+      color: var(--accent-purple);
+    }
+    .mock-hier .hnode.root {
+      background: rgba(124,58,237,0.35);
+    }
+
+    /* Ego graph mock */
+    .mock-ego {
+      position: relative;
+    }
+    .mock-ego .center-node {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      box-shadow: 0 0 16px var(--accent-cyan);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .mock-ego .orbit-node {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(0,229,255,0.4);
+      border: 1px solid rgba(0,229,255,0.5);
+    }
+
+    /* City map mock */
+    .mock-city {
+      gap: 4px;
+      padding: 16px;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .mock-city .bldg {
+      border-radius: 3px 3px 0 0;
+      width: 18px;
+      background: var(--accent-violet);
+      opacity: 0.7;
+    }
+
+    /* ─── Layout strategy grid ──────────────────────────────────────── */
+    .layout-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .layout-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: all 0.22s ease;
+    }
+
+    .layout-card:hover {
+      border-color: var(--border-bright);
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+    }
+
+    .layout-preview {
+      height: 130px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .layout-info {
+      padding: 14px 16px 16px;
+    }
+
+    .layout-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .layout-name span {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-left: 6px;
+    }
+
+    .layout-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+
+    .layout-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .layout-tag {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      background: rgba(255,255,255,0.05);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .layout-rec {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      color: var(--accent-amber);
+      background: rgba(245,158,11,0.06);
+      border: 1px solid rgba(245,158,11,0.15);
+      font-family: var(--font-mono);
+    }
+
+    /* ─── Director note ─────────────────────────────────────────────── */
+    .director-note {
+      margin-top: 80px;
+      padding: 36px 40px;
+      background: linear-gradient(135deg, rgba(124,58,237,0.07) 0%, rgba(0,229,255,0.04) 100%);
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: var(--radius-lg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .director-note::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-violet), var(--accent-cyan), transparent);
+    }
+
+    .director-note-eyebrow {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent-purple);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .director-note-eyebrow::before {
+      content: '';
+      width: 20px;
+      height: 1px;
+      background: var(--accent-purple);
+    }
+
+    .director-note-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+    }
+
+    .rec-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .rec-item {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .rec-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-violet), var(--accent-purple));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .rec-content {}
+
+    .rec-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 3px;
+    }
+
+    .rec-title span {
+      color: var(--accent-cyan);
+    }
+
+    .rec-body {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .rec-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 20px 0;
+    }
+
+    .rec-note {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    .rec-note strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* ─── Footer ────────────────────────────────────────────────────── */
+    .footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-left {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .footer-right {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ─── Lightbox ──────────────────────────────────────────────────── */
+    #lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0,0,0,0.88);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      cursor: zoom-out;
+    }
+
+    #lightbox.open {
+      display: flex;
+    }
+
+    #lightbox-img {
+      max-width: min(90vw, 1200px);
+      max-height: 85vh;
+      object-fit: contain;
+      border-radius: var(--radius-md);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
+      cursor: default;
+    }
+
+    #lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+
+    #lightbox-close:hover {
+      background: rgba(255,255,255,0.16);
+    }
+
+    #lightbox-caption {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 999px;
+      padding: 6px 18px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      white-space: nowrap;
+      max-width: 90vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ─── Scroll-to-top ─────────────────────────────────────────────── */
+    #scroll-top {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 200;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-bright);
+      color: var(--text-secondary);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+
+    #scroll-top.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #scroll-top:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+
+    /* ─── Responsive ────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .site-header { padding: 0 16px; }
+      .header-inner { flex-direction: column; height: auto; padding: 12px 0; gap: 10px; }
+      .nav-tabs { justify-content: center; }
+      .hero { padding: 48px 16px 40px; }
+      .main { padding: 0 16px 60px; }
+      .card-grid { grid-template-columns: 1fr; }
+      .card-grid.wide { grid-template-columns: 1fr; }
+      .director-note { padding: 24px 20px; }
+      .footer { padding: 16px; }
+    }
+
+    /* ─── Utility ───────────────────────────────────────────────────── */
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────── -->
+<header class="site-header" role="banner">
+  <div class="header-inner">
+    <div class="header-brand">
+      <div class="brand-logo">CA</div>
+      <div>
+        <div class="brand-title">CodeAtlas</div>
+        <div class="brand-sub">sprint11 / visual-reference</div>
+      </div>
+    </div>
+    <nav aria-label="分類導覽">
+      <ul class="nav-tabs" id="nav-tabs">
+        <li><a href="#section-arch" class="active"><span class="nav-dot"></span>架構視覺化</a></li>
+        <li><a href="#section-flow"><span class="nav-dot"></span>資料流呈現</a></li>
+        <li><a href="#section-3d"><span class="nav-dot"></span>3D 視覺化</a></li>
+        <li><a href="#section-layout"><span class="nav-dot"></span>佈局策略對比</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<!-- ── Hero ────────────────────────────────────────────────────────── -->
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-eyebrow">Design Reference Gallery</div>
+  <h1 class="hero-title" id="hero-title">CodeAtlas Sprint 11<br>業界視覺參考圖集</h1>
+  <p class="hero-subtitle">
+    為「三種故事視角」選擇最佳呈現風格而整理的競品與工具視覺參考。<br>
+    涵蓋架構視覺化、資料流呈現、3D 視覺化、佈局策略，共 19 組參考案例。
+  </p>
+  <div class="hero-meta">
+    <div class="meta-chip"><span class="meta-dot" style="background:var(--accent-cyan)"></span>19 個參考案例</div>
+    <div class="meta-chip"><span class="meta-dot" style="background:var(--accent-purple)"></span>4 大分類</div>
+    <div class="meta-chip"><span class="meta-dot" style="background:var(--accent-pink)"></span>Sprint 11 視角設計</div>
+    <div class="meta-chip"><span class="meta-dot" style="background:var(--accent-green)"></span>2026-03-31</div>
+  </div>
+</section>
+
+<!-- ── Main ─────────────────────────────────────────────────────────── -->
+<main class="main" id="main">
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       Section 1 — 程式碼架構視覺化工具
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section class="section" id="section-arch" aria-labelledby="section-arch-title">
+    <header class="section-header">
+      <div class="section-icon cyan">&#9664;</div>
+      <div class="section-text">
+        <div class="section-num">Category 01</div>
+        <h2 class="section-title" id="section-arch-title">程式碼架構視覺化工具</h2>
+        <p class="section-desc">
+          業界主流的靜態程式碼結構探索工具。重點關注三視角同步佈局、
+          健康度色彩編碼、依賴圖的互動設計模式。
+        </p>
+      </div>
+    </header>
+
+    <div class="card-grid wide">
+
+      <!-- 1. Sourcetrail -->
+      <div class="img-card" role="button" tabindex="0" aria-label="放大 Sourcetrail 截圖"
+           onclick="openLightbox(this)" data-src="https://raw.githubusercontent.com/CoatiSoftware/Sourcetrail/master/docs/readme/user_interface.png" data-caption="Sourcetrail — 三欄佈局 + 星狀依賴圖">
+        <div class="img-wrapper">
+          <img
+            src="https://raw.githubusercontent.com/CoatiSoftware/Sourcetrail/master/docs/readme/user_interface.png"
+            alt="Sourcetrail 三欄佈局截圖：左欄符號清單、中欄星狀依賴圖、右欄程式碼高亮"
+            loading="lazy"
+            onerror="this.parentElement.innerHTML=getPlaceholderHTML('Sourcetrail','https://github.com/CoatiSoftware/Sourcetrail')"
+          />
+          <div class="zoom-hint">點擊放大</div>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <span class="tool-name">Sourcetrail</span>
+            <span class="badge badge-cyan">開源</span>
+            <span class="badge badge-muted">三欄同步</span>
+          </div>
+          <p class="card-desc">
+            三欄佈局（符號清單 + 星狀依賴圖 + 程式碼高亮），左右欄聯動：點選符號，依賴圖即時更新，程式碼捲動到對應位置。
+            是業界三視角同步操作的最佳範例，強調「定位 → 理解 → 閱讀」的探索動線。
+          </p>
+          <div class="card-ref">
+            <strong>對 CodeAtlas 的參考價值</strong>
+            三欄同步佈局是「三種故事視角」切換機制的直接對標。
+            可參考其左欄固定符號樹、中欄動態圖、右欄程式碼的分割比例與聯動邏輯。
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. CodeScene -->
+      <div class="img-card" role="button" tabindex="0" aria-label="放大 CodeScene 截圖"
+           onclick="openLightbox(this)" data-src="https://codescene.com/hubfs/New%20Website/Product%20Images/Website%20-%20Code%20Health%20Visualization.svg" data-caption="CodeScene — Code Health Circle Packing 視覺化">
+        <div class="img-wrapper">
+          <img
+            src="https://codescene.com/hubfs/New%20Website/Product%20Images/Website%20-%20Code%20Health%20Visualization.svg"
+            alt="CodeScene Code Health 視覺化：Circle Packing 圓形填充圖搭配熱力色彩"
+            loading="lazy"
+            onerror="this.parentElement.innerHTML=getPlaceholderHTML('CodeScene','https://codescene.com')"
+          />
+          <div class="zoom-hint">點擊放大</div>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <span class="tool-name">CodeScene</span>
+            <span class="badge badge-violet">商業</span>
+            <span class="badge badge-muted">Circle Packing</span>
+          </div>
+          <p class="card-desc">
+            Circle Packing 圓形填充圖 + 熱力色彩編碼：紅色代表高複雜度 / 高改動頻率的風險區域，
+            綠色為健康模組。面積映射檔案大小，顏色映射健康度，實現雙維度資訊密度。
+          </p>
+          <div class="card-ref">
+            <strong>對 CodeAtlas 的參考價值</strong>
+            可直接用於 CodeAtlas 的 Hotspot 故事視角。圓形填充作為「模組健康度總覽」的替代佈局，
+            比節點圖更能直覺呈現整體專案的風險分佈。
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Dependency Cruiser -->
+      <div class="img-card" role="button" tabindex="0" aria-label="放大 Dependency Cruiser 截圖"
+           onclick="openLightbox(this)" data-src="https://raw.githubusercontent.com/sverweij/dependency-cruiser/main/doc/assets/sample-dot-output.png" data-caption="Dependency Cruiser — 靜態 SVG 有向依賴圖">
+        <div class="img-wrapper">
+          <img
+            src="https://raw.githubusercontent.com/sverweij/dependency-cruiser/main/doc/assets/sample-dot-output.png"
+            alt="Dependency Cruiser 依賴圖：Graphviz 有向圖，紅色標示違規依賴"
+            loading="lazy"
+            onerror="this.parentElement.innerHTML=getPlaceholderHTML('Dependency Cruiser','https://github.com/sverweij/dependency-cruiser')"
+          />
+          <div class="zoom-hint">點擊放大</div>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <span class="tool-name">Dependency Cruiser</span>
+            <span class="badge badge-cyan">開源</span>
+            <span class="badge badge-muted">靜態 SVG</span>
+          </div>
+          <p class="card-desc">
+            Graphviz 靜態有向圖。正常依賴為灰色細線，違規依賴以紅色粗線標示，
+            循環依賴形成明顯閉環結構。純文字 SVG 無互動，但層次清晰，資訊密度極高。
+          </p>
+          <div class="card-ref">
+            <strong>對 CodeAtlas 的參考價值</strong>
+            循環依賴紅線標示語彙是架構健康視覺化的重要元素。
+            CodeAtlas 可沿用「問題邊加粗 + 高飽和警告色」的視覺慣例，讓問題節點一眼可辨。
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Nx Graph — text card -->
+      <div class="img-card" style="cursor:default;">
+        <div class="img-wrapper">
+          <div class="img-placeholder">
+            <div class="placeholder-icon">&#9635;</div>
+            <div class="placeholder-label">Nx Graph 為互動式 Web UI<br>需直接訪問體驗互動效果</div>
+            <a class="placeholder-url" href="https://nx.dev/features/explore-graph" target="_blank" rel="noopener">nx.dev/features/explore-graph &#8599;</a>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <span class="tool-name">Nx Graph</span>
+            <span class="badge badge-cyan">開源</span>
+            <span class="badge badge-muted">互動式依賴圖</span>
+          </div>
+          <p class="card-desc">
+            互動式 Web UI 深色主題依賴圖，支援 Focus 聚焦模式：選中節點後，
+            無關聯節點淡化至 10% 不透明度，形成強烈視覺對比，引導使用者聚焦在目標模組的上下游關係。
+          </p>
+          <div class="card-ref">
+            <strong>對 CodeAtlas 的參考價值</strong>
+            聚焦模式（選中 → 其餘淡化）是 CodeAtlas 端到端追蹤模式的核心互動設計參考。
+            建議實作時淡化非路徑節點至 15% 不透明度，路徑節點保持 100%。
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Obsidian Graph View — text card -->
+      <div class="img-card" style="cursor:default;">
+        <div class="img-wrapper">
+          <div class="img-placeholder">
+            <div class="placeholder-icon">&#11044;</div>
+            <div class="placeholder-label">Obsidian Graph View 為桌面應用程式<br>請安裝 Obsidian 後開啟 Graph View 體驗</div>
+            <a class="placeholder-url" href="https://obsidian.md" target="_blank" rel="noopener">obsidian.md &#8599;</a>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <span class="tool-name">Obsidian Graph View</span>
+            <span class="badge badge-violet">商業</span>
+            <span class="badge badge-muted">力導向圖</span>
+          </div>
+          <p class="card-desc">
+            深色主題力導向圖，節點大小依連結數量縮放（高連結度節點更大），
+            hover 時鄰近節點以高亮色環顯示，無關節點不淡化（與 Nx 策略相反，保留全域感）。
+            整體配色最接近 CodeAtlas 現有深色霓虹風格。
+          </p>
+          <div class="card-ref">
+            <strong>對 CodeAtlas 的參考價值</strong>
+            力導向圖深色主題配色的直接對標，特別是節點大小映射連結度的設計原則。
+            Hover 高亮不淡化其他節點的策略適用於「探索模式」（vs 追蹤模式需要淡化）。
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       Section 2 — 資料流呈現方式
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section class="section" id="section-flow" aria-labelledby="section-flow-title">
+    <header class="section-header">
+      <div class="section-icon violet">&#9654;</div>
+      <div class="section-text">
+        <div class="section-num">Category 02</div>
+        <h2 class="section-title" id="section-flow-title">資料流呈現方式</h2>
+        <p class="section-desc">
+          從 Sankey 流量圖到分散式追蹤服務地圖，研究業界如何把「資料移動的過程」視覺化，
+          以服務 CodeAtlas 的資料旅程故事視角。
+        </p>
+      </div>
+    </header>
+
+    <div class="card-grid wide">
+
+      <!-- 6. D3 Sankey — text card -->
+      <div class="img-card" style="cursor:default;">
+        <div class="img-wrapper">
+          <div class="img-placeholder">
+            <div class="placeholder-icon">&#9144;</div>
+            <div class="placeholder-label">D3 Sankey 為互動式 Observable Notebook<br>需訪問頁面體驗流量帶動態效果</div>
+            <a class="placeholder-url" href="https://observablehq.com/@d3/sankey" target="_blank" rel="noopener">observablehq.com/@d3/sankey &#8599;</a>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <span class="tool-name">D3 Sankey Diagram</span>
+            <span class="badge badge-cyan">開源</span>
+            <span class="badge badge-muted">流量圖</span>
+          </div>
+          <p class="card-desc">
+            資料流量帶寬度比例分配，左到右流向，節點垂直排列。流量越大的路徑帶越寬，
+            可直覺感受哪條呼叫路徑最頻繁。節點支援拖拽重排，帶會自動重繪貝茲曲線。
+          </p>
+          <div class="card-ref">
+            <strong>對 CodeAtlas 的參考價值</strong>
+            資料流故事視角的「流量分佈」子視圖。適合呈現函式呼叫的相對流量比例，
+            幫助識別系統瓶頸點。帶寬度 = 呼叫次數是直覺的視覺映射。
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. Mermaid.js — text card -->
+      <div class="img-card" style="cursor:default;">
+        <div class="img-wrapper">
+          <div class="img-placeholder">
+            <div class="placeholder-icon">&#8614;</div>
+            <div class="placeholder-label">Mermaid.js 官網 Hero 區有深色主題時序圖<br>需訪問頁面查看互動效果</div>
+            <a class="placeholder-url" href="https://mermaid.js.org" target="_blank" rel="noopener">mermaid.js.org &#8599;</a>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <span class="tool-name">Mermaid.js</span>
+            <span class="badge badge-cyan">開源</span>
+            <span class="badge badge-muted">時序圖</span>
+          </div>
+          <p class="card-desc">
+            Actor 矩形 + 垂直生命線 + 水平訊息箭頭，構成標準時序圖視覺語言。
+            順序箭頭實線、回應箭頭虛線，活躍期用窄矩形標示在生命線上。
+            支援深色主題，是技術文件的事實標準。
+          </p>
+          <div class="card-ref">
+            <strong>對 CodeAtlas 的參考價值</strong>
+            API 呼叫鏈的「執行流程」故事視角的視覺語言直接參考。
+            生命線模式適合呈現非同步 await 鏈，可清楚看出哪段時間在等待。
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. Apache Airflow DAG -->
+      <div class="img-card" role="button" tabindex="0" aria-label="放大 Apache Airflow 截圖"
+           onclick="openLightbox(this)" data-src="https://airflow.apache.org/docs/apache-airflow/stable/_images/dag_overview_graph.png" data-caption="Apache Airflow — DAG 執行圖（狀態顏色編碼）">
+        <div class="img-wrapper">
+          <img
+            src="https://airflow.apache.org/docs/apache-airflow/stable/_images/dag_overview_graph.png"
+            alt="Apache Airflow DAG 流程圖：節點以執行狀態顏色填色"
+            loading="lazy"
+            onerror="this.parentElement.innerHTML=getPlaceholderHTML('Apache Airflow','https://airflow.apache.org')"
+          />
+          <div class="zoom-hint">點擊放大</div>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <span class="tool-name">Apache Airflow</span>
+            <span class="badge badge-cyan">開源</span>
+            <span class="badge badge-muted">DAG 執行圖</span>
+          </div>
+          <p class="card-desc">
+            DAG 流程深色主題，節點以執行狀態顏色填色：綠色=成功、紅色=失敗、
+            黃色=執行中、灰色=待執行。有向邊清楚標示執行先後依賴。
+            狀態顏色覆蓋節點背景，圖形語言一致且可快速掃描。
+          </p>
+          <div class="card-ref">
+            <strong>對 CodeAtlas 的參考價值</strong>
+            執行狀態顏色編碼體系可直接套用於程式碼路徑追蹤視圖。
+            「節點顏色 = 執行狀態」的視覺慣例是使用者已有的心智模型，降低學習成本。
+          </div>
+        </div>
+      </div>
+
+      <!-- 9. AWS X-Ray 服務地圖 -->
+      <div class="img-card" role="button" tabindex="0" aria-label="放大 AWS X-Ray 服務地圖截圖"
+           onclick="openLightbox(this)" data-src="https://docs.aws.amazon.com/xray/latest/devguide/images/console-servicemap-xray.png" data-caption="AWS X-Ray — 服務地圖 + 路徑追蹤">
+        <div class="img-wrapper">
+          <img
+            src="https://docs.aws.amazon.com/xray/latest/devguide/images/console-servicemap-xray.png"
+            alt="AWS X-Ray 服務地圖：圓形節點佈局，邊框色標示健康度，選中節點路徑全亮"
+            loading="lazy"
+            onerror="this.parentElement.innerHTML=getPlaceholderHTML('AWS X-Ray','https://aws.amazon.com/xray/')"
+          />
+          <div class="zoom-hint">點擊放大</div>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <span class="tool-name">AWS X-Ray</span>
+            <span class="badge badge-amber">商業</span>
+            <span class="badge badge-muted">服務地圖</span>
+          </div>
+          <p class="card-desc">
+            圓形節點佈局：節點邊框色 = 健康度（綠/橙/紅），邊粗細 = 流量大小。
+            選中節點後，上下游完整路徑以高亮色保留，其餘服務淡化。
+            同時在右側面板顯示延遲百分位數和錯誤率分布。
+          </p>
+          <div class="card-ref">
+            <strong>對 CodeAtlas 的參考價值</strong>
+            路徑追蹤高亮 + 非路徑節點淡化的互動模式是 CodeAtlas 端到端追蹤的直接設計參考。
+            健康度色環（邊框色而非填充色）讓節點在保持辨識度的同時攜帶狀態資訊。
+          </div>
+        </div>
+      </div>
+
+      <!-- 10. AWS X-Ray 節點詳情 -->
+      <div class="img-card" role="button" tabindex="0" aria-label="放大 AWS X-Ray 節點詳情截圖"
+           onclick="openLightbox(this)" data-src="https://docs.aws.amazon.com/xray/latest/devguide/images/console-servicemap-nodedetail-xray.png" data-caption="AWS X-Ray — 節點詳情面板（下鑽體驗）">
+        <div class="img-wrapper">
+          <img
+            src="https://docs.aws.amazon.com/xray/latest/devguide/images/console-servicemap-nodedetail-xray.png"
+            alt="AWS X-Ray 節點詳情面板：延遲分佈圖、請求數、錯誤率"
+            loading="lazy"
+            onerror="this.parentElement.innerHTML=getPlaceholderHTML('AWS X-Ray Detail','https://aws.amazon.com/xray/')"
+          />
+          <div class="zoom-hint">點擊放大</div>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <span class="tool-name">AWS X-Ray</span>
+            <span class="badge badge-amber">商業</span>
+            <span class="badge badge-muted">節點詳情</span>
+          </div>
+          <p class="card-desc">
+            點選節點後，右側滑入詳細面板：延遲分佈直方圖 + P50/P90/P99 數字、
+            每分鐘請求數折線圖、錯誤率 / 錯誤率趨勢。
+            面板設計強調「從地圖下鑽到細節」的兩層操作流程。
+          </p>
+          <div class="card-ref">
+            <strong>對 CodeAtlas 的參考價值</strong>
+            下鑽體驗設計範本：點選圖譜節點 → 右側詳情面板滑入，不離開主視圖。
+            可套用於 CodeAtlas 的「點選函式節點 → 查看呼叫次數 / 影響路徑」的互動設計。
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       Section 3 — 3D 視覺化
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section class="section" id="section-3d" aria-labelledby="section-3d-title">
+    <header class="section-header">
+      <div class="section-icon pink">&#9670;</div>
+      <div class="section-text">
+        <div class="section-num">Category 03</div>
+        <h2 class="section-title" id="section-3d-title">3D 視覺化</h2>
+        <p class="section-desc">
+          從 Gource Git 歷史動畫到 Three.js 後處理效果，研究業界如何用 3D 空間感
+          和粒子特效強化視覺衝擊力，服務 CodeAtlas 的 3D 模式升級需求。
+        </p>
+      </div>
+    </header>
+
+    <div class="card-grid wide">
+
+      <!-- 11. Gource Linux -->
+      <div class="img-card" role="button" tabindex="0" aria-label="放大 Gource Linux Repo 截圖"
+           onclick="openLightbox(this)" data-src="https://gource.io/images/gource-linux.jpg" data-caption="Gource — Git 歷史動畫（Linux Kernel Repo）">
+        <div class="img-wrapper">
+          <img
+            src="https://gource.io/images/gource-linux.jpg"
+            alt="Gource Git 歷史動畫：Linux Kernel，樹狀結構加上貢獻者粒子流"
+            loading="lazy"
+            onerror="this.parentElement.innerHTML=getPlaceholderHTML('Gource (Linux)','https://gource.io')"
+          />
+          <div class="zoom-hint">點擊放大</div>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <span class="tool-name">Gource</span>
+            <span class="badge badge-cyan">開源</span>
+            <span class="badge badge-muted">Git 歷史</span>
+            <span class="badge badge-pink">Linux Repo</span>
+          </div>
+          <p class="card-desc">
+            Git 提交歷史動畫：目錄為樹狀分支節點，檔案為葉節點，
+            貢獻者以發光粒子移動至修改的節點。深黑背景 + 節點發光讓密集提交視覺震撼。
+            時間軸控制播放速度，可快速感受專案演化脈絡。
+          </p>
+          <div class="card-ref">
+            <strong>對 CodeAtlas 的參考價值</strong>
+            Sprint 11 Git 歷史故事視角的核心靈感來源。
+            樹狀結構 + 貢獻者粒子 + 時間軸的三元素組合是 Git 時光機模式的設計藍圖。
+          </div>
+        </div>
+      </div>
+
+      <!-- 12. Gource Git Repo -->
+      <div class="img-card" role="button" tabindex="0" aria-label="放大 Gource Git Repo 截圖"
+           onclick="openLightbox(this)" data-src="https://gource.io/images/gource-git.jpg" data-caption="Gource — Git 歷史動畫（Git Repo 自身）">
+        <div class="img-wrapper">
+          <img
+            src="https://gource.io/images/gource-git.jpg"
+            alt="Gource Git Repo 自身歷史動畫：密集提交形成輻射狀星爆"
+            loading="lazy"
+            onerror="this.parentElement.innerHTML=getPlaceholderHTML('Gource (Git Repo)','https://gource.io')"
+          />
+          <div class="zoom-hint">點擊放大</div>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <span class="tool-name">Gource</span>
+            <span class="badge badge-cyan">開源</span>
+            <span class="badge badge-muted">高活動度</span>
+            <span class="badge badge-pink">Git Repo</span>
+          </div>
+          <p class="card-desc">
+            Git 自身 repo 的提交歷史，密集活動時形成輻射狀星爆效果。
+            多條活躍分支同時有貢獻者粒子移動，視覺資訊密度極高。
+            展示 Gource 在高頻率提交下的視覺密度處理能力。
+          </p>
+          <div class="card-ref">
+            <strong>對 CodeAtlas 的參考價值</strong>
+            高活動度專案的視覺密度處理策略。粒子密集時需要層次感，
+            建議使用深度排序（遠近虛化）或活動衰減（舊提交粒子逐漸透明化）。
+          </div>
+        </div>
+      </div>
+
+      <!-- 13. Gource Papervision -->
+      <div class="img-card" role="button" tabindex="0" aria-label="放大 Gource Papervision 截圖"
+           onclick="openLightbox(this)" data-src="https://gource.io/images/gource-papervision.jpg" data-caption="Gource — Git 歷史動畫（Papervision3D）">
+        <div class="img-wrapper">
+          <img
+            src="https://gource.io/images/gource-papervision.jpg"
+            alt="Gource Papervision3D 歷史動畫：稀疏樹狀結構的活動熱點"
+            loading="lazy"
+            onerror="this.parentElement.innerHTML=getPlaceholderHTML('Gource (Papervision3D)','https://gource.io')"
+          />
+          <div class="zoom-hint">點擊放大</div>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <span class="tool-name">Gource</span>
+            <span class="badge badge-cyan">開源</span>
+            <span class="badge badge-muted">低活動度</span>
+            <span class="badge badge-pink">Papervision3D</span>
+          </div>
+          <p class="card-desc">
+            稀疏樹狀結構下的活動熱點：偶發的提交讓單一節點閃光，
+            長時間靜默後突然一批修改讓整個子樹爆發。
+            發光粒子軌跡在深黑背景下格外明顯，即使低活動度也不失優雅。
+          </p>
+          <div class="card-ref">
+            <strong>對 CodeAtlas 的參考價值</strong>
+            低活動度（冷門）專案的優雅呈現策略。稀疏資料下不應擠壓視覺空間，
+            反而應利用負空間凸顯有活動的節點，避免空洞感。
+          </div>
+        </div>
+      </div>
+
+      <!-- 14. 3d-force-graph -->
+      <div class="img-card" role="button" tabindex="0" aria-label="放大 3d-force-graph 截圖"
+           onclick="openLightbox(this)" data-src="https://vasturiano.github.io/3d-force-graph/example/preview.png" data-caption="3d-force-graph — 深色半透明球形節點力導向圖">
+        <div class="img-wrapper">
+          <img
+            src="https://vasturiano.github.io/3d-force-graph/example/preview.png"
+            alt="3d-force-graph：深色背景，球形節點半透明發光，細線邊"
+            loading="lazy"
+            onerror="this.parentElement.innerHTML=getPlaceholderHTML('3d-force-graph','https://vasturiano.github.io/3d-force-graph/')"
+          />
+          <div class="zoom-hint">點擊放大</div>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <span class="tool-name">3d-force-graph</span>
+            <span class="badge badge-cyan">開源</span>
+            <span class="badge badge-muted">CodeAtlas 使用中</span>
+          </div>
+          <p class="card-desc">
+            深色背景，半透明球形節點帶內發光，細線連邊。
+            Three.js WebGL 渲染，支援軌道控制（旋轉/縮放/平移）。
+            這是 CodeAtlas 3D 模式目前使用的底層渲染庫。
+          </p>
+          <div class="card-ref">
+            <strong>對 CodeAtlas 的參考價值</strong>
+            CodeAtlas 3D 模式的 UI 設計基線。Sprint 11 的 3D 視覺升級需以此為出發點，
+            評估哪些效果可在現有 Three.js 架構上追加（Bloom Pass、粒子系統等）。
+          </div>
+        </div>
+      </div>
+
+      <!-- 15. Three.js Bloom -->
+      <div class="img-card" role="button" tabindex="0" aria-label="放大 Three.js Bloom 截圖"
+           onclick="openLightbox(this)" data-src="https://threejs.org/examples/screenshots/webgl_postprocessing_unreal_bloom.jpg" data-caption="Three.js UnrealBloomPass — 泛光後處理效果">
+        <div class="img-wrapper">
+          <img
+            src="https://threejs.org/examples/screenshots/webgl_postprocessing_unreal_bloom.jpg"
+            alt="Three.js UnrealBloomPass：高亮物件周圍光暈向外擴散的泛光效果"
+            loading="lazy"
+            onerror="this.parentElement.innerHTML=getPlaceholderHTML('Three.js Bloom','https://threejs.org/examples/?q=bloom#webgl_postprocessing_unreal_bloom')"
+          />
+          <div class="zoom-hint">點擊放大</div>
+        </div>
+        <div class="card-body">
+          <div class="card-header-row">
+            <span class="tool-name">Three.js UnrealBloomPass</span>
+            <span class="badge badge-cyan">開源</span>
+            <span class="badge badge-muted">後處理效果</span>
+          </div>
+          <p class="card-desc">
+            UnrealBloomPass 泛光後處理：高亮物件（如自發光節點）的光亮向外暈散，
+            形成霓虹感光暈。強度、半徑、門檻值三個參數可調，
+            適合標記「高活躍節點」或「選中的追蹤路徑」。
+          </p>
+          <div class="card-ref">
+            <strong>對 CodeAtlas 的參考價值</strong>
+            3D 視角中「高活躍節點發光」的技術實作基礎。
+            建議對追蹤路徑上的節點啟用 Bloom，非路徑節點關閉，形成強烈的視覺引導對比。
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       Section 4 — 佈局策略對比
+  ══════════════════════════════════════════════════════════════════════ -->
+  <section class="section" id="section-layout" aria-labelledby="section-layout-title">
+    <header class="section-header">
+      <div class="section-icon amber">&#9724;</div>
+      <div class="section-text">
+        <div class="section-num">Category 04</div>
+        <h2 class="section-title" id="section-layout-title">佈局策略對比</h2>
+        <p class="section-desc">
+          四種核心圖譜佈局策略的優劣對比分析。Sprint 11 三種故事視角各需要選擇最合適的佈局，
+          不同視角有不同的認知任務，佈局選擇直接影響使用者理解效率。
+        </p>
+      </div>
+    </header>
+
+    <div class="layout-grid">
+
+      <!-- 16. Force-Directed -->
+      <div class="layout-card">
+        <div class="layout-preview" style="background: #0d0d18;" aria-hidden="true">
+          <!-- SVG 力導向示意圖 -->
+          <svg width="260" height="120" viewBox="0 0 260 120" style="overflow:visible;">
+            <!-- edges -->
+            <line x1="130" y1="60" x2="80"  y2="30"  stroke="rgba(0,229,255,0.3)" stroke-width="1.5"/>
+            <line x1="130" y1="60" x2="180" y2="25"  stroke="rgba(0,229,255,0.3)" stroke-width="1.5"/>
+            <line x1="130" y1="60" x2="60"  y2="80"  stroke="rgba(0,229,255,0.3)" stroke-width="1.5"/>
+            <line x1="130" y1="60" x2="200" y2="75"  stroke="rgba(0,229,255,0.3)" stroke-width="1.5"/>
+            <line x1="130" y1="60" x2="150" y2="100" stroke="rgba(0,229,255,0.3)" stroke-width="1.5"/>
+            <line x1="80"  y1="30" x2="40"  y2="50"  stroke="rgba(0,229,255,0.2)" stroke-width="1"/>
+            <line x1="180" y1="25" x2="220" y2="45"  stroke="rgba(0,229,255,0.2)" stroke-width="1"/>
+            <line x1="60"  y1="80" x2="30"  y2="100" stroke="rgba(0,229,255,0.15)" stroke-width="1"/>
+            <!-- nodes -->
+            <circle cx="130" cy="60"  r="11" fill="rgba(0,229,255,0.25)" stroke="#00e5ff" stroke-width="1.5"/>
+            <circle cx="80"  cy="30"  r="8"  fill="rgba(168,85,247,0.25)" stroke="#a855f7" stroke-width="1.5"/>
+            <circle cx="180" cy="25"  r="7"  fill="rgba(168,85,247,0.2)"  stroke="#a855f7" stroke-width="1"/>
+            <circle cx="60"  cy="80"  r="6"  fill="rgba(168,85,247,0.2)"  stroke="#a855f7" stroke-width="1"/>
+            <circle cx="200" cy="75"  r="9"  fill="rgba(168,85,247,0.25)" stroke="#a855f7" stroke-width="1.5"/>
+            <circle cx="150" cy="100" r="5"  fill="rgba(168,85,247,0.15)" stroke="#a855f7" stroke-width="1"/>
+            <circle cx="40"  cy="50"  r="5"  fill="rgba(168,85,247,0.15)" stroke="#a855f7" stroke-width="1"/>
+            <circle cx="220" cy="45"  r="6"  fill="rgba(168,85,247,0.2)"  stroke="#a855f7" stroke-width="1"/>
+            <circle cx="30"  cy="100" r="4"  fill="rgba(168,85,247,0.12)" stroke="#a855f7" stroke-width="0.8"/>
+          </svg>
+        </div>
+        <div class="layout-info">
+          <div class="layout-name">力導向佈局 <span>(Force-Directed)</span></div>
+          <p class="layout-desc">
+            節點依物理模擬自然聚集，連結強的節點自動靠近，形成視覺上的模組群。
+            無固定層次，適合有機探索式瀏覽，找不認識的模組間的隱性關聯。
+          </p>
+          <div class="layout-tags">
+            <span class="layout-tag">自然聚類</span>
+            <span class="layout-tag">無明確層次</span>
+            <span class="layout-tag">探索式瀏覽</span>
+          </div>
+          <div style="margin-top:8px; font-size:12px; color:var(--text-muted);">
+            代表工具：CodeAtlas（現有）、Obsidian Graph View
+          </div>
+        </div>
+      </div>
+
+      <!-- 17. Hierarchical -->
+      <div class="layout-card">
+        <div class="layout-preview" style="background: #0d0d18;" aria-hidden="true">
+          <svg width="260" height="120" viewBox="0 0 260 120">
+            <!-- level 0 root -->
+            <rect x="100" y="8" width="60" height="22" rx="4" fill="rgba(124,58,237,0.35)" stroke="#7c3aed" stroke-width="1.5"/>
+            <text x="130" y="23" text-anchor="middle" font-size="9" fill="#a855f7">root</text>
+            <!-- level 1 edges -->
+            <line x1="130" y1="30" x2="70"  y2="52" stroke="rgba(124,58,237,0.4)" stroke-width="1.2"/>
+            <line x1="130" y1="30" x2="130" y2="52" stroke="rgba(124,58,237,0.4)" stroke-width="1.2"/>
+            <line x1="130" y1="30" x2="190" y2="52" stroke="rgba(124,58,237,0.4)" stroke-width="1.2"/>
+            <!-- level 1 nodes -->
+            <rect x="40"  y="52" width="60" height="20" rx="3" fill="rgba(124,58,237,0.2)" stroke="#7c3aed" stroke-width="1"/>
+            <text x="70"  y="65" text-anchor="middle" font-size="8" fill="#a855f7">module A</text>
+            <rect x="100" y="52" width="60" height="20" rx="3" fill="rgba(124,58,237,0.2)" stroke="#7c3aed" stroke-width="1"/>
+            <text x="130" y="65" text-anchor="middle" font-size="8" fill="#a855f7">module B</text>
+            <rect x="160" y="52" width="60" height="20" rx="3" fill="rgba(124,58,237,0.2)" stroke="#7c3aed" stroke-width="1"/>
+            <text x="190" y="65" text-anchor="middle" font-size="8" fill="#a855f7">module C</text>
+            <!-- level 2 edges -->
+            <line x1="70"  y1="72" x2="50"  y2="93" stroke="rgba(124,58,237,0.25)" stroke-width="1"/>
+            <line x1="70"  y1="72" x2="90"  y2="93" stroke="rgba(124,58,237,0.25)" stroke-width="1"/>
+            <line x1="130" y1="72" x2="120" y2="93" stroke="rgba(124,58,237,0.25)" stroke-width="1"/>
+            <line x1="130" y1="72" x2="145" y2="93" stroke="rgba(124,58,237,0.25)" stroke-width="1"/>
+            <line x1="190" y1="72" x2="180" y2="93" stroke="rgba(124,58,237,0.25)" stroke-width="1"/>
+            <line x1="190" y1="72" x2="210" y2="93" stroke="rgba(124,58,237,0.25)" stroke-width="1"/>
+            <!-- level 2 nodes -->
+            <circle cx="50"  cy="97" r="5" fill="rgba(124,58,237,0.15)" stroke="#7c3aed" stroke-width="1"/>
+            <circle cx="90"  cy="97" r="5" fill="rgba(124,58,237,0.15)" stroke="#7c3aed" stroke-width="1"/>
+            <circle cx="120" cy="97" r="5" fill="rgba(124,58,237,0.15)" stroke="#7c3aed" stroke-width="1"/>
+            <circle cx="145" cy="97" r="5" fill="rgba(124,58,237,0.15)" stroke="#7c3aed" stroke-width="1"/>
+            <circle cx="180" cy="97" r="5" fill="rgba(124,58,237,0.15)" stroke="#7c3aed" stroke-width="1"/>
+            <circle cx="210" cy="97" r="5" fill="rgba(124,58,237,0.15)" stroke="#7c3aed" stroke-width="1"/>
+          </svg>
+        </div>
+        <div class="layout-info">
+          <div class="layout-name">分層佈局 <span>(Hierarchical Top-Down)</span></div>
+          <p class="layout-desc">
+            根節點在頂，依賴逐層向下展開，整條依賴鏈一眼掃完。
+            30 秒看懂整個系統框架，是「交代給新成員看」的最佳佈局。
+          </p>
+          <div class="layout-tags">
+            <span class="layout-tag">有明確層次</span>
+            <span class="layout-tag">快速理解</span>
+            <span class="layout-tag">依賴方向清晰</span>
+          </div>
+          <div style="margin-top:8px; font-size:12px; color:var(--text-muted);">
+            代表工具：dagre、Graphviz dot、Sourcetrail
+          </div>
+          <div class="layout-rec">Sprint 11 建議：系統框架視角使用此佈局</div>
+        </div>
+      </div>
+
+      <!-- 18. Ego Graph -->
+      <div class="layout-card">
+        <div class="layout-preview" style="background: #0d0d18;" aria-hidden="true">
+          <svg width="260" height="120" viewBox="0 0 260 120">
+            <!-- orbit edges -->
+            <line x1="130" y1="60" x2="130" y2="15"  stroke="rgba(0,229,255,0.35)" stroke-width="1.5"/>
+            <line x1="130" y1="60" x2="175" y2="30"  stroke="rgba(0,229,255,0.35)" stroke-width="1.5"/>
+            <line x1="130" y1="60" x2="185" y2="75"  stroke="rgba(0,229,255,0.35)" stroke-width="1.5"/>
+            <line x1="130" y1="60" x2="155" y2="105" stroke="rgba(0,229,255,0.35)" stroke-width="1.5"/>
+            <line x1="130" y1="60" x2="95"  y2="105" stroke="rgba(0,229,255,0.35)" stroke-width="1.5"/>
+            <line x1="130" y1="60" x2="75"  y2="75"  stroke="rgba(0,229,255,0.35)" stroke-width="1.5"/>
+            <line x1="130" y1="60" x2="80"  y2="28"  stroke="rgba(0,229,255,0.35)" stroke-width="1.5"/>
+            <!-- orbit guide circle -->
+            <circle cx="130" cy="60" r="48" fill="none" stroke="rgba(0,229,255,0.06)" stroke-width="1" stroke-dasharray="4 4"/>
+            <!-- orbit nodes -->
+            <circle cx="130" cy="15"  r="8" fill="rgba(0,229,255,0.3)" stroke="#00e5ff" stroke-width="1.5"/>
+            <circle cx="175" cy="30"  r="7" fill="rgba(0,229,255,0.25)" stroke="#00e5ff" stroke-width="1.2"/>
+            <circle cx="185" cy="75"  r="9" fill="rgba(0,229,255,0.3)" stroke="#00e5ff" stroke-width="1.5"/>
+            <circle cx="155" cy="105" r="6" fill="rgba(0,229,255,0.2)" stroke="#00e5ff" stroke-width="1"/>
+            <circle cx="95"  cy="105" r="7" fill="rgba(0,229,255,0.25)" stroke="#00e5ff" stroke-width="1.2"/>
+            <circle cx="75"  cy="75"  r="8" fill="rgba(0,229,255,0.3)" stroke="#00e5ff" stroke-width="1.5"/>
+            <circle cx="80"  cy="28"  r="6" fill="rgba(0,229,255,0.2)" stroke="#00e5ff" stroke-width="1"/>
+            <!-- center node with glow -->
+            <circle cx="130" cy="60" r="16" fill="rgba(0,229,255,0.15)" stroke="rgba(0,229,255,0.2)" stroke-width="1"/>
+            <circle cx="130" cy="60" r="11" fill="rgba(0,229,255,0.4)" stroke="#00e5ff" stroke-width="2"/>
+            <circle cx="130" cy="60" r="5"  fill="#00e5ff"/>
+          </svg>
+        </div>
+        <div class="layout-info">
+          <div class="layout-name">星狀展開 <span>(Ego Graph)</span></div>
+          <p class="layout-desc">
+            以選中節點為中心，只顯示其直接相鄰（1 度）關係。
+            聚焦模式，減少認知負擔，適合「我只想知道這個函式依賴誰、誰依賴它」的場景。
+          </p>
+          <div class="layout-tags">
+            <span class="layout-tag">聚焦單一節點</span>
+            <span class="layout-tag">1 度關係</span>
+            <span class="layout-tag">快速定向</span>
+          </div>
+          <div style="margin-top:8px; font-size:12px; color:var(--text-muted);">
+            代表工具：Sourcetrail Focus Mode、Nx 聚焦模式
+          </div>
+        </div>
+      </div>
+
+      <!-- 19. City Map -->
+      <div class="layout-card">
+        <div class="layout-preview" style="background: #0d0d18; overflow: hidden;" aria-hidden="true">
+          <svg width="260" height="120" viewBox="0 0 260 120">
+            <!-- "ground" blocks representing directories -->
+            <!-- district A -->
+            <rect x="10"  y="70" width="90" height="44" rx="3" fill="rgba(124,58,237,0.06)" stroke="rgba(124,58,237,0.2)" stroke-width="1"/>
+            <text x="55" y="118" text-anchor="middle" font-size="7" fill="rgba(168,85,247,0.5)">src/core</text>
+            <!-- district B -->
+            <rect x="110" y="55" width="70" height="59" rx="3" fill="rgba(0,229,255,0.05)" stroke="rgba(0,229,255,0.15)" stroke-width="1"/>
+            <text x="145" y="118" text-anchor="middle" font-size="7" fill="rgba(0,229,255,0.4)">src/ui</text>
+            <!-- district C -->
+            <rect x="190" y="75" width="62" height="39" rx="3" fill="rgba(236,72,153,0.05)" stroke="rgba(236,72,153,0.15)" stroke-width="1"/>
+            <text x="221" y="118" text-anchor="middle" font-size="7" fill="rgba(236,72,153,0.4)">src/cli</text>
+            <!-- buildings core -->
+            <rect x="16"  y="50" width="16" height="20" rx="2" fill="rgba(124,58,237,0.5)" stroke="#7c3aed" stroke-width="1"/>
+            <rect x="36"  y="38" width="14" height="32" rx="2" fill="rgba(124,58,237,0.65)" stroke="#7c3aed" stroke-width="1"/>
+            <rect x="54"  y="57" width="12" height="13" rx="2" fill="rgba(124,58,237,0.35)" stroke="#7c3aed" stroke-width="1"/>
+            <rect x="70"  y="44" width="18" height="26" rx="2" fill="rgba(124,58,237,0.55)" stroke="#7c3aed" stroke-width="1.2"/>
+            <rect x="18"  y="35" width="10" height="15" rx="2" fill="rgba(239,68,68,0.6)"   stroke="#ef4444" stroke-width="1.2"/>
+            <!-- buildings ui -->
+            <rect x="116" y="30" width="14" height="25" rx="2" fill="rgba(0,229,255,0.5)"  stroke="#00e5ff" stroke-width="1"/>
+            <rect x="134" y="45" width="12" height="10" rx="2" fill="rgba(0,229,255,0.3)"  stroke="#00e5ff" stroke-width="1"/>
+            <rect x="150" y="22" width="16" height="33" rx="2" fill="rgba(0,229,255,0.6)"  stroke="#00e5ff" stroke-width="1.2"/>
+            <rect x="170" y="40" width="10" height="15" rx="2" fill="rgba(0,229,255,0.35)" stroke="#00e5ff" stroke-width="1"/>
+            <!-- buildings cli -->
+            <rect x="196" y="52" width="12" height="23" rx="2" fill="rgba(236,72,153,0.45)" stroke="#ec4899" stroke-width="1"/>
+            <rect x="212" y="62" width="14" height="13" rx="2" fill="rgba(236,72,153,0.3)"  stroke="#ec4899" stroke-width="1"/>
+            <rect x="230" y="48" width="16" height="27" rx="2" fill="rgba(236,72,153,0.5)"  stroke="#ec4899" stroke-width="1.2"/>
+            <!-- height legend hint -->
+            <text x="130" y="12" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.2)">高度 = 複雜度</text>
+            <text x="71"  y="32" text-anchor="middle" font-size="6.5" fill="rgba(239,68,68,0.7)">&#9651; hotspot</text>
+          </svg>
+        </div>
+        <div class="layout-info">
+          <div class="layout-name">城市地圖 <span>(City Map)</span></div>
+          <p class="layout-desc">
+            目錄 = 街區、檔案 = 建築、建築高度 = 複雜度、屋頂顏色 = 改動頻率。
+            提供最直覺的規模感和熱區感知，非技術人員（PM/老闆）也能快速理解。
+          </p>
+          <div class="layout-tags">
+            <span class="layout-tag">非技術友善</span>
+            <span class="layout-tag">規模直覺</span>
+            <span class="layout-tag">熱區感知</span>
+          </div>
+          <div style="margin-top:8px; font-size:12px; color:var(--text-muted);">
+            代表工具：CodeScene Circle Packing、Code City、Sotomayor
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       Director Note
+  ══════════════════════════════════════════════════════════════════════ -->
+  <aside class="director-note" role="complementary" aria-labelledby="director-note-title">
+    <div class="director-note-eyebrow">Design Director</div>
+    <h2 class="director-note-title" id="director-note-title">設計總監建議 — Sprint 11 視覺方向</h2>
+
+    <div class="rec-list">
+      <div class="rec-item">
+        <div class="rec-num">1</div>
+        <div class="rec-content">
+          <div class="rec-title"><span>系統框架視角</span> → 分層佈局（Hierarchical Top-Down）</div>
+          <div class="rec-body">
+            採用分層佈局，參考 Sourcetrail 三欄同步佈局 + Airflow DAG 狀態色。
+            根節點在頂，依賴逐層向下展開，30 秒看懂整個系統架構。
+            左側固定目錄樹，中間 dagre 有向圖，右側程式碼預覽，三欄聯動。
+            節點顏色採用 Airflow 狀態色系：綠=穩定、橙=高耦合、紅=循環依賴。
+          </div>
+        </div>
+      </div>
+
+      <div class="rec-item">
+        <div class="rec-num">2</div>
+        <div class="rec-content">
+          <div class="rec-title"><span>邏輯運作視角</span> → 力導向佈局（保持現有）+ 路徑高亮</div>
+          <div class="rec-body">
+            保持力導向佈局，參考 Obsidian hover 鄰近節點高亮策略 + AWS X-Ray 路徑追蹤淡化策略。
+            探索模式（無選中）：hover 時高亮鄰近節點，其餘節點不淡化，保留全域感。
+            追蹤模式（選中路徑）：路徑節點 100% 不透明 + Bloom 光暈，非路徑節點淡化至 15%。
+            兩種模式在 ViewStateContext 中切換，不重建圖形。
+          </div>
+        </div>
+      </div>
+
+      <div class="rec-item">
+        <div class="rec-num">3</div>
+        <div class="rec-content">
+          <div class="rec-title"><span>資料旅程視角</span> → 路徑追蹤高亮（Path Tracing）</div>
+          <div class="rec-body">
+            採用路徑追蹤高亮視覺語言，參考 Datadog / AWS X-Ray 的 fade-out 策略 + Gource 粒子軌跡效果。
+            選定入口函式後，端到端路徑高亮（節點 + 邊），動畫粒子沿路徑流動表示資料流向。
+            非路徑節點淡化，右側面板顯示路徑上每個節點的延遲 / 呼叫次數。
+            粒子流速映射實際呼叫頻率（高頻 = 粒子更密集、更快）。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="rec-divider" />
+
+    <p class="rec-note">
+      <strong>整體風格：</strong>繼續深色霓虹主題（bg #0a0a0f），不改變既有視覺識別。
+      3D 模式考慮追加 Three.js UnrealBloomPass 泛光後處理效果，對高活躍節點和追蹤路徑啟用 Bloom，
+      增強視覺衝擊力，同時以 Gource 的粒子軌跡設計作為 Git 歷史故事視角的核心動畫語彙。
+      建議以 3d-force-graph 現有架構為基線，評估 Bloom + 粒子系統的效能預算再決定實作範圍。
+    </p>
+  </aside>
+
+</main>
+
+<!-- ── Footer ────────────────────────────────────────────────────────── -->
+<footer class="footer" role="contentinfo">
+  <div class="footer-left">CodeAtlas / sprint11-visual-gallery.html</div>
+  <div class="footer-right">Design Reference Gallery &mdash; ui-designer &mdash; 2026-03-31</div>
+</footer>
+
+<!-- ── Lightbox ──────────────────────────────────────────────────────── -->
+<div id="lightbox" role="dialog" aria-modal="true" aria-label="圖片放大檢視" onclick="closeLightboxOnBackdrop(event)">
+  <button id="lightbox-close" onclick="closeLightbox()" aria-label="關閉">&times;</button>
+  <img id="lightbox-img" src="" alt="" onclick="event.stopPropagation()" />
+  <div id="lightbox-caption"></div>
+</div>
+
+<!-- ── Scroll to top ─────────────────────────────────────────────────── -->
+<button id="scroll-top" aria-label="回到頂部" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8593;</button>
+
+<script>
+  /* ── Lightbox ──────────────────────────────────────────────────────── */
+  function openLightbox(card) {
+    var src     = card.getAttribute('data-src');
+    var caption = card.getAttribute('data-caption') || '';
+    if (!src) return;
+    var lb  = document.getElementById('lightbox');
+    var img = document.getElementById('lightbox-img');
+    var cap = document.getElementById('lightbox-caption');
+    img.src = src;
+    img.alt = caption;
+    cap.textContent = caption;
+    lb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    // keyboard focus
+    document.getElementById('lightbox-close').focus();
+  }
+
+  function closeLightbox() {
+    var lb = document.getElementById('lightbox');
+    lb.classList.remove('open');
+    document.body.style.overflow = '';
+    document.getElementById('lightbox-img').src = '';
+  }
+
+  function closeLightboxOnBackdrop(e) {
+    if (e.target === document.getElementById('lightbox')) {
+      closeLightbox();
+    }
+  }
+
+  // Keyboard: Escape to close, Enter/Space on card to open
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      var lb = document.getElementById('lightbox');
+      if (lb.classList.contains('open')) closeLightbox();
+    }
+  });
+
+  // Allow keyboard activation of cards
+  document.querySelectorAll('.img-card[tabindex="0"]').forEach(function(card) {
+    card.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openLightbox(card);
+      }
+    });
+  });
+
+  /* ── Image placeholder helper ─────────────────────────────────────── */
+  function getPlaceholderHTML(name, url) {
+    return '<div class="img-placeholder">'
+      + '<div class="placeholder-icon">&#9632;</div>'
+      + '<div class="placeholder-label">' + name + '<br>圖片載入失敗 — 請確認網路連線</div>'
+      + (url ? '<a class="placeholder-url" href="' + url + '" target="_blank" rel="noopener">' + url + ' &#8599;</a>' : '')
+      + '</div>';
+  }
+
+  /* ── Active nav tab on scroll ──────────────────────────────────────── */
+  var sections = ['section-arch', 'section-flow', 'section-3d', 'section-layout'];
+  var navLinks  = document.querySelectorAll('#nav-tabs a');
+
+  function updateActiveNav() {
+    var scrollY = window.scrollY + 100;
+    var active  = sections[0];
+    sections.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && el.offsetTop <= scrollY) active = id;
+    });
+    navLinks.forEach(function(a) {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + active);
+    });
+  }
+
+  window.addEventListener('scroll', updateActiveNav, { passive: true });
+  updateActiveNav();
+
+  /* ── Scroll-to-top visibility ──────────────────────────────────────── */
+  var scrollTopBtn = document.getElementById('scroll-top');
+  window.addEventListener('scroll', function() {
+    scrollTopBtn.classList.toggle('visible', window.scrollY > 400);
+  }, { passive: true });
+</script>
+
+</body>
+</html>

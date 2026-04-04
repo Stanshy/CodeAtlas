@@ -1,0 +1,19 @@
+{
+  "nodes": [
+    { "id": "src/core/engine.ts",     "type": "file",      "label": "engine.ts",   "filePath": "src/core/engine.ts",     "metadata": {} },
+    { "id": "src/core/parser.ts",     "type": "file",      "label": "parser.ts",   "filePath": "src/core/parser.ts",     "metadata": {} },
+    { "id": "src/ui/button.tsx",      "type": "file",      "label": "button.tsx",  "filePath": "src/ui/button.tsx",      "metadata": {} },
+    { "id": "src/ui/panel.tsx",       "type": "file",      "label": "panel.tsx",   "filePath": "src/ui/panel.tsx",       "metadata": {} },
+    { "id": "src/core",               "type": "directory", "label": "core",        "filePath": "src/core",               "metadata": {} },
+    { "id": "src/ui",                 "type": "directory", "label": "ui",          "filePath": "src/ui",                 "metadata": {} },
+    { "id": "src/core/engine.ts#run", "type": "function",  "label": "run",         "filePath": "src/core/engine.ts",     "metadata": { "parentFileId": "src/core/engine.ts" } },
+    { "id": "src/ui/button.tsx#Click","type": "function",  "label": "Click",       "filePath": "src/ui/button.tsx",      "metadata": { "parentFileId": "src/ui/button.tsx" } }
+  ],
+  "edges": [
+    { "id": "engine--import--parser",   "source": "src/core/engine.ts",     "target": "src/core/parser.ts",  "type": "import",    "metadata": {} },
+    { "id": "button--import--engine",   "source": "src/ui/button.tsx",      "target": "src/core/engine.ts",  "type": "import",    "metadata": {} },
+    { "id": "panel--import--button",    "source": "src/ui/panel.tsx",       "target": "src/ui/button.tsx",   "type": "import",    "metadata": {} },
+    { "id": "button--call--run",        "source": "src/ui/button.tsx#Click","target": "src/core/engine.ts#run","type": "call",    "metadata": {} },
+    { "id": "engine--data-flow--panel", "source": "src/core/engine.ts",     "target": "src/ui/panel.tsx",    "type": "data-flow", "metadata": {} }
+  ]
+}

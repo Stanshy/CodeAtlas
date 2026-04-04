@@ -1,0 +1,93 @@
+/**
+ * CodeAtlas — Stagger Animation CSS
+ * Data Journey perspective animations.
+ * Sprint 11 — T7 / Sprint 12 — T7 (entry node pulse, appear semantics).
+ */
+
+/* Entry node pulse ring animation */
+@keyframes dj-entry-pulse {
+  0%   { opacity: 0.4; transform: scale(1); }
+  50%  { opacity: 0.15; transform: scale(1.18); }
+  100% { opacity: 0.4; transform: scale(1); }
+}
+
+.dj-entry-pulse {
+  animation: dj-entry-pulse 1.8s ease-in-out infinite;
+}
+
+/* Node appear: opacity 0 → 1 */
+@keyframes dj-node-appear {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.dj-node-appear {
+  animation: dj-node-appear 0.25s ease-out forwards;
+}
+
+/* Edge draw animation (stroke-dashoffset reveal) */
+.data-journey-edge {
+  stroke-dasharray: var(--dash-len);
+  stroke-dashoffset: var(--dash-len);
+}
+.data-journey-edge.animate {
+  animation: draw-edge 280ms ease-out forwards;
+}
+
+@keyframes draw-edge {
+  from { stroke-dashoffset: var(--dash-len); }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* Pulse animation when node becomes lit */
+@keyframes pulse-node {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+.pulse-once {
+  animation: pulse-node 280ms ease-out forwards;
+}
+
+/* Node step reveal animation */
+.data-journey-node-reveal {
+  animation: node-reveal 200ms ease-in forwards;
+}
+
+@keyframes node-reveal {
+  from { opacity: 0.3; }
+  to   { opacity: 1; }
+}
+
+/* Dim state for nodes not yet reached */
+.data-journey-node-dim {
+  opacity: 0.15;
+  transition: opacity 300ms ease;
+}
+
+/* Current step node — extra glow */
+.data-journey-node-current {
+  filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.7));
+}
+
+/* Path particles (Data Journey) */
+@keyframes flow-path-particle {
+  0%   { offset-distance: 0%;   opacity: 0; }
+  5%   { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+.path-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00ff88;
+  box-shadow: 0 0 10px #00ff88, 0 0 20px rgba(0,255,136,0.6);
+  pointer-events: none;
+  z-index: 25;
+  animation: flow-path-particle 2s linear infinite;
+  offset-rotate: 0deg;
+}
+.path-particle.pp2 { animation-delay: 0.67s; }
+.path-particle.pp3 { animation-delay: 1.33s; }

@@ -1,0 +1,36 @@
+{
+  "name": "@codeatlas/cli",
+  "version": "0.0.1",
+  "description": "CodeAtlas CLI — command-line interface for codebase analysis",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "codeatlas": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@codeatlas/core": "workspace:*",
+    "@fastify/static": "^9.0.0",
+    "commander": "^12.1.0",
+    "fastify": "^5.8.4"
+  }
+}

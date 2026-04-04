@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeAtlas — File View (Zoom In)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0f;
+      font-family: 'Inter', system-ui, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #canvas {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at 50% 50%, #0f0f1a 0%, #0a0a0f 60%, #070710 100%);
+    }
+    #canvas::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+    }
+    #canvas::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(7,7,16,0.6) 100%);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* ── SVG edges ── */
+    #edges-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* ── Nodes layer ── */
+    #nodes {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+    }
+
+    /* ══════════════════════════════════════
+       EXPANDED DIRECTORY GROUP (core/)
+    ══════════════════════════════════════ */
+    .dir-group {
+      position: absolute;
+      border-radius: 14px;
+      border: 1.5px solid #8855ff;
+      background: rgba(136,85,255,0.08);
+      box-shadow: 0 0 20px rgba(189,0,255,0.18), 0 0 40px rgba(189,0,255,0.08);
+      overflow: visible;
+    }
+
+    .dir-group-accent {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #bd00ff;
+      border-radius: 14px 14px 0 0;
+    }
+
+    .dir-group-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid rgba(136,85,255,0.15);
+    }
+
+    .dir-group-icon {
+      width: 20px;
+      height: 20px;
+      color: #bd00ff;
+      flex-shrink: 0;
+    }
+
+    .dir-group-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 600;
+      color: #e8eaf6;
+    }
+    .dir-group-count {
+      font-size: 11px;
+      color: #9e9ec8;
+      margin-left: auto;
+    }
+
+    .toggle-btn {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1.5px solid #8855ff;
+      background: transparent;
+      color: #8855ff;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: 600;
+      margin-left: 8px;
+      transition: border-color 150ms, color 150ms, background 150ms;
+      flex-shrink: 0;
+    }
+    .toggle-btn:hover {
+      background: rgba(136,85,255,0.20);
+      border-color: #bd00ff;
+      color: #bd00ff;
+    }
+
+    /* child area */
+    .dir-child-area {
+      background: rgba(136,85,255,0.04);
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      border-radius: 0 0 14px 14px;
+    }
+
+    /* ── File node (inside group) ── */
+    .file-node {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1.5px solid #00d4ff;
+      background: rgba(0,212,255,0.07);
+      box-shadow: 0 0 8px rgba(0,212,255,0.25), 0 0 16px rgba(0,212,255,0.10);
+      cursor: pointer;
+      transition: transform 150ms ease-out, box-shadow 150ms ease-out, border-color 150ms ease-out, background 150ms ease-out;
+      user-select: none;
+      min-height: 52px;
+    }
+    .file-node:hover {
+      border-color: #00ffff;
+      border-width: 2px;
+      background: rgba(0,212,255,0.12);
+      box-shadow: 0 0 12px rgba(0,212,255,0.50), 0 0 24px rgba(0,212,255,0.25), 0 0 40px rgba(0,212,255,0.10);
+      transform: scale(1.04);
+      z-index: 50;
+    }
+
+    .file-icon {
+      width: 14px;
+      height: 14px;
+      color: #00d4ff;
+      flex-shrink: 0;
+    }
+    .file-label-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+    }
+    .file-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      color: #e8eaf6;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .file-ext {
+      font-size: 10px;
+      color: #0099cc;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .file-sublabel {
+      font-size: 10px;
+      color: #9e9ec8;
+    }
+
+    /* ── Collapsed directory nodes ── */
+    .node-dir-collapsed {
+      position: absolute;
+      border-radius: 10px;
+      border: 1.5px solid #8855ff;
+      background: rgba(136,85,255,0.08);
+      box-shadow: 0 0 8px rgba(189,0,255,0.25), 0 0 16px rgba(189,0,255,0.10);
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform 150ms ease-out, box-shadow 150ms ease-out, border-color 150ms ease-out, background 150ms ease-out;
+      user-select: none;
+      min-width: 160px;
+      height: 56px;
+    }
+    .node-dir-collapsed:hover {
+      border-color: #bd00ff;
+      border-width: 2px;
+      background: rgba(189,0,255,0.13);
+      box-shadow: 0 0 12px rgba(189,0,255,0.50), 0 0 24px rgba(189,0,255,0.25);
+      transform: scale(1.02);
+      z-index: 20;
+    }
+    .collapsed-accent {
+      width: 100%;
+      height: 3px;
+      background: #bd00ff;
+    }
+    .collapsed-body {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+    }
+    .collapsed-icon { width: 14px; height: 14px; color: #bd00ff; }
+    .collapsed-label-stack { display: flex; flex-direction: column; gap: 2px; }
+    .collapsed-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #e8eaf6;
+    }
+    .collapsed-count {
+      font-size: 10px;
+      color: #9e9ec8;
+    }
+    .collapsed-toggle {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid #8855ff;
+      background: transparent;
+      color: #8855ff;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    /* ── Toolbar ── */
+    #toolbar {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(26,26,46,0.90);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 6px;
+      backdrop-filter: blur(8px);
+    }
+    .toolbar-title { font-size: 24px; font-weight: 700; color: #e8eaf6; padding: 0 10px 0 6px; }
+    .toolbar-title span { color: #00d4ff; }
+    .toolbar-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.10); margin: 0 4px; }
+    .toolbar-btn {
+      width: 32px; height: 32px; border: none; background: transparent;
+      border-radius: 6px; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; color: #9e9ec8; font-size: 16px; font-weight: 600;
+      transition: background 100ms, color 100ms;
+    }
+    .toolbar-btn:hover { background: rgba(255,255,255,0.06); color: #e8eaf6; }
+
+    /* ── Zoom level indicator ── */
+    #zoom-indicator {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(26,26,46,0.85);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 6px 16px;
+      backdrop-filter: blur(8px);
+      font-size: 12px;
+      color: #9e9ec8;
+    }
+    .zoom-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .zoom-dot.active { background: #00d4ff; box-shadow: 0 0 6px rgba(0,212,255,0.60); }
+    .zoom-dot.inactive { background: rgba(255,255,255,0.15); }
+
+    /* Breadcrumb */
+    #breadcrumb {
+      position: absolute;
+      top: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #5c5c88;
+      background: rgba(26,26,46,0.80);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 6px;
+      padding: 5px 12px;
+      backdrop-filter: blur(6px);
+    }
+    .bc-sep { color: #3a3a5c; }
+    .bc-active { color: #00d4ff; font-weight: 500; }
+
+    /* ── Minimap ── */
+    #minimap {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      width: 160px;
+      height: 120px;
+      background: rgba(10,10,15,0.85);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      backdrop-filter: blur(4px);
+      z-index: 40;
+      overflow: hidden;
+    }
+    #minimap-svg { width: 100%; height: 100%; }
+    #minimap-label {
+      position: absolute;
+      top: 6px; left: 8px;
+      font-size: 9px; font-weight: 500;
+      color: #5c5c88;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+<div id="canvas">
+
+  <svg id="edges-svg" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L6,3 z" fill="#00cc66" opacity="0.7"/>
+      </marker>
+    </defs>
+  </svg>
+
+  <div id="nodes">
+
+    <!-- ══════════════════════════════
+         EXPANDED: core/ group
+    ══════════════════════════════ -->
+    <div class="dir-group" id="group-core"
+         style="left:280px; top:140px; width:480px;">
+      <div class="dir-group-accent"></div>
+      <div class="dir-group-header">
+        <svg class="dir-group-icon" viewBox="0 0 20 20" fill="none">
+          <path d="M2 5A2 2 0 014 3h4.17l2 2H16a2 2 0 012 2v9a2 2 0 01-2 2H4a2 2 0 01-2-2V5z"
+                stroke="currentColor" stroke-width="1.4" fill="rgba(189,0,255,0.12)"/>
+        </svg>
+        <span class="dir-group-name">core/</span>
+        <span class="dir-group-count">12 files · 4 shown</span>
+        <button class="toggle-btn">−</button>
+      </div>
+      <div class="dir-child-area">
+
+        <!-- graph-builder.ts -->
+        <div class="file-node" id="fn-graph-builder">
+          <svg class="file-icon" viewBox="0 0 14 14" fill="none">
+            <rect x="2" y="1" width="10" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="rgba(0,212,255,0.10)"/>
+            <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="currentColor" stroke-width="1"/>
+            <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="currentColor" stroke-width="1"/>
+            <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="currentColor" stroke-width="1"/>
+          </svg>
+          <div class="file-label-stack">
+            <span class="file-label">graph-builder<span class="file-ext">.ts</span></span>
+            <span class="file-sublabel">284 lines</span>
+          </div>
+        </div>
+
+        <!-- scanner.ts -->
+        <div class="file-node" id="fn-scanner">
+          <svg class="file-icon" viewBox="0 0 14 14" fill="none">
+            <rect x="2" y="1" width="10" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="rgba(0,212,255,0.10)"/>
+            <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="currentColor" stroke-width="1"/>
+            <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="currentColor" stroke-width="1"/>
+            <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="currentColor" stroke-width="1"/>
+          </svg>
+          <div class="file-label-stack">
+            <span class="file-label">scanner<span class="file-ext">.ts</span></span>
+            <span class="file-sublabel">156 lines</span>
+          </div>
+        </div>
+
+        <!-- parser.ts -->
+        <div class="file-node" id="fn-parser">
+          <svg class="file-icon" viewBox="0 0 14 14" fill="none">
+            <rect x="2" y="1" width="10" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="rgba(0,212,255,0.10)"/>
+            <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="currentColor" stroke-width="1"/>
+            <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="currentColor" stroke-width="1"/>
+            <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="currentColor" stroke-width="1"/>
+          </svg>
+          <div class="file-label-stack">
+            <span class="file-label">parser<span class="file-ext">.ts</span></span>
+            <span class="file-sublabel">312 lines</span>
+          </div>
+        </div>
+
+        <!-- index.ts -->
+        <div class="file-node" id="fn-index">
+          <svg class="file-icon" viewBox="0 0 14 14" fill="none">
+            <rect x="2" y="1" width="10" height="12" rx="2" stroke="currentColor" stroke-width="1.2" fill="rgba(0,212,255,0.10)"/>
+            <line x1="4.5" y1="5" x2="9.5" y2="5" stroke="currentColor" stroke-width="1"/>
+            <line x1="4.5" y1="7.5" x2="9.5" y2="7.5" stroke="currentColor" stroke-width="1"/>
+            <line x1="4.5" y1="10" x2="7.5" y2="10" stroke="currentColor" stroke-width="1"/>
+          </svg>
+          <div class="file-label-stack">
+            <span class="file-label">index<span class="file-ext">.ts</span></span>
+            <span class="file-sublabel">entry · 24 lines</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════
+         COLLAPSED: cli/
+    ══════════════════════════════ -->
+    <div class="node-dir-collapsed" id="n-cli" style="left:840px;top:160px;width:180px;">
+      <div class="collapsed-accent"></div>
+      <div class="collapsed-body">
+        <svg class="collapsed-icon" viewBox="0 0 14 14" fill="none">
+          <path d="M1 3.5A1.5 1.5 0 012.5 2H5.38l1.4 1.5H11.5A1.5 1.5 0 0113 5v5.5A1.5 1.5 0 0111.5 12h-9A1.5 1.5 0 011 10.5v-7z" stroke="currentColor" stroke-width="1.2" fill="rgba(136,85,255,0.15)"/>
+        </svg>
+        <div class="collapsed-label-stack">
+          <span class="collapsed-name">cli/</span>
+          <span class="collapsed-count">6 files</span>
+        </div>
+      </div>
+      <div class="collapsed-toggle">+</div>
+    </div>
+
+    <!-- ══════════════════════════════
+         COLLAPSED: web/
+    ══════════════════════════════ -->
+    <div class="node-dir-collapsed" id="n-web" style="left:840px;top:390px;width:180px;">
+      <div class="collapsed-accent"></div>
+      <div class="collapsed-body">
+        <svg class="collapsed-icon" viewBox="0 0 14 14" fill="none">
+          <path d="M1 3.5A1.5 1.5 0 012.5 2H5.38l1.4 1.5H11.5A1.5 1.5 0 0113 5v5.5A1.5 1.5 0 0111.5 12h-9A1.5 1.5 0 011 10.5v-7z" stroke="currentColor" stroke-width="1.2" fill="rgba(136,85,255,0.15)"/>
+        </svg>
+        <div class="collapsed-label-stack">
+          <span class="collapsed-name">web/</span>
+          <span class="collapsed-count">18 files</span>
+        </div>
+      </div>
+      <div class="collapsed-toggle">+</div>
+    </div>
+
+    <!-- ══════════════════════════════
+         COLLAPSED: shared/
+    ══════════════════════════════ -->
+    <div class="node-dir-collapsed" id="n-shared" style="left:100px;top:300px;width:180px;">
+      <div class="collapsed-accent"></div>
+      <div class="collapsed-body">
+        <svg class="collapsed-icon" viewBox="0 0 14 14" fill="none">
+          <path d="M1 3.5A1.5 1.5 0 012.5 2H5.38l1.4 1.5H11.5A1.5 1.5 0 0113 5v5.5A1.5 1.5 0 0111.5 12h-9A1.5 1.5 0 011 10.5v-7z" stroke="currentColor" stroke-width="1.2" fill="rgba(136,85,255,0.15)"/>
+        </svg>
+        <div class="collapsed-label-stack">
+          <span class="collapsed-name">shared/</span>
+          <span class="collapsed-count">4 files</span>
+        </div>
+      </div>
+      <div class="collapsed-toggle">+</div>
+    </div>
+
+  </div>
+
+  <!-- Toolbar -->
+  <div id="toolbar">
+    <span class="toolbar-title">Code<span>Atlas</span></span>
+    <div class="toolbar-divider"></div>
+    <button class="toolbar-btn">+</button>
+    <button class="toolbar-btn">−</button>
+    <div class="toolbar-divider"></div>
+    <button class="toolbar-btn" style="font-size:13px;">⌂</button>
+    <button class="toolbar-btn" style="font-size:11px;">[ ]</button>
+  </div>
+
+  <!-- Zoom indicator -->
+  <div id="zoom-indicator">
+    <span class="zoom-dot active"></span>
+    <span style="color:#e8eaf6;font-weight:500;">file</span>
+    <span class="zoom-dot inactive"></span>
+    <span style="color:#5c5c88;">directory</span>
+    <span class="zoom-dot inactive"></span>
+    <span style="color:#5c5c88;">package</span>
+  </div>
+
+  <!-- Breadcrumb -->
+  <div id="breadcrumb">
+    <span>CodeAtlas</span>
+    <span class="bc-sep">/</span>
+    <span>packages</span>
+    <span class="bc-sep">/</span>
+    <span class="bc-active">core/</span>
+  </div>
+
+  <!-- Minimap -->
+  <div id="minimap">
+    <span id="minimap-label">Minimap</span>
+    <svg id="minimap-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 600">
+      <!-- expanded group outline -->
+      <rect x="280" y="140" width="480" height="280" rx="6" fill="rgba(136,85,255,0.25)" stroke="#8855ff" stroke-width="1.5"/>
+      <rect x="280" y="140" width="480" height="4" rx="2" fill="#bd00ff"/>
+      <!-- file nodes inside group -->
+      <rect x="296" y="190" width="100" height="28" rx="3" fill="rgba(0,212,255,0.60)"/>
+      <rect x="406" y="190" width="100" height="28" rx="3" fill="rgba(0,212,255,0.60)"/>
+      <rect x="296" y="230" width="100" height="28" rx="3" fill="rgba(0,212,255,0.60)"/>
+      <rect x="406" y="230" width="100" height="28" rx="3" fill="rgba(0,212,255,0.60)"/>
+      <!-- collapsed dirs -->
+      <rect x="840" y="160" width="180" height="56" rx="4" fill="rgba(136,85,255,0.45)"/>
+      <rect x="840" y="160" width="180" height="3" rx="2" fill="#bd00ff"/>
+      <rect x="840" y="390" width="180" height="56" rx="4" fill="rgba(136,85,255,0.45)"/>
+      <rect x="840" y="390" width="180" height="3" rx="2" fill="#bd00ff"/>
+      <rect x="100" y="300" width="180" height="56" rx="4" fill="rgba(136,85,255,0.45)"/>
+      <rect x="100" y="300" width="180" height="3" rx="2" fill="#bd00ff"/>
+      <!-- edges -->
+      <line x1="760" y1="280" x2="840" y2="280" stroke="#00cc66" stroke-width="2" opacity="0.5"/>
+      <line x1="760" y1="300" x2="840" y2="420" stroke="#00cc66" stroke-width="2" opacity="0.5"/>
+      <line x1="280" y1="300" x2="190" y2="328" stroke="#00cc66" stroke-width="2" opacity="0.5"/>
+      <!-- viewport -->
+      <rect x="10" y="10" width="1080" height="580" rx="4" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+    </svg>
+  </div>
+
+</div>
+
+<script>
+  const svg = document.getElementById('edges-svg');
+  const canvas = document.getElementById('canvas');
+
+  function midpoint(el) {
+    const r  = el.getBoundingClientRect();
+    const cr = canvas.getBoundingClientRect();
+    return { x: r.left - cr.left + r.width/2, y: r.top - cr.top + r.height/2 };
+  }
+
+  function drawEdge(x1,y1,x2,y2, dashed=false) {
+    const dx=x2-x1;
+    const d=`M${x1},${y1} C${x1+dx*0.5},${y1} ${x1+dx*0.5},${y2} ${x2},${y2}`;
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', d);
+    path.setAttribute('stroke','#00cc66');
+    path.setAttribute('stroke-width','1.5');
+    path.setAttribute('opacity','0.7');
+    path.setAttribute('fill','none');
+    path.setAttribute('marker-end','url(#arrow)');
+    if(dashed) path.setAttribute('stroke-dasharray','4 4');
+    svg.appendChild(path);
+  }
+
+  window.addEventListener('load', () => {
+    // Edges between file nodes inside core/
+    const g = document.getElementById('fn-graph-builder');
+    const s = document.getElementById('fn-scanner');
+    const p = document.getElementById('fn-parser');
+    const i = document.getElementById('fn-index');
+    const cli = document.getElementById('n-cli');
+    const web = document.getElementById('n-web');
+    const shr = document.getElementById('n-shared');
+
+    const gp = midpoint(g), sp = midpoint(s), pp = midpoint(p), ip = midpoint(i);
+    const clp = midpoint(cli), wp = midpoint(web), shrp = midpoint(shr);
+
+    // Internal edges inside group
+    drawEdge(gp.x, gp.y, sp.x, sp.y);
+    drawEdge(sp.x, sp.y, pp.x, pp.y);
+    drawEdge(ip.x, ip.y, gp.x, gp.y);
+
+    // Edges from core group to collapsed dirs
+    const groupEl = document.getElementById('group-core');
+    const gr = groupEl.getBoundingClientRect();
+    const cr = canvas.getBoundingClientRect();
+    const groupRight = { x: gr.right - cr.left, y: gr.top - cr.top + gr.height/2 };
+    const groupLeft  = { x: gr.left  - cr.left, y: gr.top - cr.top + gr.height/2 };
+
+    drawEdge(groupRight.x, groupRight.y - 40, clp.x, clp.y);
+    drawEdge(groupRight.x, groupRight.y + 40, wp.x, wp.y);
+    drawEdge(shrp.x, shrp.y, groupLeft.x, groupLeft.y, true);
+  });
+</script>
+</body>
+</html>

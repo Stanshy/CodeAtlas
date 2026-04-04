@@ -1,0 +1,18 @@
+{
+  "nodes": [
+    { "id": "src/a.ts", "type": "file", "label": "a.ts", "filePath": "src/a.ts", "metadata": {} },
+    { "id": "src/b.ts", "type": "file", "label": "b.ts", "filePath": "src/b.ts", "metadata": {} },
+    { "id": "src/c.ts", "type": "file", "label": "c.ts", "filePath": "src/c.ts", "metadata": {} },
+    { "id": "src/d.ts", "type": "file", "label": "d.ts", "filePath": "src/d.ts", "metadata": {} },
+    { "id": "src/e.ts", "type": "file", "label": "e.ts", "filePath": "src/e.ts", "metadata": {} },
+    { "id": "src/isolated.ts", "type": "file", "label": "isolated.ts", "filePath": "src/isolated.ts", "metadata": {} }
+  ],
+  "edges": [
+    { "id": "a--import--b", "source": "src/a.ts", "target": "src/b.ts", "type": "import", "metadata": {} },
+    { "id": "b--import--c", "source": "src/b.ts", "target": "src/c.ts", "type": "import", "metadata": {} },
+    { "id": "c--import--d", "source": "src/c.ts", "target": "src/d.ts", "type": "import", "metadata": {} },
+    { "id": "d--import--e", "source": "src/d.ts", "target": "src/e.ts", "type": "import", "metadata": {} },
+    { "id": "c--call--a",   "source": "src/c.ts", "target": "src/a.ts", "type": "call",   "metadata": {} },
+    { "id": "a--data-flow--d", "source": "src/a.ts", "target": "src/d.ts", "type": "data-flow", "metadata": {} }
+  ]
+}

@@ -1,0 +1,113 @@
+/**
+ * CodeAtlas — Particle Flow CSS Animations
+ *
+ * Light particles flowing along edges from source to target.
+ * Color: neon green (#00ff88) per design spec.
+ * Supports prefers-reduced-motion.
+ */
+
+/* Particle flow along edge path using offset-distance */
+@keyframes particle-flow {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.85;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+/* Particle dot base style */
+.particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #00ff88;
+  pointer-events: none;
+  animation: particle-flow 2s linear infinite;
+  will-change: offset-distance, opacity;
+}
+
+/* Staggered particles */
+.particle--delay-1 {
+  animation-delay: -0.5s;
+}
+
+.particle--delay-2 {
+  animation-delay: -1.0s;
+}
+
+.particle--delay-3 {
+  animation-delay: -1.5s;
+}
+
+/* Hover state — brighter and faster */
+.particle--hover {
+  background: #00ff88;
+  filter: drop-shadow(0 0 4px rgba(0, 255, 136, 0.8));
+  animation-duration: 1.33s; /* 1.5x faster */
+}
+
+/* Faded state — hidden */
+.particle--faded {
+  opacity: 0 !important;
+  animation: none;
+}
+
+/* SVG-based particle for React Flow edge overlay */
+.edge-particle {
+  fill: #00ff88;
+  r: 1.5;
+  opacity: 0;
+}
+
+.edge-particle--active {
+  animation: particle-glow 2s linear infinite;
+}
+
+@keyframes particle-glow {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Reduced motion — static dots, no animation */
+@media (prefers-reduced-motion: reduce) {
+  .particle {
+    animation: none;
+    opacity: 0.4;
+  }
+
+  .particle--hover {
+    animation: none;
+    opacity: 0.6;
+  }
+
+  .edge-particle--active {
+    animation: none;
+    opacity: 0.4;
+  }
+}
+
+/* Performance degradation — hide particles when too many nodes */
+.particles-disabled .particle,
+.particles-disabled .edge-particle--active {
+  display: none;
+}
