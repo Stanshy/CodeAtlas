@@ -114,18 +114,20 @@ export function useGraphCanvasFiltering({
       const methodMap = new Map<LoCategory, MethodItem[]>();
       (Object.keys(CATEGORY_CONFIG) as LoCategory[]).forEach((cat) => methodMap.set(cat, []));
 
-      const endpointNodeIds = new Set<string>();
+      // Build a set of method labels that actually appear in endpoint chains
+      // Only these methods get ★ and are clickable for chain view
+      const chainMethodLabels = new Set<string>();
       if (endpointGraph) {
-        endpointGraph.nodes
-          .filter((en) => en.kind === 'endpoint')
-          .forEach((en) => endpointNodeIds.add(en.id));
+        for (const node of endpointGraph.nodes) {
+          if (node.kind === 'method' || node.kind === 'handler') {
+            chainMethodLabels.add(node.label.replace(/\(\)$/, ''));
+          }
+        }
       }
 
-      const isEntryMethod = (name: string, nodeId: string): boolean => {
-        if (endpointNodeIds.has(nodeId)) return true;
-        const lower = name.toLowerCase();
-        return /^(get|post|put|patch|delete|handle|on[A-Z]|dispatch|request|respond)/.test(lower)
-          || /Handler$|Controller$|Action$|Route$|Endpoint$/.test(name);
+      const isEntryMethod = (name: string, _nodeId: string): boolean => {
+        const bare = name.replace(/\(\)$/, '');
+        return chainMethodLabels.has(bare);
       };
 
       rawGraphNodes

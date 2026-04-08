@@ -337,6 +337,14 @@ export class AIJobManager {
         const methodNodes = methodFiltered.graph.nodes.filter(
           (n) => n.type === 'function' && n.metadata?.parentFileId,
         );
+        if (methodNodes.length === 0) {
+          // Debug: log why no match was found
+          const allFnNodes = analysis.graph.nodes.filter((n) => n.type === 'function');
+          console.warn(`[AI Debug] method target="${job.target}", matched=${methodFiltered.graph.nodes.length}, fnNodes in graph=${allFnNodes.length}`);
+          if (allFnNodes.length > 0) {
+            console.warn(`[AI Debug] sample node ids: ${allFnNodes.slice(0, 5).map(n => `"${n.id}" (label="${n.label}", filePath="${n.filePath}")`).join(', ')}`);
+          }
+        }
         if (methodNodes.length > 0) {
           await runPhase1MethodBatch(methodFiltered, provider, this.cache);
         } else {

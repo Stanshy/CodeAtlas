@@ -20,6 +20,8 @@ export interface MethodItem {
   name: string;
   filePath: string;
   nodeId: string;
+  /** Whether this method appears in an endpoint call chain (clickable for chain view) */
+  hasChain?: boolean;
 }
 
 export interface CategoryGroupData {
@@ -288,17 +290,26 @@ function CategoryCard({ group, position, expanded, onToggle, onMethodClick }: Ca
         {visibleMethods.map((m) => (
           <div
             key={m.nodeId}
-            style={methodRowStyle}
-            onClick={() => onMethodClick(m.name)}
+            style={{
+              ...methodRowStyle,
+              ...(m.hasChain ? {} : { color: '#999', cursor: 'default' }),
+            }}
+            onClick={() => m.hasChain && onMethodClick(m.name)}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLDivElement).style.background = bgColor + '88';
+              if (m.hasChain) (e.currentTarget as HTMLDivElement).style.background = bgColor + '88';
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLDivElement).style.background = '';
             }}
-            title={`${m.name} — ${m.filePath}`}
+            title={m.hasChain
+              ? `${m.name} — ${m.filePath}`
+              : `${m.name} — ${m.filePath}（無呼叫鏈）`}
           >
-            {m.name.endsWith('()') ? m.name : `${m.name}()`}
+            {m.hasChain && <span style={{ marginRight: 4, fontSize: 10 }}>★</span>}
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {m.name.endsWith('()') ? m.name : `${m.name}()`}
+            </span>
+            {!m.hasChain && <span style={{ marginLeft: 'auto', fontSize: 9, color: '#bbb', flexShrink: 0, paddingLeft: 4 }}>{m.filePath.split('/').pop()}</span>}
           </div>
         ))}
         {hasToggle && (
@@ -440,6 +451,16 @@ export function LOCategoryGroup({ graphNodes, graphEdges, endpointGraph, onMetho
     const methodMap = new Map<LoCategory, MethodItem[]>();
     (Object.keys(CATEGORY_CONFIG) as LoCategory[]).forEach((cat) => methodMap.set(cat, []));
 
+    // Build a set of method labels that appear in endpoint chains (clickable)
+    const chainMethodLabels = new Set<string>();
+    if (endpointGraph) {
+      for (const en of endpointGraph.nodes) {
+        if (en.kind === 'method' || en.kind === 'handler') {
+          chainMethodLabels.add(en.label.replace(/\(\)$/, ''));
+        }
+      }
+    }
+
     // Collect from graphNodes (function/method nodes)
     graphNodes
       .filter((n) => n.type === 'function' || n.metadata?.kind === 'method' || n.metadata?.kind === 'function')
@@ -449,6 +470,7 @@ export function LOCategoryGroup({ graphNodes, graphEdges, endpointGraph, onMetho
           name: n.label,
           filePath: n.filePath,
           nodeId: n.id,
+          hasChain: chainMethodLabels.has(n.label.replace(/\(\)$/, '')),
         });
       });
 
@@ -466,9 +488,19 @@ export function LOCategoryGroup({ graphNodes, graphEdges, endpointGraph, onMetho
               name: en.label,
               filePath: en.filePath,
               nodeId: en.id,
+              hasChain: true,
             });
           }
         });
+    }
+
+    // Sort: methods with chains first (★), then alphabetically
+    for (const [, list] of methodMap) {
+      list.sort((a, b) => {
+        if (a.hasChain && !b.hasChain) return -1;
+        if (!a.hasChain && b.hasChain) return 1;
+        return a.name.localeCompare(b.name);
+      });
     }
 
     return (Object.keys(CATEGORY_CONFIG) as LoCategory[]).map((cat) => ({
