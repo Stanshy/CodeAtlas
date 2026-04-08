@@ -342,6 +342,8 @@ export async function buildFunctionGraph(
           kind: fn.kind,
           parameters: fn.parameters,
           lineCount: fn.endLine - fn.startLine + 1,
+          startLine: fn.startLine,
+          endLine: fn.endLine,
           language,
         };
         if (fn.returnType !== undefined) fnMeta.returnType = fn.returnType;
@@ -372,6 +374,8 @@ export async function buildFunctionGraph(
           parentFileId: fileId,
           kind: 'class',
           lineCount: cls.endLine - cls.startLine + 1,
+          startLine: cls.startLine,
+          endLine: cls.endLine,
           methodCount: cls.methods.length,
           language,
         };
@@ -397,6 +401,8 @@ export async function buildFunctionGraph(
             kind: method.kind,
             parameters: method.parameters,
             lineCount: method.endLine - method.startLine + 1,
+            startLine: method.startLine,
+            endLine: method.endLine,
             language,
           };
           if (method.returnType !== undefined) methodMeta.returnType = method.returnType;

@@ -318,7 +318,7 @@ export class AIJobManager {
               promptVersion: 'placeholder',
               result: {
                 directoryPath: job.target,
-                role: 'unknown',
+                role: '未分類',
                 oneLineSummary: `${job.target} — 包含 ${fileNodes.length} 個檔案`,
                 keyResponsibilities: [],
                 confidence: 0.2,
@@ -354,7 +354,7 @@ export class AIJobManager {
             promptVersion: 'placeholder',
             result: {
               id: cleanTarget,
-              role: 'unknown',
+              role: '未分類',
               summary: `${methodName} — 此方法的原始碼尚未被解析器支援，無法進行深度分析`,
               confidence: 0,
               provider: provider.name,

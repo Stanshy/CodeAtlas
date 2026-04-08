@@ -14,6 +14,8 @@
  * All phases are wrapped in try-catch; failures are logged but never crash the server.
  */
 
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import type { AnalysisResult } from '@codeatlas/core';
 import {
   createProvider,
@@ -153,6 +155,20 @@ export async function runPhase1MethodBatch(
         if (n.metadata.isAsync) ctx.isAsync = n.metadata.isAsync;
         if (n.metadata.isExported) ctx.isExported = n.metadata.isExported;
         if (n.metadata.lineCount) ctx.lineCount = n.metadata.lineCount;
+
+        // Read source code snippet using startLine/endLine metadata
+        if (n.metadata.startLine != null && n.metadata.endLine != null && n.filePath) {
+          try {
+            const absPath = join(analysis.projectPath, n.filePath);
+            const src = readFileSync(absPath, 'utf-8');
+            const lines = src.split('\n');
+            const start = Math.max(0, n.metadata.startLine);
+            const end = Math.min(lines.length - 1, n.metadata.endLine);
+            ctx.codeSnippet = lines.slice(start, end + 1).join('\n');
+          } catch {
+            // File not readable — proceed without snippet
+          }
+        }
         return ctx;
       });
 
@@ -240,13 +256,10 @@ export async function runPhase2DirectorySummaries(
       const directoryContext = buildLargeContext(directoryInfo, 'medium');
       const prompt = buildDirectorySummaryPrompt(directoryContext, dirNode.id);
 
+      // Use rawPrompt to avoid legacy buildPrompt() wrapping an English system
+      // message around our Chinese prompt template.
       const raw = await withTimeout(
-        aiProvider.summarize(prompt, {
-          filePath: `directory-summary:${dirNode.id}`,
-          language: 'text',
-          imports: [],
-          exports: [],
-        }),
+        aiProvider.rawPrompt(prompt),
         PER_ITEM_TIMEOUT_MS,
         `directory ${dirNode.id}`,
       );
@@ -352,12 +365,7 @@ export async function runPhase3EndpointAnalysis(
         );
 
         const rawEndpoint = await withTimeout(
-          aiProvider.summarize(endpointPrompt, {
-            filePath: `endpoint-desc:${endpoint.id}`,
-            language: 'text',
-            imports: [],
-            exports: [],
-          }),
+          aiProvider.rawPrompt(endpointPrompt),
           PER_ITEM_TIMEOUT_MS,
           `endpoint ${endpoint.id}`,
         );
@@ -427,12 +435,7 @@ export async function runPhase3EndpointAnalysis(
 
           const stepPrompt = buildStepDetailPrompt(context, stepsInput);
           const rawSteps = await withTimeout(
-            aiProvider.summarize(stepPrompt, {
-              filePath: `step-detail:${endpoint.id}`,
-              language: 'text',
-              imports: [],
-              exports: [],
-            }),
+            aiProvider.rawPrompt(stepPrompt),
             PER_ITEM_TIMEOUT_MS,
             `steps for ${endpoint.id}`,
           );

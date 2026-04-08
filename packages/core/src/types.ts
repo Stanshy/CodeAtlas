@@ -40,6 +40,8 @@ export interface NodeMetadata {
   parameters?: FunctionParam[];
   returnType?: string;
   lineCount?: number;
+  startLine?: number;          // 0-based line number of function/class start
+  endLine?: number;            // 0-based line number of function/class end
   isAsync?: boolean;
   isExported?: boolean;
   methodCount?: number;
