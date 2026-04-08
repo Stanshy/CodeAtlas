@@ -293,7 +293,7 @@ describe('DJEndpointSelector — click interaction', () => {
         onEndpointClick,
       }),
     );
-    // The card should show "N steps" badge
-    expect(screen.getByText(/steps/)).toBeTruthy();
+    // The card shows "N 個步驟" badge (localized to Chinese)
+    expect(screen.getByText(/個步驟/)).toBeTruthy();
   });
 });

@@ -79,10 +79,13 @@ describe('toReactFlowNodes', () => {
     expect(result[0].data.nodeType).toBe('directory');
   });
 
-  it('sets parentId for file nodes inside directories', () => {
+  it('does not set parentId for file nodes (parentId grouping removed — causes RF warnings)', () => {
+    // parentId grouping was removed in Sprint 13 because D3 force / dagre layouts
+    // do not use React Flow sub-flows and setting parentId caused "Parent node not
+    // found" warnings. File nodes are positioned independently.
     const result = toReactFlowNodes([dirNode, fileNode]);
     const file = result.find((n) => n.id === fileNode.id);
-    expect(file?.parentId).toBe('src/utils');
+    expect(file?.parentId).toBeUndefined();
   });
 
   it('does not set parentId for root-level files', () => {

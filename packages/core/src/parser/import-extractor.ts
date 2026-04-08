@@ -18,6 +18,7 @@
 
 import { parseSource } from './parser-factory.js';
 import type { AstNode, ParseResult } from './ast-provider.js';
+import type { SupportedLanguage } from '../types.js';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -82,7 +83,7 @@ function stripQuotes(raw: string): string {
 
 /** Returns true when the tree looks like it came from tree-sitter (snake_case). */
 function isTreeSitterAst(root: AstNode): boolean {
-  return root.type === 'program' || root.type === 'source_file';
+  return root.type === 'program' || root.type === 'source_file' || root.type === 'module';
 }
 
 // ---------------------------------------------------------------------------
@@ -264,14 +265,258 @@ function extractTreeSitterCallExpression(node: AstNode): ParsedImport | null {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// Java dialect helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Recursively unwrap a tree-sitter scoped_identifier into a dotted string.
+ * e.g. scoped_identifier { scope: scoped_identifier { "com", "foo" }, name: identifier "Bar" }
+ * → "com.foo.Bar"
+ */
+function flattenScopedIdentifier(node: AstNode): string {
+  if (node.type === 'identifier') return node.text;
+  if (node.type === 'scoped_identifier') {
+    const parts: string[] = [];
+    for (const child of node.children) {
+      if (child.type === 'scoped_identifier' || child.type === 'identifier') {
+        parts.push(flattenScopedIdentifier(child));
+      }
+    }
+    return parts.join('.');
+  }
+  // Fallback: asterisk for wildcard imports
+  if (node.type === 'asterisk' || node.text === '*') return '*';
+  return node.text;
+}
+
+/**
+ * Extract a ParsedImport from a Java `import_declaration` node.
+ *
+ * Examples:
+ *   import com.foo.Bar;                → source: "com.foo.Bar", symbol: "Bar"
+ *   import com.foo.*;                  → source: "com.foo.*", isNamespace: true
+ *   import static com.foo.Bar.method;  → source: "com.foo.Bar.method", isTypeOnly: true
+ */
+function extractJavaImport(node: AstNode): ParsedImport | null {
+  const line = node.startLine + 1;
+
+  const isStatic = node.children.some((c) => c.text === 'static');
+  const hasWildcard = node.children.some((c) => c.type === 'asterisk' || c.text === '*');
+
+  // Find the scoped_identifier or identifier that represents the import path
+  const scopedIdent = findChild(node, 'scoped_identifier', 'identifier');
+  if (!scopedIdent) return null;
+
+  let source = flattenScopedIdentifier(scopedIdent);
+
+  // Append wildcard suffix if present and not already included
+  if (hasWildcard && !source.endsWith('.*')) {
+    source = source + '.*';
+  }
+
+  // Extract the last segment as the imported symbol (e.g. "Bar" from "com.foo.Bar")
+  const importedSymbols: string[] = [];
+  if (!hasWildcard) {
+    const lastDot = source.lastIndexOf('.');
+    if (lastDot !== -1) {
+      importedSymbols.push(source.slice(lastDot + 1));
+    }
+  }
+
+  return {
+    source,
+    importedSymbols,
+    isDefault: false,
+    isDynamic: false,
+    isNamespace: hasWildcard,
+    isTypeOnly: isStatic, // reuse isTypeOnly to flag static imports
+    line,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Python dialect helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract one or more ParsedImport records from a Python import_statement or
+ * import_from_statement node.
+ *
+ * import_statement examples:
+ *   import os
+ *   import os, sys
+ *   import os as operating_system
+ *
+ * import_from_statement examples:
+ *   from os.path import join
+ *   from . import utils
+ *   from ..models import User
+ *   from foo.bar import *
+ */
+function extractPythonImport(node: AstNode): ParsedImport[] {
+  const line = node.startLine + 1;
+  const results: ParsedImport[] = [];
+
+  if (node.type === 'import_statement') {
+    for (const child of node.children) {
+      if (child.type === 'dotted_name') {
+        results.push({
+          source: child.text,
+          importedSymbols: [],
+          isDefault: true,
+          isDynamic: false,
+          isNamespace: true,
+          isTypeOnly: false,
+          line,
+        });
+      } else if (child.type === 'aliased_import') {
+        const dottedName = findChild(child, 'dotted_name');
+        if (dottedName) {
+          results.push({
+            source: dottedName.text,
+            importedSymbols: [],
+            isDefault: true,
+            isDynamic: false,
+            isNamespace: true,
+            isTypeOnly: false,
+            line,
+          });
+        }
+      }
+    }
+    return results;
+  }
+
+  if (node.type === 'import_from_statement') {
+    // Determine the module source path
+    let source = '';
+    let relativeDots = 0;
+
+    for (const child of node.children) {
+      if (child.type === 'relative_import') {
+        for (const dot of child.children) {
+          if (dot.text === '.') relativeDots++;
+          if (dot.type === 'dotted_name') {
+            source = '.'.repeat(relativeDots) + dot.text;
+            relativeDots = 0; // dots already folded into source
+          }
+        }
+        if (source === '') {
+          source = '.'.repeat(relativeDots);
+        }
+      } else if (child.type === 'dotted_name' && source === '') {
+        source = child.text;
+      }
+    }
+
+    if (!source) return results;
+
+    // from X import *
+    const wildcardImport = findChild(node, 'wildcard_import');
+    if (wildcardImport) {
+      results.push({
+        source,
+        importedSymbols: [],
+        isDefault: false,
+        isDynamic: false,
+        isNamespace: true,
+        isTypeOnly: false,
+        line,
+      });
+      return results;
+    }
+
+    // from X import a, b, c  (or aliased variants)
+    const importedSymbols: string[] = [];
+
+    // Collect from import_list (parenthesized imports: from X import (a, b))
+    const importList = findChild(node, 'import_list');
+    if (importList) {
+      for (const item of importList.children) {
+        if (item.type === 'dotted_name') {
+          importedSymbols.push(item.text);
+        } else if (item.type === 'aliased_import') {
+          const name = findChild(item, 'dotted_name');
+          if (name) importedSymbols.push(name.text);
+        }
+      }
+    } else {
+      // Flat children: skip the module source dotted_name (already captured)
+      let firstDottedName = true;
+      for (const child of node.children) {
+        // Skip the `from` keyword, the module source, and the `import` keyword
+        if (child.type === 'dotted_name') {
+          if (firstDottedName) {
+            firstDottedName = false;
+            continue; // this is the module source
+          }
+          importedSymbols.push(child.text);
+        } else if (child.type === 'aliased_import') {
+          const name = findChild(child, 'dotted_name');
+          if (name) importedSymbols.push(name.text);
+        }
+      }
+    }
+
+    results.push({
+      source,
+      importedSymbols,
+      isDefault: false,
+      isDynamic: false,
+      isNamespace: false,
+      isTypeOnly: false,
+      line,
+    });
+    return results;
+  }
+
+  return results;
+}
+
 /** Recursively walk a tree-sitter AST, collecting imports and exports. */
 function walkTreeSitter(
   node: AstNode,
   imports: ParsedImport[],
   exports: ParsedExport[],
   errors: string[],
+  language: SupportedLanguage,
 ): void {
   try {
+    // Python-specific node types
+    if (language === 'python') {
+      if (node.type === 'import_statement' || node.type === 'import_from_statement') {
+        const parsed = extractPythonImport(node);
+        if (parsed.length > 0) imports.push(...parsed);
+        return;
+      }
+      // Python has no export_statement — skip export extraction
+      // Python has no require() or dynamic import() — skip call_expression for imports
+      // Recurse into children
+      for (const child of node.children) {
+        walkTreeSitter(child, imports, exports, errors, language);
+      }
+      return;
+    }
+
+    // Java-specific node types
+    if (language === 'java') {
+      if (node.type === 'import_declaration') {
+        const parsed = extractJavaImport(node);
+        if (parsed) imports.push(parsed);
+        return;
+      }
+      if (node.type === 'package_declaration') {
+        // Package declarations are informational — not import edges; skip subtree
+        return;
+      }
+      // Java has no export_statement, require(), or dynamic import()
+      for (const child of node.children) {
+        walkTreeSitter(child, imports, exports, errors, language);
+      }
+      return;
+    }
+
     if (node.type === 'import_statement') {
       const parsed = extractTreeSitterImport(node);
       if (parsed) imports.push(parsed);
@@ -297,7 +542,7 @@ function walkTreeSitter(
   }
 
   for (const child of node.children) {
-    walkTreeSitter(child, imports, exports, errors);
+    walkTreeSitter(child, imports, exports, errors, language);
   }
 }
 
@@ -531,12 +776,12 @@ function walkTsCompiler(
  *
  * @param filePath    Absolute or relative path (used only in error messages)
  * @param sourceCode  Raw source text
- * @param language    'javascript' | 'typescript'
+ * @param language    Target language — supports all SupportedLanguage values
  */
 export async function parseFileImports(
   filePath: string,
   sourceCode: string,
-  language: 'javascript' | 'typescript',
+  language: SupportedLanguage,
 ): Promise<FileParseResult> {
   const imports: ParsedImport[] = [];
   const exports: ParsedExport[] = [];
@@ -553,7 +798,7 @@ export async function parseFileImports(
   const { root } = parseResult;
 
   if (isTreeSitterAst(root)) {
-    walkTreeSitter(root, imports, exports, errors);
+    walkTreeSitter(root, imports, exports, errors, language);
   } else {
     // TypeScript Compiler API — root type is "SourceFile"
     walkTsCompiler(root, imports, exports, errors);

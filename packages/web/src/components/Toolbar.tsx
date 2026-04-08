@@ -21,18 +21,11 @@ interface ToolbarProps {
 // SVG Icons
 // ---------------------------------------------------------------------------
 
-function HamburgerIcon() {
+function GearIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M2 4h14M2 9h14M2 14h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M9 11.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M14.7 7.2l-.8-.5a5.7 5.7 0 00-.5-.9l.2-.9a.5.5 0 00-.2-.5l-1-.6a.5.5 0 00-.5 0l-.8.5a5.5 5.5 0 00-1 0l-.8-.5a.5.5 0 00-.5 0l-1 .6a.5.5 0 00-.2.5l.2.9a5.7 5.7 0 00-.5.9l-.8.5a.5.5 0 00-.3.4v1.2a.5.5 0 00.3.4l.8.5c.1.3.3.6.5.9l-.2.9a.5.5 0 00.2.5l1 .6a.5.5 0 00.5 0l.8-.5a5.5 5.5 0 001 0l.8.5a.5.5 0 00.5 0l1-.6a.5.5 0 00.2-.5l-.2-.9c.2-.3.4-.6.5-.9l.8-.5a.5.5 0 00.3-.4V7.6a.5.5 0 00-.3-.4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -79,7 +72,7 @@ function BarChartIcon() {
 
 export function Toolbar({ onSearchClick }: ToolbarProps) {
   const { state, dispatch } = useViewState();
-  const { isControlPanelOpen, activePerspective, mode } = state;
+  const { isSettingsPanelOpen, activePerspective, mode } = state;
 
   const [searchHovered, setSearchHovered] = useState(false);
   const [overviewHovered, setOverviewHovered] = useState(false);
@@ -154,7 +147,7 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: isControlPanelOpen ? colors.primary.DEFAULT : colors.text.secondary,
+    color: isSettingsPanelOpen ? colors.primary.DEFAULT : colors.text.secondary,
     transition: 'color 0.15s ease-out, background 0.15s ease-out',
   };
 
@@ -268,25 +261,26 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
         <button
           type="button"
           style={hamburgerButtonStyle}
-          onClick={() => dispatch({ type: 'TOGGLE_CONTROL_PANEL' })}
-          title={isControlPanelOpen ? '關閉控制面板' : '開啟控制面板'}
-          aria-label={isControlPanelOpen ? '關閉控制面板' : '開啟控制面板'}
-          aria-expanded={isControlPanelOpen}
+          data-settings-trigger
+          onClick={() => dispatch({ type: 'TOGGLE_SETTINGS_PANEL' })}
+          title={isSettingsPanelOpen ? '關閉設定' : '開啟設定'}
+          aria-label={isSettingsPanelOpen ? '關閉設定' : '開啟設定'}
+          aria-expanded={isSettingsPanelOpen}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLButtonElement).style.background =
               'rgba(255,255,255,0.06)';
-            if (!isControlPanelOpen) {
+            if (!isSettingsPanelOpen) {
               (e.currentTarget as HTMLButtonElement).style.color = colors.text.primary;
             }
           }}
           onMouseLeave={(e) => {
             (e.currentTarget as HTMLButtonElement).style.background = 'none';
-            if (!isControlPanelOpen) {
+            if (!isSettingsPanelOpen) {
               (e.currentTarget as HTMLButtonElement).style.color = colors.text.secondary;
             }
           }}
         >
-          {isControlPanelOpen ? <CloseIcon /> : <HamburgerIcon />}
+          <GearIcon />
         </button>
       </div>
 

@@ -21,7 +21,7 @@ interface FilterPanelProps {
   onToggle?: () => void;
   allNodes: GraphNode[];
   /** When true, render filter content inline (no fixed position, no header, no collapse button).
-   * Used when embedded inside ControlPanel. */
+   * Used when embedded inside SettingsPopover. */
   embedded?: boolean;
 }
 
@@ -422,7 +422,7 @@ export const FilterPanel = memo(function FilterPanel({
     filter.edgeTypes.length > 0;
 
   // -----------------------------------------------------------------------
-  // Render: embedded mode (inside ControlPanel)
+  // Render: embedded mode (inside SettingsPopover)
   // -----------------------------------------------------------------------
 
   if (embedded) {

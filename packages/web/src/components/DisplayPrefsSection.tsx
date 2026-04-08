@@ -1,6 +1,6 @@
 /**
  * CodeAtlas — DisplayPrefsSection
- * Display preferences controls for the ControlPanel.
+ * Display preferences controls for the SettingsPopover.
  * Sprint 9 — S9-4.
  */
 

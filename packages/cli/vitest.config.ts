@@ -4,9 +4,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    // No test files yet — CLI integration tests are planned for Sprint 2.
-    // passWithNoTests prevents vitest from exiting with code 1 in CI when
-    // the test suite is intentionally empty.
+    include: ['__tests__/**/*.test.ts'],
+    // passWithNoTests allows CI to pass if the only tests present are
+    // intentionally disabled or the suite is temporarily empty.
     passWithNoTests: true,
   },
 });

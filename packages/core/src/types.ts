@@ -12,6 +12,9 @@ export type NodeType = 'directory' | 'file' | 'function' | 'class';
 // Sprint 10: Node Role Classification
 export type NodeRole = 'business-logic' | 'cross-cutting' | 'infrastructure' | 'utility' | 'noise';
 
+// Sprint 18: Multi-language support
+export type SupportedLanguage = 'javascript' | 'typescript' | 'python' | 'java';
+
 // Sprint 7: function parameter descriptor
 export interface FunctionParam {
   name: string;
@@ -40,6 +43,11 @@ export interface NodeMetadata {
   isAsync?: boolean;
   isExported?: boolean;
   methodCount?: number;
+
+  // Sprint 14: AI method analysis
+  methodRole?: string;        // MethodRole enum value
+  roleConfidence?: number;    // 0-1 confidence score
+  aiSummary?: string;         // AI one-line summary
 }
 
 export interface GraphNode {

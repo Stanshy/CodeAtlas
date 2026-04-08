@@ -1,7 +1,6 @@
 ---
 name: sprint-retro
 description: Generate sprint retrospective by analyzing section 10 data
-disable-model-invocation: true
 allowed-tools: Read, Write, Glob, Grep
 ---
 

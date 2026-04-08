@@ -38,6 +38,11 @@ const TABS: { key: PerspectiveName; label: string; dotClass: 'blue' | 'multi' | 
 
 const styles = {
   tabBar: {
+    position: 'fixed',
+    top: 48,
+    left: 0,
+    right: 0,
+    zIndex: 39,
     height: '48px',
     background: '#ffffff',
     borderBottom: `1.5px solid ${THEME.borderDefault}`,

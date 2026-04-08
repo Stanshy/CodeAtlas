@@ -19,7 +19,7 @@
 
 import { existsSync } from 'fs';
 import { resolve, relative, dirname } from 'path';
-import type { GraphEdge, EdgeMetadata } from '../types.js';
+import type { GraphEdge, EdgeMetadata, SupportedLanguage } from '../types.js';
 import type { ParsedImport, ParsedExport } from './import-extractor.js';
 
 // ---------------------------------------------------------------------------
@@ -31,6 +31,15 @@ const EXTENSION_PROBES = ['.ts', '.tsx', '.js', '.jsx'] as const;
 
 /** Index-file probe order when an import path resolves to a directory. */
 const INDEX_PROBES = ['/index.ts', '/index.js'] as const;
+
+/** Extension probe order for Python files. */
+const PYTHON_EXTENSION_PROBES = ['.py', '.pyw'] as const;
+
+/** Index-file probe order for Python packages (directories with __init__.py). */
+const PYTHON_INDEX_PROBES = ['/__init__.py'] as const;
+
+/** Extension probe order for Java files. */
+const JAVA_EXTENSION_PROBES = ['.java'] as const;
 
 // ---------------------------------------------------------------------------
 // Path utilities
@@ -49,6 +58,54 @@ function isRelative(source: string): boolean {
   return source.startsWith('./') || source.startsWith('../');
 }
 
+/** Returns true for Python relative imports (start with one or more dots). */
+function isPythonRelative(source: string): boolean {
+  return source.startsWith('.');
+}
+
+/**
+ * Convert a Java fully-qualified import source to a file-system-style path.
+ *
+ * Examples:
+ *   "com.foo.Bar"  → "com/foo/Bar"
+ *   "com.foo.*"    → "com/foo"   (wildcard — resolves to directory, no specific file)
+ */
+function javaSourceToPath(source: string): string {
+  let clean = source;
+  if (clean.endsWith('.*')) clean = clean.slice(0, -2);
+  return clean.replace(/\./g, '/');
+}
+
+/**
+ * Convert a Python dotted import source to a file-system-style relative path.
+ *
+ * Examples:
+ *   '.utils'    → './utils'
+ *   '..models'  → '../models'
+ *   '...pkg.mod'→ '../../pkg/mod'
+ *   'foo.bar'   → 'foo/bar'   (absolute package — treated as third-party)
+ */
+function pythonSourceToPath(source: string): string {
+  let dots = 0;
+  while (dots < source.length && source[dots] === '.') dots++;
+  const modulePart = source.slice(dots).replace(/\./g, '/');
+  if (dots === 0) return modulePart; // absolute Python import
+  const prefix = dots === 1 ? './' : '../'.repeat(dots - 1);
+  return modulePart ? prefix + modulePart : prefix.replace(/\/$/, '');
+}
+
+/**
+ * Select the appropriate extension / index probes for a given language.
+ */
+function getProbes(language?: SupportedLanguage): {
+  ext: readonly string[];
+  idx: readonly string[];
+} {
+  if (language === 'python') return { ext: PYTHON_EXTENSION_PROBES, idx: PYTHON_INDEX_PROBES };
+  if (language === 'java') return { ext: JAVA_EXTENSION_PROBES, idx: [] as const };
+  return { ext: EXTENSION_PROBES, idx: INDEX_PROBES };
+}
+
 /**
  * Attempt to resolve `importPath` (which may or may not have a file
  * extension) to an existing file path, probing extensions in order.
@@ -57,6 +114,7 @@ function isRelative(source: string): boolean {
  * @param importPath    The raw import specifier (relative, no quotes)
  * @param existingFiles Optional set of known file paths for fast lookup
  *                      (paths must use the same OS separator as `resolve`)
+ * @param language      Optional language hint to select the correct probe set
  * @returns             Resolved absolute path with correct extension, or
  *                      undefined if no matching file was found
  */
@@ -64,8 +122,10 @@ function resolveExtension(
   baseDir: string,
   importPath: string,
   existingFiles: Set<string> | undefined,
+  language?: SupportedLanguage,
 ): string | undefined {
   const absoluteBase = resolve(baseDir, importPath);
+  const probes = getProbes(language);
 
   /** Check whether a candidate path actually exists. */
   function exists(p: string): boolean {
@@ -79,13 +139,13 @@ function resolveExtension(
   if (exists(absoluteBase)) return absoluteBase;
 
   // 2. Try appending each extension
-  for (const ext of EXTENSION_PROBES) {
+  for (const ext of probes.ext) {
     const candidate = absoluteBase + ext;
     if (exists(candidate)) return candidate;
   }
 
   // 3. Try treating the path as a directory and looking for an index file
-  for (const idx of INDEX_PROBES) {
+  for (const idx of probes.idx) {
     const candidate = absoluteBase + idx;
     if (exists(candidate)) return candidate;
   }
@@ -158,22 +218,48 @@ export interface ResolveResult {
  * @param projectRoot     Absolute project root directory
  * @param existingFiles   Set of known file paths (from Scanner); used for
  *                        fast existence checks without hitting the FS
+ * @param language        Optional language hint for path resolution strategy
  */
 export function resolveImportEdges(
   sourceFilePath: string,
   imports: ParsedImport[],
   projectRoot: string,
   existingFiles: Set<string>,
+  language?: SupportedLanguage,
 ): GraphEdge[] {
   const sourceRelative = toProjectRelative(projectRoot, sourceFilePath);
   const sourceDir = dirname(sourceFilePath);
   const edges: GraphEdge[] = [];
 
   for (const imp of imports) {
-    // Skip third-party packages and path aliases
-    if (!isRelative(imp.source)) continue;
+    // Java imports are fully-qualified package paths — resolve against project root
+    if (language === 'java') {
+      if (imp.isNamespace) continue; // wildcard imports cannot resolve to a single file
+      const javaPath = javaSourceToPath(imp.source);
+      const resolved = resolveExtension(projectRoot, javaPath, existingFiles, 'java');
+      if (!resolved) continue; // stdlib or external dependency — skip silently
 
-    const resolved = resolveExtension(sourceDir, imp.source, existingFiles);
+      const targetRelative = toProjectRelative(projectRoot, resolved);
+      const edgeId = makeEdgeId(sourceRelative, 'import', targetRelative);
+      edges.push({
+        id: edgeId,
+        source: sourceRelative,
+        target: targetRelative,
+        type: 'import',
+        metadata: makeImportMetadata(imp),
+      });
+      continue;
+    }
+
+    // Skip third-party packages and path aliases using language-aware check
+    const effectiveRelative =
+      language === 'python' ? isPythonRelative(imp.source) : isRelative(imp.source);
+    if (!effectiveRelative) continue;
+
+    const effectivePath =
+      language === 'python' ? pythonSourceToPath(imp.source) : imp.source;
+
+    const resolved = resolveExtension(sourceDir, effectivePath, existingFiles, language);
     if (!resolved) continue; // unresolvable — skip silently
 
     const targetRelative = toProjectRelative(projectRoot, resolved);
@@ -199,12 +285,14 @@ export function resolveImportEdges(
  * @param exports         Array of ParsedExport from parseFileImports()
  * @param projectRoot     Absolute project root directory
  * @param existingFiles   Set of known file paths (from Scanner)
+ * @param language        Optional language hint for path resolution strategy
  */
 export function resolveExportEdges(
   sourceFilePath: string,
   exports: ParsedExport[],
   projectRoot: string,
   existingFiles: Set<string>,
+  language?: SupportedLanguage,
 ): GraphEdge[] {
   const sourceRelative = toProjectRelative(projectRoot, sourceFilePath);
   const sourceDir = dirname(sourceFilePath);
@@ -213,9 +301,11 @@ export function resolveExportEdges(
   for (const exp of exports) {
     // Only re-exports (export { foo } from '...' or export * from '...') produce edges
     if (!exp.source) continue;
+    // Python has no export_statement — this branch will never fire for Python,
+    // but guard defensively anyway
     if (!isRelative(exp.source)) continue;
 
-    const resolved = resolveExtension(sourceDir, exp.source, existingFiles);
+    const resolved = resolveExtension(sourceDir, exp.source, existingFiles, language);
     if (!resolved) continue;
 
     const targetRelative = toProjectRelative(projectRoot, resolved);
@@ -242,6 +332,7 @@ export function resolveExportEdges(
  * @param exports         ParsedExport[] from parseFileImports()
  * @param projectRoot     Absolute project root directory
  * @param existingFiles   Set of known file paths (from Scanner)
+ * @param language        Optional language hint for path resolution strategy
  */
 export function resolveAllEdges(
   sourceFilePath: string,
@@ -249,6 +340,7 @@ export function resolveAllEdges(
   exports: ParsedExport[],
   projectRoot: string,
   existingFiles: Set<string>,
+  language?: SupportedLanguage,
 ): ResolveResult {
   const errors: string[] = [];
   const sourceDir = dirname(sourceFilePath);
@@ -256,9 +348,33 @@ export function resolveAllEdges(
 
   // --- imports ---
   for (const imp of imports) {
-    if (!isRelative(imp.source)) continue;
+    // Java imports are fully-qualified — resolve against project root
+    if (language === 'java') {
+      if (imp.isNamespace) continue; // wildcard imports cannot resolve to a single file
+      const javaPath = javaSourceToPath(imp.source);
+      const resolved = resolveExtension(projectRoot, javaPath, existingFiles, 'java');
+      if (!resolved) continue; // stdlib or external dependency — skip silently
 
-    const resolved = resolveExtension(sourceDir, imp.source, existingFiles);
+      const sourceRelative = toProjectRelative(projectRoot, sourceFilePath);
+      const targetRelative = toProjectRelative(projectRoot, resolved);
+      edges.push({
+        id: makeEdgeId(sourceRelative, 'import', targetRelative),
+        source: sourceRelative,
+        target: targetRelative,
+        type: 'import',
+        metadata: makeImportMetadata(imp),
+      });
+      continue;
+    }
+
+    const effectiveRelative =
+      language === 'python' ? isPythonRelative(imp.source) : isRelative(imp.source);
+    if (!effectiveRelative) continue;
+
+    const effectivePath =
+      language === 'python' ? pythonSourceToPath(imp.source) : imp.source;
+
+    const resolved = resolveExtension(sourceDir, effectivePath, existingFiles, language);
     if (!resolved) {
       errors.push(
         `Cannot resolve import '${imp.source}' in ${sourceFilePath} (line ${imp.line})`,
@@ -283,7 +399,7 @@ export function resolveAllEdges(
     if (!exp.source) continue;
     if (!isRelative(exp.source)) continue;
 
-    const resolved = resolveExtension(sourceDir, exp.source, existingFiles);
+    const resolved = resolveExtension(sourceDir, exp.source, existingFiles, language);
     if (!resolved) {
       errors.push(
         `Cannot resolve re-export '${exp.source}' in ${sourceFilePath} (line ${exp.line})`,
@@ -306,5 +422,5 @@ export function resolveAllEdges(
   return { edges, errors };
 }
 
-// Re-export path utility for consumers that need it
-export { toPosix, isRelative, toProjectRelative };
+// Re-export path utilities for consumers that need them
+export { toPosix, isRelative, isPythonRelative, pythonSourceToPath, javaSourceToPath, toProjectRelative };

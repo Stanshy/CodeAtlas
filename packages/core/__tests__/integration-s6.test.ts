@@ -47,9 +47,9 @@ describe('integration-s6 — createProvider ollama', () => {
     ).not.toThrow();
   });
 
-  it('createProvider("ollama") without options — getModel() returns default "codellama"', () => {
+  it('createProvider("ollama") without options — getModel() returns default "gemma3:4b"', () => {
     const provider = createProvider('ollama');
-    expect((provider as OllamaProvider).getModel()).toBe('codellama');
+    expect((provider as OllamaProvider).getModel()).toBe('gemma3:4b');
   });
 });
 
@@ -109,7 +109,7 @@ describe('integration-s6 — AiStatusResponse type checks', () => {
   });
 
   it('mode field accepts "local"', () => {
-    const status = { enabled: true, provider: 'ollama', mode: 'local' as const, model: 'codellama' };
+    const status = { enabled: true, provider: 'ollama', mode: 'local' as const, model: 'gemma3:4b' };
     expect(status.mode).toBe('local');
     expect(true).toBe(true);
   });
@@ -139,7 +139,7 @@ describe('integration-s6 — AiStatusResponse type checks', () => {
   });
 
   it('model field accepts a string value', () => {
-    const status = { enabled: true, provider: 'ollama', model: 'codellama' };
+    const status = { enabled: true, provider: 'ollama', model: 'gemma3:4b' };
     expect(typeof status.model).toBe('string');
     expect(true).toBe(true);
   });

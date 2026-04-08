@@ -11,6 +11,8 @@
  *   3. TypeScriptCompilerProvider — TypeScript Compiler API (pure JS, always works)
  */
 
+import type { SupportedLanguage } from '../types.js';
+
 // ---------------------------------------------------------------------------
 // Lightweight AST node — only the subset CodeAtlas needs
 // ---------------------------------------------------------------------------
@@ -34,7 +36,7 @@ export interface AstNode {
 
 export interface ParseResult {
   /** Language that was used to parse the source */
-  language: 'javascript' | 'typescript';
+  language: SupportedLanguage;
   /** Root node of the AST */
   root: AstNode;
   /** Which backend produced this result */
@@ -63,6 +65,6 @@ export interface AstProvider {
    */
   parse(
     source: string,
-    language: 'javascript' | 'typescript',
+    language: SupportedLanguage,
   ): Promise<ParseResult>;
 }

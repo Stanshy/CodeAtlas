@@ -1,7 +1,6 @@
 ---
 name: task-status
 description: Update task status and append event log in .tasks/ file
-disable-model-invocation: true
 allowed-tools: Read, Edit, Glob
 ---
 
@@ -42,7 +41,8 @@ allowed-tools: Read, Edit, Glob
 1. **解析參數**：從 `$ARGUMENTS` 提取 task-id、new-status、備註
 
 2. **找到任務檔案**（支援 Sprint 子目錄）：
-!`find .tasks -name "$0-*" -o -name "$0.*" 2>/dev/null | head -1`
+   使用 Glob tool 搜尋 `.tasks/**/$0-*.md`，若無結果再搜尋 `.tasks/**/$0.md`。
+   取得檔案路徑後用 Read tool 讀取內容。
 
 > 任務檔案可能在 `.tasks/sprint-{N}/T3-xxx.md`，不再只在 `.tasks/` 根目錄。
 

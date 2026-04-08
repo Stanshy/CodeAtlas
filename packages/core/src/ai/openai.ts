@@ -5,17 +5,18 @@
  * Uses gpt-4o-mini for lightweight, cost-effective summaries.
  */
 
-import type { SummaryProvider, SummaryContext } from '../types.js';
+import type { SummaryContext } from '../types.js';
+import { BaseAnalysisProvider } from './base-analysis-provider.js';
 import { buildPrompt, AI_TIMEOUT_MS } from './utils.js';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_MODEL = 'gpt-4o-mini';
 const MAX_TOKENS = 300;
 
-export class OpenAIProvider implements SummaryProvider {
+export class OpenAIProvider extends BaseAnalysisProvider {
   name = 'openai';
 
-  constructor(private apiKey?: string) {}
+  constructor(private apiKey?: string) { super(); }
 
   isConfigured(): boolean {
     return !!this.apiKey;

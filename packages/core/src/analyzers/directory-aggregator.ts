@@ -68,7 +68,12 @@ export interface DirectoryGraph {
 // ---------------------------------------------------------------------------
 
 /** Entry: files whose basename indicates application entry points. */
-const ENTRY_FILENAMES = new Set(['app.ts', 'index.ts', 'main.ts', 'server.ts']);
+const ENTRY_FILENAMES = new Set([
+  'app.ts', 'index.ts', 'main.ts', 'server.ts',
+  // Sprint 18: Python / Java entry points
+  'main.py', 'app.py', 'wsgi.py', 'asgi.py', 'manage.py', 'celery_app.py',
+  'Application.java', 'Main.java', 'App.java',
+]);
 
 /** Logic: directory segment names that indicate request-handling / business logic. */
 const LOGIC_DIR_NAMES = new Set([
@@ -79,6 +84,13 @@ const LOGIC_DIR_NAMES = new Set([
   'handlers',
   'pages',
   'views',
+  // Sprint 18: Python / Java common logic dirs
+  'api',
+  'endpoints',
+  'tasks',
+  'commands',
+  'serializers',
+  'viewsets',
 ]);
 
 /** Data: directory segment names that indicate data / persistence layers. */
@@ -89,6 +101,11 @@ const DATA_DIR_NAMES = new Set([
   'schemas',
   'entities',
   'stores',
+  // Sprint 18: Python / Java common data dirs
+  'migrations',
+  'fixtures',
+  'repositories',
+  'dao',
 ]);
 
 // ---------------------------------------------------------------------------
@@ -147,8 +164,19 @@ function getDirKey(filePath: string): string {
     return 'root';
   }
 
+  // Sprint 18: For non-src projects (Python, Java, etc.), try using
+  // two-level grouping when the first segment is a common app container.
+  // e.g. app/api/routes/billing.py → "app/api" instead of just "app"
+  // This produces more meaningful buckets for Python projects.
+  const segments = normalised.split('/');
+  const firstSegment = segments[0]!;
+  const APP_CONTAINERS = new Set(['app', 'src', 'lib', 'main', 'core']);
+  if (APP_CONTAINERS.has(firstSegment) && segments.length >= 3) {
+    return `${firstSegment}/${segments[1]!}`;
+  }
+
   // Fallback: use first path segment (handles lib/, dist/, etc.)
-  return normalised.split('/')[0]!;
+  return firstSegment;
 }
 
 /**
@@ -332,6 +360,14 @@ function detectCategory(
 
 /** Percentage threshold: directories above this share get auto-expanded */
 const EXPANSION_THRESHOLD = 0.7;
+
+/**
+ * Sprint 18: When initial grouping produces very few buckets (e.g. Python
+ * projects with app/ + tests/ + migrations/), lower the expansion threshold
+ * so medium-large directories get expanded into sub-directory cards.
+ */
+const LOW_BUCKET_EXPANSION_THRESHOLD = 0.35;
+const LOW_BUCKET_LIMIT = 5;
 
 /** Maximum card count target (expansion stops when we reach this) */
 const MAX_CARD_COUNT = 17;
@@ -548,7 +584,12 @@ export function aggregateByDirectory(
       const candidate = finalNodes[i]!;
       const share = candidate.fileCount / totalFiles;
 
-      if (share <= EXPANSION_THRESHOLD) continue;
+      // Sprint 18: Use lower threshold when few buckets to handle Python/Java
+      // projects whose top-level structure is flat (e.g. app/ + tests/ + migrations/)
+      const effectiveThreshold = finalNodes.length <= LOW_BUCKET_LIMIT
+        ? LOW_BUCKET_EXPANSION_THRESHOLD
+        : EXPANSION_THRESHOLD;
+      if (share <= effectiveThreshold) continue;
       if (finalNodes.length >= MAX_CARD_COUNT) break;
 
       // --- Expand this node ---

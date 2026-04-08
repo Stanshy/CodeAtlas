@@ -17,24 +17,28 @@
  * Design rule: animation highlights steps (scroll-to-active), details
  * expand ONLY on manual click — never during auto-playback.
  *
- * Sprint 13 — T6
+ * Sprint 13-15
  */
 
 import { memo, useRef, useEffect, useState, useCallback, type CSSProperties } from 'react';
 import { THEME } from '../styles/theme';
 import type { EndpointChain, DJChainStep } from '../types/graph';
 import { deriveStepDetail } from '../utils/dj-descriptions';
+import { useAIAnalysis } from '../hooks/useAIAnalysis';
+import { AIResultBlock } from './AIResultBlock';
 
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
 export interface DJPanelProps {
-  endpointId: string;
-  chain: EndpointChain;
+  endpointId: string | null;
+  chain: EndpointChain | null;
   /** -1 = animation not started, 0+ = current active step index */
   currentStep: number;
   isPlaying: boolean;
+  /** Step index selected from canvas click (-1 = none) */
+  selectedStep?: number;
   onReplay: () => void;
   onClear: () => void;
   onStepClick: (stepIndex: number) => void;
@@ -53,42 +57,6 @@ const StepDetail = memo(function StepDetail({ step }: StepDetailProps) {
     padding: '8px 10px 4px 10px',
     borderTop: `1px solid ${THEME.borderDefault}`,
     background: '#fafafa',
-  };
-
-  const rowStyle: CSSProperties = {
-    display: 'flex',
-    gap: 6,
-    marginBottom: 5,
-    fontSize: 11,
-    fontFamily: THEME.fontUi,
-    lineHeight: 1.5,
-  };
-
-  const iconStyle: CSSProperties = {
-    flexShrink: 0,
-    fontSize: 12,
-    marginTop: 1,
-  };
-
-  const labelStyle: CSSProperties = {
-    color: THEME.inkMuted,
-    fontWeight: 600,
-    flexShrink: 0,
-    minWidth: 70,
-  };
-
-  const valueStyle: CSSProperties = {
-    color: THEME.inkSecondary,
-    fontFamily: THEME.fontMono,
-    fontSize: 10,
-    wordBreak: 'break-all',
-  };
-
-  const monoValueStyle: CSSProperties = {
-    ...valueStyle,
-    background: '#f0f0f0',
-    borderRadius: 3,
-    padding: '1px 4px',
   };
 
   // Heuristically fill missing INPUT/OUTPUT/TRANSFORM from step name + file
@@ -110,34 +78,130 @@ const StepDetail = memo(function StepDetail({ step }: StepDetailProps) {
 
   return (
     <div style={containerStyle}>
+      {/* INPUT block */}
       {resolvedInput && (
-        <div style={rowStyle}>
-          <span style={iconStyle}>📥</span>
-          <span style={labelStyle}>輸入</span>
-          <span style={valueStyle}>{resolvedInput}</span>
+        <div style={{ marginBottom: 6 }}>
+          <div style={{
+            fontSize: 9,
+            fontWeight: 700,
+            fontFamily: THEME.fontUi,
+            color: '#1565c0',
+            background: '#e3f2fd',
+            padding: '3px 8px',
+            borderRadius: '4px 4px 0 0',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+          }}>
+            輸入
+          </div>
+          <div style={{
+            fontFamily: THEME.fontMono,
+            fontSize: 10,
+            color: THEME.inkSecondary,
+            background: '#f8f9fa',
+            padding: '5px 8px',
+            borderRadius: '0 0 4px 4px',
+            border: '1px solid #e3f2fd',
+            borderTop: 'none',
+            wordBreak: 'break-all',
+          }}>
+            {resolvedInput}
+          </div>
         </div>
       )}
+
+      {/* OUTPUT block */}
       {resolvedOutput && (
-        <div style={rowStyle}>
-          <span style={iconStyle}>📤</span>
-          <span style={labelStyle}>輸出</span>
-          <span style={valueStyle}>{resolvedOutput}</span>
+        <div style={{ marginBottom: 6 }}>
+          <div style={{
+            fontSize: 9,
+            fontWeight: 700,
+            fontFamily: THEME.fontUi,
+            color: '#2e7d32',
+            background: '#e8f5e9',
+            padding: '3px 8px',
+            borderRadius: '4px 4px 0 0',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+          }}>
+            輸出
+          </div>
+          <div style={{
+            fontFamily: THEME.fontMono,
+            fontSize: 10,
+            color: THEME.inkSecondary,
+            background: '#f8f9fa',
+            padding: '5px 8px',
+            borderRadius: '0 0 4px 4px',
+            border: '1px solid #e8f5e9',
+            borderTop: 'none',
+            wordBreak: 'break-all',
+          }}>
+            {resolvedOutput}
+          </div>
         </div>
       )}
+
+      {/* TRANSFORM block */}
       {resolvedTransform && (
-        <div style={rowStyle}>
-          <span style={iconStyle}>🔄</span>
-          <span style={labelStyle}>轉換</span>
-          <span style={valueStyle}>{resolvedTransform}</span>
+        <div style={{ marginBottom: 6 }}>
+          <div style={{
+            fontSize: 9,
+            fontWeight: 700,
+            fontFamily: THEME.fontUi,
+            color: '#e65100',
+            background: '#fff3e0',
+            padding: '3px 8px',
+            borderRadius: '4px 4px 0 0',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+          }}>
+            轉換
+          </div>
+          <div style={{
+            fontFamily: THEME.fontMono,
+            fontSize: 10,
+            color: THEME.inkSecondary,
+            background: '#f8f9fa',
+            padding: '5px 8px',
+            borderRadius: '0 0 4px 4px',
+            border: '1px solid #fff3e0',
+            borderTop: 'none',
+            wordBreak: 'break-all',
+          }}>
+            {resolvedTransform}
+          </div>
         </div>
       )}
+
+      {/* METHOD block — always shown */}
       {(resolvedMethod || resolvedFile) && (
-        <div style={rowStyle}>
-          <span style={iconStyle}>📍</span>
-          <span style={labelStyle}>方法</span>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {resolvedMethod && <span style={monoValueStyle}>{resolvedMethod}</span>}
-            {resolvedFile && <span style={{ ...valueStyle, color: THEME.inkMuted }}>{resolvedFile}</span>}
+        <div style={{ marginBottom: 2 }}>
+          <div style={{
+            fontSize: 9,
+            fontWeight: 700,
+            fontFamily: THEME.fontUi,
+            color: '#546e7a',
+            background: '#eceff1',
+            padding: '3px 8px',
+            borderRadius: '4px 4px 0 0',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+          }}>
+            方法
+          </div>
+          <div style={{
+            fontFamily: THEME.fontMono,
+            fontSize: 10,
+            color: THEME.inkSecondary,
+            background: '#f8f9fa',
+            padding: '5px 8px',
+            borderRadius: '0 0 4px 4px',
+            border: '1px solid #eceff1',
+            borderTop: 'none',
+          }}>
+            {resolvedMethod && <div>{resolvedMethod}()</div>}
+            {resolvedFile && <div style={{ color: THEME.inkMuted, fontSize: 9, marginTop: 2 }}>@ {resolvedFile}</div>}
           </div>
         </div>
       )}
@@ -272,19 +336,167 @@ const StepItem = memo(function StepItem({
 // DJPanel
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// AI Result section — shown in detail panel header when endpoint was analyzed
+// ---------------------------------------------------------------------------
+
+function DJAIResultSection({ endpointId }: { endpointId: string | null }) {
+  const { status, job, error, analyze } = useAIAnalysis('endpoint', endpointId ?? '');
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  if (!endpointId) return null;
+
+  const isDisabled = error === 'AI_DISABLED';
+
+  const sectionStyle: CSSProperties = {
+    padding: '10px 14px',
+    borderBottom: `1px solid ${THEME.borderDefault}`,
+  };
+
+  const btnBase: CSSProperties = {
+    width: '100%',
+    fontSize: 11,
+    fontWeight: 500,
+    padding: '6px 10px',
+    borderRadius: 6,
+    border: `1px solid ${THEME.djBorder}`,
+    background: 'transparent',
+    color: THEME.djBorder,
+    cursor: 'pointer',
+    fontFamily: "'Inter', sans-serif",
+    boxSizing: 'border-box',
+    textAlign: 'center',
+    lineHeight: '16px',
+    display: 'block',
+  };
+
+  // Succeeded → show result block
+  if (status === 'succeeded' && job) {
+    const aiResult = (job.result ?? {}) as Record<string, unknown>;
+    const description = typeof aiResult.description === 'string' ? aiResult.description
+      : typeof aiResult.summary === 'string' ? aiResult.summary : undefined;
+    const provider = typeof aiResult.provider === 'string' ? aiResult.provider : undefined;
+
+    if (!description) return null;
+
+    return (
+      <div style={sectionStyle}>
+        <AIResultBlock
+          variant="full"
+          result={{ summary: description }}
+          {...(provider !== undefined ? { provider } : {})}
+          {...(job.completedAt !== undefined ? { analyzedAt: job.completedAt } : {})}
+          onReanalyze={() => analyze(true)}
+        />
+      </div>
+    );
+  }
+
+  // Analyzing → spinner
+  if (status === 'analyzing') {
+    return (
+      <div style={sectionStyle}>
+        <div style={{ ...btnBase, border: '1px solid #d0d0d8', color: '#8888aa', opacity: 0.6, cursor: 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }} aria-busy="true">
+          <span style={{ width: 10, height: 10, borderRadius: '50%', border: '1.5px solid currentColor', borderTopColor: 'transparent', animation: 'ca-spin 0.8s linear infinite', display: 'inline-block' }} aria-hidden="true" />
+          分析中...
+        </div>
+      </div>
+    );
+  }
+
+  // AI disabled → disabled button + tooltip
+  if (isDisabled) {
+    return (
+      <div style={{ ...sectionStyle, position: 'relative' }}>
+        {showTooltip && (
+          <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 5, background: '#333', color: '#fff', fontSize: 10, padding: '4px 8px', borderRadius: 4, whiteSpace: 'nowrap', zIndex: 10, pointerEvents: 'none' }} role="tooltip">
+            請先在設定中啟用 AI Provider
+          </div>
+        )}
+        <button
+          style={{ ...btnBase, border: '1px solid #d0d0d8', color: '#8888aa', opacity: 0.55, cursor: 'not-allowed' }}
+          disabled
+          onMouseEnter={() => setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
+          type="button"
+        >
+          ✨ 解釋資料流
+        </button>
+      </div>
+    );
+  }
+
+  // Failed → retry button
+  if (status === 'failed') {
+    return (
+      <div style={sectionStyle}>
+        <button
+          style={{ ...btnBase, border: '1px solid #ef9a9a', background: '#fff5f5', color: '#c62828' }}
+          onClick={() => analyze(true)}
+          type="button"
+        >
+          ⚠️ 分析失敗，點擊重試
+        </button>
+      </div>
+    );
+  }
+
+  // Idle → analyze button
+  return (
+    <div style={sectionStyle}>
+      <button style={btnBase} onClick={() => analyze()} type="button">
+        ✨ 解釋資料流
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// DJPanel
+// ---------------------------------------------------------------------------
+
 export const DJPanel = memo(function DJPanel({
+  endpointId,
   chain,
   currentStep,
   isPlaying,
+  selectedStep: externalSelectedStep,
   onReplay,
   onClear,
   onStepClick,
 }: DJPanelProps) {
+  // Empty state — no journey selected yet
+  if (!chain) {
+    return (
+      <div style={{ width: 300, height: '100%', background: '#ffffff', borderLeft: `1px solid ${THEME.borderDefault}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: THEME.fontUi }}>
+        <span style={{ fontSize: 24 }}>🗺️</span>
+        <span style={{ fontSize: 13, fontWeight: 500, color: THEME.inkSecondary }}>選擇端點查看資料旅程</span>
+        <span style={{ fontSize: 11, color: THEME.inkMuted }}>點擊左側端點卡片開始</span>
+      </div>
+    );
+  }
+
   const totalSteps = chain.steps.length;
   const isComplete = !isPlaying && currentStep >= totalSteps - 1 && totalSteps > 0;
 
   // Track which step item is manually expanded (one at a time)
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
+
+  // Guard: skip external sync when the click originated from the panel itself
+  const panelInitiated = useRef(false);
+
+  // Sync from canvas node click → expand the clicked step
+  useEffect(() => {
+    if (panelInitiated.current) {
+      panelInitiated.current = false;
+      return;
+    }
+    if (externalSelectedStep !== undefined && externalSelectedStep >= 0) {
+      setExpandedStep(externalSelectedStep);
+    } else if (externalSelectedStep === -1) {
+      setExpandedStep(null);
+    }
+  }, [externalSelectedStep]);
 
   // Auto-scroll the active step into view
   const stepRefs = useRef<Map<number, HTMLElement>>(new Map());
@@ -297,8 +509,9 @@ export const DJPanel = memo(function DJPanel({
     }
   }, [currentStep]);
 
-  // Manual step click: toggle expand + notify parent
+  // Manual step click: toggle expand + notify parent (canvas sync)
   const handleToggle = useCallback((index: number) => {
+    panelInitiated.current = true;
     setExpandedStep((prev) => (prev === index ? null : index));
     onStepClick(index);
   }, [onStepClick]);
@@ -435,6 +648,9 @@ export const DJPanel = memo(function DJPanel({
           </div>
         )}
       </div>
+
+      {/* AI analysis result — from shared hook, shown when endpoint was analyzed */}
+      <DJAIResultSection endpointId={endpointId} />
 
       {/* Step list */}
       <div style={stepListStyle}>

@@ -13,7 +13,7 @@
  *   size: 340×76px
  *   border: 1.5px solid #e0e0e0 (unreached), 2px solid #2e7d32 (active)
  *
- * Sprint 13 — T6
+ * Sprint 13-15
  */
 
 import { memo, type CSSProperties } from 'react';
@@ -30,6 +30,10 @@ export interface DJStepNodeData {
   stepIndex: number;
   step: DJChainStep;
   state: 'unreached' | 'active' | 'completed';
+  /** Whether this node is user-selected (for right panel sync) */
+  selected?: boolean;
+  /** Sprint 15: AI-generated step description */
+  aiDescription?: string;
   [key: string]: unknown;
 }
 
@@ -38,31 +42,39 @@ export interface DJStepNodeData {
 // ---------------------------------------------------------------------------
 
 export const DJStepNode = memo(function DJStepNode({ data }: NodeProps) {
-  const { stepIndex, step, state } = data as DJStepNodeData;
+  const { stepIndex, step, state, selected, aiDescription } = data as DJStepNodeData;
 
   const isActive = state === 'active';
   const isCompleted = state === 'completed';
+  const isSelected = !!selected;
 
   const outerStyle: CSSProperties = {
     width: 340,
     minHeight: 76,
-    background: isActive
+    background: isSelected
       ? THEME.djBg
-      : isCompleted
-        ? '#f1f8e9'
-        : '#ffffff',
-    border: isActive
+      : isActive
+        ? THEME.djBg
+        : isCompleted
+          ? '#f1f8e9'
+          : '#ffffff',
+    border: isSelected
       ? `2px solid ${THEME.djBorder}`
-      : `1.5px solid #e0e0e0`,
+      : isActive
+        ? `2px solid ${THEME.djBorder}`
+        : `1.5px solid ${isCompleted ? THEME.djBorder + '66' : '#e0e0e0'}`,
     borderRadius: THEME.radiusSm,
     position: 'relative',
     overflow: 'hidden',
-    boxShadow: isActive
-      ? `0 0 0 3px ${THEME.djGlow}, 0 4px 16px rgba(46,125,50,0.18)`
-      : isCompleted
-        ? '0 2px 8px rgba(46,125,50,0.10)'
-        : THEME.shadowCard,
+    boxShadow: isSelected
+      ? `0 0 0 3px ${THEME.djGlow}, 0 4px 16px rgba(46,125,50,0.22)`
+      : isActive
+        ? `0 0 0 3px ${THEME.djGlow}, 0 4px 16px rgba(46,125,50,0.18)`
+        : isCompleted
+          ? '0 2px 8px rgba(46,125,50,0.10)'
+          : THEME.shadowCard,
     transition: 'border 0.25s ease, box-shadow 0.25s ease, background 0.25s ease',
+    cursor: 'pointer',
   };
 
   // Left accent bar for completed state
@@ -116,10 +128,12 @@ export const DJStepNode = memo(function DJStepNode({ data }: NodeProps) {
     opacity: isActive ? 1 : 0.4,
   };
 
-  // Resolve description: prefer explicit desc if it differs from name, else derive heuristically
-  const resolvedDesc = (step.desc && step.desc !== step.name)
-    ? step.desc
-    : deriveStepDesc(step.name, step.file ?? '');
+  // Resolve description: prefer AI description, then explicit desc if it differs from name, else derive heuristically
+  const resolvedDesc = aiDescription
+    ? aiDescription
+    : (step.desc && step.desc !== step.name)
+      ? step.desc
+      : deriveStepDesc(step.name, step.file ?? '');
 
   return (
     <div style={outerStyle}>

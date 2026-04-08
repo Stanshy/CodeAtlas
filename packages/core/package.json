@@ -26,12 +26,15 @@
     "verify:parser": "npx tsx scripts/verify-parser.ts"
   },
   "dependencies": {
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "zod": "^3.23.0"
   },
   "optionalDependencies": {
     "tree-sitter": "^0.21.1",
     "tree-sitter-javascript": "^0.21.4",
     "tree-sitter-typescript": "^0.21.2",
+    "tree-sitter-python": "^0.21.0",
+    "tree-sitter-java": "^0.21.0",
     "web-tree-sitter": "^0.22.6"
   },
   "devDependencies": {

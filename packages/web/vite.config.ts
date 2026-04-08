@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     port: 5190,
     proxy: {
-      '/api': 'http://localhost:3004',
+      '/api': 'http://localhost:3030',
     },
   },
   build: { outDir: 'dist' },

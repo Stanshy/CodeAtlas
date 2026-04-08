@@ -16,6 +16,7 @@
  */
 
 import type { AstNode, AstProvider, ParseResult } from '../ast-provider.js';
+import type { SupportedLanguage } from '../../types.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TS = typeof import('typescript');
@@ -74,8 +75,15 @@ export class TypeScriptCompilerProvider implements AstProvider {
 
   async parse(
     source: string,
-    language: 'javascript' | 'typescript',
+    language: SupportedLanguage,
   ): Promise<ParseResult> {
+    if (language !== 'javascript' && language !== 'typescript') {
+      throw new Error(
+        `TypeScriptCompilerProvider does not support language "${language}". ` +
+        'Use a tree-sitter provider for Python/Java.',
+      );
+    }
+
     const ts = await loadTs();
 
     const scriptKind =

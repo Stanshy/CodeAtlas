@@ -38,12 +38,14 @@ export interface RightPanelProps {
   loSelectedStep: LODetailPanelProps['selectedStep'];
   loGraphNodes: LODetailPanelProps['graphNodes'];
   loGraphEdges: LODetailPanelProps['graphEdges'];
+  loChain?: LODetailPanelProps['chain'];
 
   // DJ props
   djEndpointId: DJPanelProps['endpointId'] | null;
   djChain: DJPanelProps['chain'] | null;
   djCurrentStep: DJPanelProps['currentStep'];
   djIsPlaying: DJPanelProps['isPlaying'];
+  djSelectedStep?: DJPanelProps['selectedStep'];
   onDjReplay: DJPanelProps['onReplay'];
   onDjClear: DJPanelProps['onClear'];
   onDjStepClick: DJPanelProps['onStepClick'];
@@ -76,10 +78,12 @@ export function RightPanel({
   loSelectedStep,
   loGraphNodes,
   loGraphEdges,
+  loChain,
   djEndpointId,
   djChain,
   djCurrentStep,
   djIsPlaying,
+  djSelectedStep,
   onDjReplay,
   onDjClear,
   onDjStepClick,
@@ -99,19 +103,18 @@ export function RightPanel({
       );
 
     case 'logic-operation':
-      if (!loSelectedStep) return null;
       return (
         <div style={panelWrapStyle}>
           <LODetailPanel
             selectedStep={loSelectedStep}
             graphNodes={loGraphNodes}
             graphEdges={loGraphEdges}
+            {...(loChain !== undefined ? { chain: loChain } : {})}
           />
         </div>
       );
 
     case 'data-journey':
-      if (!djEndpointId || !djChain) return null;
       return (
         <div style={panelWrapStyle}>
           <DJPanel
@@ -119,6 +122,7 @@ export function RightPanel({
             chain={djChain}
             currentStep={djCurrentStep}
             isPlaying={djIsPlaying}
+            {...(djSelectedStep !== undefined ? { selectedStep: djSelectedStep } : {})}
             onReplay={onDjReplay}
             onClear={onDjClear}
             onStepClick={onDjStepClick}

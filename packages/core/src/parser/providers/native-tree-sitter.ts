@@ -11,6 +11,7 @@
  */
 
 import type { AstNode, AstProvider, ParseResult } from '../ast-provider.js';
+import type { SupportedLanguage } from '../../types.js';
 
 // We use dynamic requires so a missing native module never crashes the
 // module loader — it only makes isAvailable() return false.
@@ -23,6 +24,8 @@ type TreeSitterTree = any;
 let _Parser: TreeSitterParser | null = null;
 let _jsGrammar: TreeSitterParser | null = null;
 let _tsGrammar: TreeSitterParser | null = null;
+let _pyGrammar: TreeSitterParser | null = null;
+let _javaGrammar: TreeSitterParser | null = null;
 let _available: boolean | null = null;   // cached after first probe
 
 async function tryLoad(): Promise<boolean> {
@@ -39,6 +42,16 @@ async function tryLoad(): Promise<boolean> {
     // tree-sitter-typescript exposes { typescript, tsx }
     _jsGrammar = jsModule;
     _tsGrammar = tsModule.typescript ?? tsModule;
+
+    // Load Python grammar (optional — failure does not break JS/TS availability)
+    try {
+      _pyGrammar = require('tree-sitter-python');
+    } catch { /* Python grammar not installed */ }
+
+    // Load Java grammar (optional — failure does not break JS/TS availability)
+    try {
+      _javaGrammar = require('tree-sitter-java');
+    } catch { /* Java grammar not installed */ }
 
     // Quick smoke-test: parse a trivial snippet
     const parser = new _Parser();
@@ -69,6 +82,19 @@ function mapNode(node: any): AstNode {
 }
 
 // ---------------------------------------------------------------------------
+// Grammar selector
+// ---------------------------------------------------------------------------
+
+function getGrammar(language: SupportedLanguage): TreeSitterParser | null {
+  switch (language) {
+    case 'javascript': return _jsGrammar;
+    case 'typescript': return _tsGrammar;
+    case 'python':     return _pyGrammar;
+    case 'java':       return _javaGrammar;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Provider implementation
 // ---------------------------------------------------------------------------
 
@@ -81,16 +107,30 @@ export class NativeTreeSitterProvider implements AstProvider {
 
   async parse(
     source: string,
-    language: 'javascript' | 'typescript',
+    language: SupportedLanguage,
   ): Promise<ParseResult> {
     if (!(await tryLoad()) || _Parser === null) {
       throw new Error('NativeTreeSitterProvider is not available');
     }
 
-    // _Parser and grammars are already loaded and cached by tryLoad()
+    const grammar = getGrammar(language);
+    if (grammar === null) {
+      throw new Error(
+        `NativeTreeSitterProvider: grammar for "${language}" is not loaded. ` +
+        `Install the tree-sitter-${language} package.`,
+      );
+    }
+
     const parser = new _Parser();
-    parser.setLanguage(language === 'javascript' ? _jsGrammar : _tsGrammar);
-    const tree: TreeSitterTree = parser.parse(source);
+    parser.setLanguage(grammar);
+    // Sprint 18: Normalize \r\n → \n before parsing. Windows-style line endings
+    // (or mixed CR/LF) can crash tree-sitter grammars (especially Python/Java).
+    const normalised = source.indexOf('\r') >= 0 ? source.replace(/\r\n?/g, '\n') : source;
+    // Sprint 18: tree-sitter native binding has a ~32KB string input limit.
+    // Use the callback API for large files to avoid "Invalid argument" errors.
+    const tree: TreeSitterTree = normalised.length > 30_000
+      ? parser.parse((index: number) => normalised.slice(index, index + 4096))
+      : parser.parse(normalised);
 
     return {
       language,

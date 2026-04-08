@@ -97,13 +97,20 @@ export interface ViewState {
   activeViewMode: ViewModeName;
   // === Sprint 11: Perspective (Story View) ===
   activePerspective: PerspectiveName;
-  isControlPanelOpen: boolean;
+  isSettingsPanelOpen: boolean;
   displayPrefs: DisplayPrefs;
   e2eTracing: E2ETracingState | null;
   isE2ESelecting: boolean;
 
   // Sprint 10: Smart Curation — pinned hidden nodes
   pinnedNodeIds: string[];
+
+  // Sprint 14: AI Settings
+  aiProvider: string;           // 'claude-code' | 'gemini' | 'ollama' | 'openai' | 'anthropic' | 'disabled'
+  aiApiKey: string;             // API key for cloud providers
+  enableAiSummary: boolean;     // Toggle AI method summaries
+  enableAiRoleClassification: boolean; // Toggle AI role classification
+  hiddenMethodRoles: string[];  // Roles to hide in LO view (default: ['utility', 'framework_glue'])
 }
 
 export type ViewAction =
@@ -148,7 +155,7 @@ export type ViewAction =
   // === Sprint 11: Perspective ===
   | { type: 'SET_PERSPECTIVE'; perspective: PerspectiveName }
   | { type: 'SET_3D_MODE'; mode: ViewMode }
-  | { type: 'TOGGLE_CONTROL_PANEL' }
+  | { type: 'TOGGLE_SETTINGS_PANEL' }
   | { type: 'SET_DISPLAY_PREFS'; prefs: Partial<DisplayPrefs> }
   | { type: 'START_E2E_TRACING'; startNodeId: string;
       path: string[]; edges: string[]; steps: E2EStep[]; truncated: boolean }
@@ -158,7 +165,14 @@ export type ViewAction =
   | { type: 'SET_E2E_SELECTING'; selecting: boolean }
   // Sprint 10: Pin/Unpin hidden nodes
   | { type: 'PIN_NODE'; nodeId: string }
-  | { type: 'UNPIN_NODE'; nodeId: string };
+  | { type: 'UNPIN_NODE'; nodeId: string }
+  // Sprint 14: AI Settings
+  | { type: 'SET_AI_PROVIDER'; provider: string }
+  | { type: 'SET_AI_API_KEY'; apiKey: string }
+  | { type: 'SET_ENABLE_AI_SUMMARY'; enabled: boolean }
+  | { type: 'SET_ENABLE_AI_ROLE_CLASSIFICATION'; enabled: boolean }
+  | { type: 'SET_HIDDEN_METHOD_ROLES'; roles: string[] }
+  | { type: 'TOGGLE_HIDDEN_METHOD_ROLE'; role: string };
 
 // ---------------------------------------------------------------------------
 // Initial state
@@ -196,7 +210,7 @@ const initialState: ViewState = {
   activeViewMode: 'panorama' as ViewModeName,
   // Sprint 11 additions
   activePerspective: 'logic-operation' as PerspectiveName,
-  isControlPanelOpen: true,
+  isSettingsPanelOpen: false,
   displayPrefs: {
     showEdgeLabels: false,
     showParticles: true,
@@ -206,6 +220,12 @@ const initialState: ViewState = {
   e2eTracing: null,
   isE2ESelecting: false,
   pinnedNodeIds: [],
+  // Sprint 14: AI Settings
+  aiProvider: 'disabled',
+  aiApiKey: '',
+  enableAiSummary: false,
+  enableAiRoleClassification: false,
+  hiddenMethodRoles: ['utility', 'framework_glue'],
 };
 
 // ---------------------------------------------------------------------------
@@ -444,8 +464,8 @@ function viewStateReducer(state: ViewState, action: ViewAction): ViewState {
       return { ...state, mode: action.mode };
     }
 
-    case 'TOGGLE_CONTROL_PANEL':
-      return { ...state, isControlPanelOpen: !state.isControlPanelOpen };
+    case 'TOGGLE_SETTINGS_PANEL':
+      return { ...state, isSettingsPanelOpen: !state.isSettingsPanelOpen };
 
     case 'SET_DISPLAY_PREFS':
       return {
@@ -508,6 +528,26 @@ function viewStateReducer(state: ViewState, action: ViewAction): ViewState {
       return {
         ...state,
         pinnedNodeIds: state.pinnedNodeIds.filter(id => id !== action.nodeId),
+      };
+
+    // --- Sprint 14: AI Settings ---
+
+    case 'SET_AI_PROVIDER':
+      return { ...state, aiProvider: action.provider };
+    case 'SET_AI_API_KEY':
+      return { ...state, aiApiKey: action.apiKey };
+    case 'SET_ENABLE_AI_SUMMARY':
+      return { ...state, enableAiSummary: action.enabled };
+    case 'SET_ENABLE_AI_ROLE_CLASSIFICATION':
+      return { ...state, enableAiRoleClassification: action.enabled };
+    case 'SET_HIDDEN_METHOD_ROLES':
+      return { ...state, hiddenMethodRoles: action.roles };
+    case 'TOGGLE_HIDDEN_METHOD_ROLE':
+      return {
+        ...state,
+        hiddenMethodRoles: state.hiddenMethodRoles.includes(action.role)
+          ? state.hiddenMethodRoles.filter(r => r !== action.role)
+          : [...state.hiddenMethodRoles, action.role],
       };
 
     default:

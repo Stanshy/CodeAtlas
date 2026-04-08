@@ -53,14 +53,17 @@ function transformEndpointGraph(raw: ApiEndpointGraphRaw): EndpointGraph {
 
   // 1. Create endpoint nodes
   for (const ep of raw.endpoints) {
-    nodes.push({
+    const node: EndpointNode = {
       id: ep.id,
       label: `${ep.method} ${ep.path}`,
       method: ep.method,
       path: ep.path,
       filePath: ep.handlerFileId,
       kind: 'endpoint',
-    });
+    };
+    // Sprint 15.1: Wire AI description from merged endpoint
+    if (ep.description) node.description = ep.description;
+    nodes.push(node);
     nodeIdSet.add(ep.id);
   }
 
@@ -75,13 +78,16 @@ function transformEndpointGraph(raw: ApiEndpointGraphRaw): EndpointGraph {
       const stepId = `${chain.endpointId}::step-${i}::${step.method}`;
 
       if (!nodeIdSet.has(stepId)) {
-        nodes.push({
+        const stepNode: EndpointNode = {
           id: stepId,
           label: step.name,
           method: step.method,
           filePath: step.fileId,
           kind: 'method',
-        });
+        };
+        // Sprint 15.1: Wire AI step description
+        if (step.description) stepNode.description = step.description;
+        nodes.push(stepNode);
         nodeIdSet.add(stepId);
       }
 

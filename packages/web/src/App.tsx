@@ -9,11 +9,12 @@
  * Sprint 9 — T9: Toolbar + ControlPanel integration
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react';
 import { useGraphData } from './hooks/useGraphData';
 import { useSearch } from './hooks/useSearch';
 import { useE2ETracing } from './hooks/useE2ETracing';
+import { useToast } from './hooks/useToast';
 import { GraphContainer } from './components/GraphContainer';
 import { NodePanel } from './components/NodePanel';
 import { SearchBar } from './components/SearchBar';
@@ -21,10 +22,11 @@ import { CodePreview } from './components/CodePreview';
 import { AiSummary } from './components/AiSummary';
 import { CameraPresets } from './components/CameraPresets';
 import { TracingPanel } from './components/TracingPanel';
-import { ControlPanel } from './components/ControlPanel';
+import { SettingsPopover } from './components/SettingsPopover';
 import { Toolbar } from './components/Toolbar';
 import { E2EPanel } from './components/E2EPanel';
 import { TabBar } from './components/TabBar';
+import { ToastStack } from './components/Toast';
 import { ViewStateProvider, useViewState } from './contexts/ViewStateContext';
 import type { PerspectiveName } from './types/graph';
 
@@ -35,9 +37,12 @@ import type { PerspectiveName } from './types/graph';
 function AppInner() {
   const { nodes, edges, rawNodes, rawEdges, directoryGraph, endpointGraph, isLoading, error, refetch } = useGraphData();
   const { state, dispatch } = useViewState();
-  const { selectedNodeId, isPanelOpen, mode, tracingSymbol, e2eTracing, activePerspective } = state;
+  const { selectedNodeId, isPanelOpen, mode, tracingSymbol, e2eTracing, activePerspective, isSettingsPanelOpen } = state;
 
   const reactFlow = useReactFlow();
+
+  // Toast hook
+  const { toasts, show: showToast, dismiss: dismissToast } = useToast();
 
   // E2E Tracing hook
   const {
@@ -94,6 +99,57 @@ function AppInner() {
     [dispatch],
   );
 
+  // Sprint 15.1: Poll AI analysis status and auto-refresh graph on each phase completion
+  const [aiProgress, setAiProgress] = useState('');
+  const [aiDone, setAiDone] = useState(false);
+  const lastPhaseRef = useRef(0);
+
+  useEffect(() => {
+    if (aiDone) return;
+    let cancelled = false;
+
+    const poll = async () => {
+      if (cancelled) return;
+
+      try {
+        const res = await fetch('/api/ai/status');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // If AI is disabled, don't poll
+        if (!data.enabled || data.provider === 'disabled') return;
+
+        setAiProgress(data.progress ?? '');
+
+        // Refetch graph whenever a new phase completes
+        const phases = data.completedPhases ?? 0;
+        if (phases > lastPhaseRef.current) {
+          lastPhaseRef.current = phases;
+          refetch();
+        }
+
+        // Pipeline fully done — stop polling
+        if (data.analysisStatus === 'done' || data.analysisStatus === 'error') {
+          setAiDone(true);
+          if (data.analysisStatus === 'error') {
+            setAiProgress(`AI analysis failed: ${data.progress ?? ''}`);
+          }
+          return;
+        }
+
+        // Still running — schedule next poll
+        if (!cancelled) {
+          setTimeout(poll, 3000);
+        }
+      } catch {
+        // AI status unavailable — stop polling
+      }
+    };
+
+    const timer = setTimeout(poll, 1000);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [aiDone, refetch]);
+
   // Compute per-tab node counts for the badge
   const tabCounts = useMemo(() => {
     // sf: directory nodes (system-framework reads directory-level data)
@@ -149,8 +205,18 @@ function AppInner() {
       {/* Unified Toolbar — fixed top */}
       <Toolbar onSearchClick={() => dispatch({ type: 'SET_SEARCH_OPEN', open: true })} />
 
-      {/* Control Panel — fixed left sidebar */}
-      <ControlPanel graphNodes={rawNodes} graphEdges={rawEdges} />
+      {/* Settings Popover — replaces ControlPanel */}
+      {isSettingsPanelOpen && (
+        <SettingsPopover
+          graphNodes={rawNodes}
+          directoryGraph={directoryGraph ?? null}
+          onClose={() => dispatch({ type: 'TOGGLE_SETTINGS_PANEL' })}
+          onShowToast={showToast}
+        />
+      )}
+
+      {/* Toast notifications — fixed top:60px right:16px */}
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
       {/* Camera Presets — 3D only, keep existing position */}
       <CameraPresets />
@@ -161,6 +227,34 @@ function AppInner() {
         onPerspectiveChange={handlePerspectiveChange}
         counts={tabCounts}
       />
+
+      {/* Sprint 15.1: AI analysis progress indicator */}
+      {aiProgress && !aiDone && (
+        <div style={{
+          position: 'fixed',
+          bottom: 12,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(20, 20, 30, 0.85)',
+          border: '1px solid rgba(100, 140, 255, 0.3)',
+          borderRadius: 8,
+          padding: '6px 14px',
+          fontSize: 11,
+          color: 'rgba(180, 200, 255, 0.8)',
+          zIndex: 999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          backdropFilter: 'blur(8px)',
+        }}>
+          <div style={{
+            width: 6, height: 6, borderRadius: '50%',
+            background: '#648cff',
+            animation: 'pulse 1.5s ease-in-out infinite',
+          }} />
+          {aiProgress}
+        </div>
+      )}
 
       {/* Graph renderer — switches between 2D and 3D */}
       <GraphContainer

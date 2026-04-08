@@ -17,8 +17,10 @@
  * Sprint 13 — T5.
  */
 
-import { useMemo, type CSSProperties } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import type { GraphNode, GraphEdge, ChainStep, LoCategory } from '../types/graph';
+import { useAIAnalysis } from '../hooks/useAIAnalysis';
+import { AIResultBlock } from './AIResultBlock';
 
 // ---------------------------------------------------------------------------
 // Category color map
@@ -40,6 +42,8 @@ export interface LODetailPanelProps {
   selectedStep: ChainStep | null;
   graphNodes: GraphNode[];
   graphEdges: GraphEdge[];
+  /** Full chain for deriving caller/callee from chain context */
+  chain?: ChainStep[] | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -97,10 +101,220 @@ function ListItem({ label }: ListItemProps) {
 }
 
 // ---------------------------------------------------------------------------
+// Sprint 14 T9: AI analysis helpers
+// ---------------------------------------------------------------------------
+
+/** Role display label mapping */
+function getRoleLabel(role: string): string {
+  const labels: Record<string, string> = {
+    entrypoint: '入口',
+    business_core: '業務核心',
+    domain_rule: '領域規則',
+    orchestration: '流程編排',
+    io_adapter: 'I/O 轉接',
+    validation: '輸入驗證',
+    infra: '基礎設施',
+    utility: '工具函式',
+    framework_glue: '框架膠水',
+  };
+  return labels[role] ?? role;
+}
+
+/** Role badge colors */
+function getRoleBadgeColor(role: string): { bg: string; text: string } {
+  const colors: Record<string, { bg: string; text: string }> = {
+    entrypoint:      { bg: '#e3f2fd', text: '#1565c0' },
+    business_core:   { bg: '#f3e5f5', text: '#7b1fa2' },
+    domain_rule:     { bg: '#fff3e0', text: '#e65100' },
+    orchestration:   { bg: '#e8f5e9', text: '#2e7d32' },
+    io_adapter:      { bg: '#efebe9', text: '#4e342e' },
+    validation:      { bg: '#fff8e1', text: '#f9a825' },
+    infra:           { bg: '#eceff1', text: '#546e7a' },
+    utility:         { bg: '#f5f5f5', text: '#9e9e9e' },
+    framework_glue:  { bg: '#fce4ec', text: '#c62828' },
+  };
+  return colors[role] ?? { bg: '#f5f5f5', text: '#757575' };
+}
+
+// ---------------------------------------------------------------------------
+// Sprint 16: AI on-demand analysis section for LO detail panel
+// ---------------------------------------------------------------------------
+
+function LOAISection({ selectedStep }: { selectedStep: ChainStep }) {
+  // Use specific method identifier: filePath#methodName — so each method gets its own analysis
+  // Strip trailing () — backend/cache keys don't include parentheses
+  const cleanName = selectedStep.methodName.replace(/\(\)$/, '');
+  const methodTarget = selectedStep.filePath
+    ? `${selectedStep.filePath}#${cleanName}`
+    : cleanName;
+  const { status, job, error, analyze } = useAIAnalysis('method', methodTarget);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  const isDisabled = error === 'AI_DISABLED';
+
+  const sectionStyle: CSSProperties = {
+    padding: '10px 16px',
+    borderBottom: '1px solid #f0f0f0',
+  };
+
+  const sectionTitleStyle: CSSProperties = {
+    fontWeight: 600,
+    fontSize: 11,
+    color: '#757575',
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    marginBottom: 8,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+  };
+
+  const btnBase: CSSProperties = {
+    width: '100%',
+    fontSize: 11,
+    fontWeight: 500,
+    padding: '6px 10px',
+    borderRadius: 6,
+    border: '1px solid #7b1fa2',
+    background: 'transparent',
+    color: '#7b1fa2',
+    cursor: 'pointer',
+    fontFamily: "'Inter', sans-serif",
+    boxSizing: 'border-box',
+    textAlign: 'center',
+    lineHeight: '16px',
+    display: 'block',
+  };
+
+  // Succeeded → show result block
+  if (status === 'succeeded' && job) {
+    const aiResult = (job.result ?? {}) as Record<string, unknown>;
+    const description = typeof aiResult.description === 'string' ? aiResult.description
+      : typeof aiResult.summary === 'string' ? aiResult.summary
+      : typeof aiResult.oneLineSummary === 'string' ? aiResult.oneLineSummary
+      : undefined;
+    const role = typeof aiResult.role === 'string' ? aiResult.role : undefined;
+    const provider = typeof aiResult.provider === 'string' ? aiResult.provider : undefined;
+    const confidence = typeof aiResult.confidence === 'number' ? aiResult.confidence : undefined;
+
+    if (!description && !job.result) {
+      // Job succeeded but no result at all — show "no data" message
+      return (
+        <div style={sectionStyle}>
+          <div style={sectionTitleStyle}>
+            <span>✨</span>
+            <span>AI 分析</span>
+          </div>
+          <div style={{ fontSize: 12, color: '#9e9e9e', fontStyle: 'italic' }}>
+            此方法暫無分析資料
+          </div>
+        </div>
+      );
+    }
+
+    if (!description) return null;
+
+    return (
+      <div style={sectionStyle}>
+        <div style={sectionTitleStyle}>
+          <span>✨</span>
+          <span>AI 分析</span>
+        </div>
+        <AIResultBlock
+          variant="full"
+          result={{
+            summary: description,
+            ...(role !== undefined ? { role } : {}),
+            ...(confidence !== undefined ? { confidence } : {}),
+          }}
+          {...(provider !== undefined ? { provider } : {})}
+          {...(job.completedAt !== undefined ? { analyzedAt: job.completedAt } : {})}
+          onReanalyze={() => analyze(true)}
+        />
+      </div>
+    );
+  }
+
+  // Analyzing → spinner
+  if (status === 'analyzing') {
+    return (
+      <div style={sectionStyle}>
+        <div style={sectionTitleStyle}>
+          <span>✨</span>
+          <span>AI 分析</span>
+        </div>
+        <div style={{ ...btnBase, border: '1px solid #d0d0d8', color: '#8888aa', opacity: 0.6, cursor: 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }} aria-busy="true">
+          <span style={{ width: 10, height: 10, borderRadius: '50%', border: '1.5px solid currentColor', borderTopColor: 'transparent', animation: 'ca-spin 0.8s linear infinite', display: 'inline-block' }} aria-hidden="true" />
+          分析中...
+        </div>
+      </div>
+    );
+  }
+
+  // AI disabled → disabled button + tooltip
+  if (isDisabled) {
+    return (
+      <div style={{ ...sectionStyle, position: 'relative' }}>
+        <div style={sectionTitleStyle}>
+          <span>✨</span>
+          <span>AI 分析</span>
+        </div>
+        {showTooltip && (
+          <div style={{ position: 'absolute', top: -30, left: '50%', transform: 'translateX(-50%)', background: '#333', color: '#fff', fontSize: 10, padding: '4px 8px', borderRadius: 4, whiteSpace: 'nowrap', zIndex: 10, pointerEvents: 'none' }} role="tooltip">
+            請先在設定中啟用 AI Provider
+          </div>
+        )}
+        <button
+          style={{ ...btnBase, border: '1px solid #d0d0d8', color: '#8888aa', opacity: 0.55, cursor: 'not-allowed' }}
+          disabled
+          onMouseEnter={() => setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
+          type="button"
+        >
+          ✨ 解釋邏輯
+        </button>
+      </div>
+    );
+  }
+
+  // Failed → retry button
+  if (status === 'failed') {
+    return (
+      <div style={sectionStyle}>
+        <div style={sectionTitleStyle}>
+          <span>✨</span>
+          <span>AI 分析</span>
+        </div>
+        <button
+          style={{ ...btnBase, border: '1px solid #ef9a9a', background: '#fff5f5', color: '#c62828' }}
+          onClick={() => analyze(true)}
+          type="button"
+        >
+          ⚠️ 分析失敗，點擊重試
+        </button>
+      </div>
+    );
+  }
+
+  // Idle → analyze button
+  return (
+    <div style={sectionStyle}>
+      <div style={sectionTitleStyle}>
+        <span>✨</span>
+        <span>AI 分析</span>
+      </div>
+      <button style={btnBase} onClick={() => analyze()} type="button">
+        ✨ 解釋邏輯
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 
-export function LODetailPanel({ selectedStep, graphNodes, graphEdges }: LODetailPanelProps) {
+export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: LODetailPanelProps) {
   // Find the function/method graphNode that corresponds to the selected chain step
   const methodNode = useMemo<GraphNode | null>(() => {
     if (!selectedStep) return null;
@@ -122,31 +336,53 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges }: LODetail
     );
   }, [selectedStep, graphNodes]);
 
-  // Callers: edges where target === methodNode.id (call type)
-  const callers = useMemo<GraphNode[]>(() => {
-    if (!methodNode) return [];
-    const callerIds = graphEdges
-      .filter((e) => e.type === 'call' && e.target === methodNode.id)
-      .map((e) => e.source);
-    return callerIds.reduce<GraphNode[]>((acc, id) => {
-      const node = graphNodes.find((n) => n.id === id);
-      if (node) acc.push(node);
-      return acc;
-    }, []);
-  }, [methodNode, graphNodes, graphEdges]);
+  // Callers/Callees: prefer chain context (prev/next steps), fallback to edge-based
+  const callers = useMemo<Array<GraphNode | ChainStep>>(() => {
+    if (!selectedStep || !chain) {
+      // Fallback: edge-based
+      if (!methodNode) return [];
+      const callerIds = graphEdges
+        .filter((e) => e.type === 'call' && e.target === methodNode.id)
+        .map((e) => e.source);
+      return callerIds.reduce<GraphNode[]>((acc, id) => {
+        const node = graphNodes.find((n) => n.id === id);
+        if (node) acc.push(node);
+        return acc;
+      }, []);
+    }
+    // Chain-based: the step before this one is the caller
+    const idx = chain.findIndex((s) => s.id === selectedStep.id);
+    if (idx <= 0) return [];
+    const prevStep = chain[idx - 1];
+    // Try to find matching GraphNode
+    const prevNode = graphNodes.find(
+      (n) => n.label === prevStep.methodName && n.filePath === prevStep.filePath,
+    );
+    return prevNode ? [prevNode] : [prevStep];
+  }, [selectedStep, chain, methodNode, graphNodes, graphEdges]);
 
-  // Callees: edges where source === methodNode.id (call type)
-  const callees = useMemo<GraphNode[]>(() => {
-    if (!methodNode) return [];
-    const calleeIds = graphEdges
-      .filter((e) => e.type === 'call' && e.source === methodNode.id)
-      .map((e) => e.target);
-    return calleeIds.reduce<GraphNode[]>((acc, id) => {
-      const node = graphNodes.find((n) => n.id === id);
-      if (node) acc.push(node);
-      return acc;
-    }, []);
-  }, [methodNode, graphNodes, graphEdges]);
+  const callees = useMemo<Array<GraphNode | ChainStep>>(() => {
+    if (!selectedStep || !chain) {
+      // Fallback: edge-based
+      if (!methodNode) return [];
+      const calleeIds = graphEdges
+        .filter((e) => e.type === 'call' && e.source === methodNode.id)
+        .map((e) => e.target);
+      return calleeIds.reduce<GraphNode[]>((acc, id) => {
+        const node = graphNodes.find((n) => n.id === id);
+        if (node) acc.push(node);
+        return acc;
+      }, []);
+    }
+    // Chain-based: the step(s) after this one are callees
+    const idx = chain.findIndex((s) => s.id === selectedStep.id);
+    if (idx < 0 || idx >= chain.length - 1) return [];
+    const nextStep = chain[idx + 1];
+    const nextNode = graphNodes.find(
+      (n) => n.label === nextStep.methodName && n.filePath === nextStep.filePath,
+    );
+    return nextNode ? [nextNode] : [nextStep];
+  }, [selectedStep, chain, methodNode, graphNodes, graphEdges]);
 
   // ---------------------------------------------------------------------------
   // Styles
@@ -358,6 +594,49 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges }: LODetail
         )}
       </div>
 
+      {/* Sprint 14 T9: AI Analysis section */}
+      {(methodNode?.metadata?.aiSummary || methodNode?.metadata?.methodRole) && (
+        <div style={sectionStyle}>
+          <div style={sectionTitleStyle}>
+            <span>✨</span>
+            <span>AI 分析</span>
+          </div>
+          {methodNode?.metadata?.aiSummary && (
+            <div style={{
+              fontSize: 12,
+              color: '#424242',
+              lineHeight: 1.5,
+              marginBottom: 6,
+            }}>
+              {methodNode.metadata.aiSummary}
+            </div>
+          )}
+          {methodNode?.metadata?.methodRole && (
+            <div style={statRowStyle}>
+              <span style={statLabelStyle}>角色分類</span>
+              <span style={{
+                fontSize: 10,
+                fontWeight: 600,
+                padding: '1px 6px',
+                borderRadius: 10,
+                background: getRoleBadgeColor(methodNode.metadata.methodRole).bg,
+                color: getRoleBadgeColor(methodNode.metadata.methodRole).text,
+              }}>
+                {getRoleLabel(methodNode.metadata.methodRole)}
+              </span>
+            </div>
+          )}
+          {methodNode?.metadata?.roleConfidence !== undefined && (
+            <div style={statRowStyle}>
+              <span style={statLabelStyle}>信心度</span>
+              <span style={statValueStyle}>
+                {Math.round((methodNode.metadata.roleConfidence ?? 0) * 100)}%
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Location section */}
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>
@@ -407,13 +686,14 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges }: LODetail
         </div>
         {callers.length === 0 ? (
           <span style={emptyListStyle}>
-            {methodNode ? '未偵測到呼叫者' : '無函式節點資料'}
+            {chain ? '此為入口方法' : methodNode ? '未偵測到呼叫者' : '無函式節點資料'}
           </span>
         ) : (
           <div style={listStyle}>
-            {callers.slice(0, 8).map((n) => (
-              <ListItem key={n.id} label={`${n.label}()`} />
-            ))}
+            {callers.slice(0, 8).map((n) => {
+              const name = 'label' in n ? n.label : (n as ChainStep).methodName;
+              return <ListItem key={n.id} label={`${name}()`} />;
+            })}
             {callers.length > 8 && (
               <span style={{ fontSize: 10, color: '#bdbdbd' }}>
                 +{callers.length - 8} 更多
@@ -431,13 +711,14 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges }: LODetail
         </div>
         {callees.length === 0 ? (
           <span style={emptyListStyle}>
-            {methodNode ? '未偵測到被呼叫者' : '無函式節點資料'}
+            {chain ? '此為末端方法' : methodNode ? '未偵測到被呼叫者' : '無函式節點資料'}
           </span>
         ) : (
           <div style={listStyle}>
-            {callees.slice(0, 8).map((n) => (
-              <ListItem key={n.id} label={`${n.label}()`} />
-            ))}
+            {callees.slice(0, 8).map((n) => {
+              const name = 'label' in n ? n.label : (n as ChainStep).methodName;
+              return <ListItem key={n.id} label={`${name}()`} />;
+            })}
             {callees.length > 8 && (
               <span style={{ fontSize: 10, color: '#bdbdbd' }}>
                 +{callees.length - 8} 更多
@@ -457,7 +738,26 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges }: LODetail
           <span style={statLabelStyle}>層級</span>
           <span style={statValueStyle}>{selectedStep.depth}</span>
         </div>
+        {chain && (
+          <>
+            <div style={statRowStyle}>
+              <span style={statLabelStyle}>位置</span>
+              <span style={statValueStyle}>
+                第 {chain.findIndex((s) => s.id === selectedStep.id) + 1} / {chain.length} 步
+              </span>
+            </div>
+            <div style={statRowStyle}>
+              <span style={statLabelStyle}>分類</span>
+              <span style={{ ...statValueStyle, color: catColors.bar }}>
+                {catColors.label}
+              </span>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Sprint 16: AI on-demand analysis — at bottom of panel */}
+      <LOAISection selectedStep={selectedStep} />
     </div>
   );
 }

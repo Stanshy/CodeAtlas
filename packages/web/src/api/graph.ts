@@ -7,6 +7,7 @@
  */
 
 import type { AnalysisResult, AnalysisStats, NodeDetailResponse, FunctionNodesResponse } from '../types/graph';
+import type { AIAnalyzeResponse, AIJobResponse, AIConfigureResult, AIJobScope } from '../types/graph';
 
 /** Typed API error returned by fetch helpers */
 export interface ApiError {
@@ -90,7 +91,8 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<ApiResul
  * GET /api/graph — Full analysis result
  */
 export function fetchGraph(): Promise<ApiResult<AnalysisResult>> {
-  return apiFetch<AnalysisResult>('/api/graph');
+  // Sprint 15.1: include function nodes so LO view can display methodRole + aiSummary
+  return apiFetch<AnalysisResult>('/api/graph?include=functions');
 }
 
 /**
@@ -112,4 +114,56 @@ export function fetchNode(id: string): Promise<ApiResult<NodeDetailResponse>> {
  */
 export function fetchFunctionNodes(fileId: string): Promise<ApiResult<FunctionNodesResponse>> {
   return apiFetch<FunctionNodesResponse>(`/api/graph/functions/${encodeURIComponent(fileId)}`);
+}
+
+/**
+ * POST /api/ai/analyze — 觸發 AI 分析 job
+ */
+export async function postAIAnalyze(
+  scope: AIJobScope,
+  target?: string,
+  force = false,
+): Promise<AIAnalyzeResponse> {
+  const res = await fetch('/api/ai/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scope, target, force }),
+  });
+  if (!res.ok) {
+    throw new Error(`POST /api/ai/analyze failed: ${res.status}`);
+  }
+  return res.json() as Promise<AIAnalyzeResponse>;
+}
+
+/**
+ * GET /api/ai/jobs/:jobId — 查詢 job 狀態
+ */
+export async function getAIJob(jobId: string): Promise<AIJobResponse> {
+  const res = await fetch(`/api/ai/jobs/${encodeURIComponent(jobId)}`);
+  if (!res.ok) {
+    throw new Error(`GET /api/ai/jobs/${jobId} failed: ${res.status}`);
+  }
+  return res.json() as Promise<AIJobResponse>;
+}
+
+/**
+ * POST /api/ai/configure — 切換 AI Provider
+ */
+export async function postAIConfigure(
+  provider: string,
+  apiKey?: string,
+): Promise<AIConfigureResult> {
+  const body: Record<string, string> = { provider };
+  if (apiKey !== undefined) {
+    body.apiKey = apiKey;
+  }
+  const res = await fetch('/api/ai/configure', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(`POST /api/ai/configure failed: ${res.status}`);
+  }
+  return res.json() as Promise<AIConfigureResult>;
 }

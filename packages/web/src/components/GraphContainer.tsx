@@ -114,7 +114,8 @@ export function GraphContainer({ rfNodes, rfEdges, graphNodes, graphEdges, direc
       style={{
         position: 'relative',
         width: '100%',
-        height: '100vh',
+        height: 'calc(100vh - 96px)',
+        marginTop: 96,
       }}
     >
       {/* 2D mode */}

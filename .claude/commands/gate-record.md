@@ -1,7 +1,6 @@
 ---
 name: gate-record
 description: Record a gate review decision in the dev plan section 10
-disable-model-invocation: true
 allowed-tools: Read, Edit, Glob
 ---
 
@@ -44,10 +43,10 @@ allowed-tools: Read, Edit, Glob
 ## 執行步驟
 
 1. 找到當前 Sprint 的 dev-plan：
-!`ls -t proposal/sprint*-dev-plan.md 2>/dev/null | head -1`
+   使用 Glob tool 搜尋 `proposal/sprint*-dev-plan.md`，取最新的檔案路徑。
 
 2. 讀取 dev-plan 找到第 10 節的 Gate 紀錄表：
-!`ls -t proposal/sprint*-dev-plan.md 2>/dev/null | head -1 | xargs cat 2>/dev/null | grep -A 20 "Gate 紀錄"`
+   使用 Read tool 讀取上述 dev-plan 完整內容，找到 `Gate 紀錄` 表格區段。
 
 3. 找到對應的 Gate 行（如 `| G0 |`），**更新該行**而非新增：
    - 如果該行已有資料（日期/決策非空），直接覆蓋

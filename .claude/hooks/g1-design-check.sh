@@ -19,15 +19,15 @@ else
   FILE_PATH=$(echo "$INPUT" | sed -n 's/.*"file_path"\s*:\s*"\([^"]*\)".*/\1/p' | head -1)
 fi
 
-# Only trigger for .vue files
-if ! echo "$FILE_PATH" | grep -qE '\.vue$'; then
-  log_hook "passed" "non-vue file skipped"
+# Only trigger for frontend component files
+if ! echo "$FILE_PATH" | grep -qE '\.(vue|tsx|jsx)$'; then
+  log_hook "passed" "non-component file skipped"
   exit 0
 fi
 
 FILENAME=$(basename "$FILE_PATH")
-# Extract page/component name: FooBar.vue → foo-bar, FooBarView.vue → foo-bar
-PAGE=$(echo "$FILENAME" | sed 's/\.vue$//' | sed 's/View$//' | sed 's/\([a-z]\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')
+# Extract page/component name: FooBar.vue / FooBar.tsx → foo-bar
+PAGE=$(echo "$FILENAME" | sed 's/\.\(vue\|tsx\|jsx\)$//' | sed 's/View$//' | sed 's/Screen$//' | sed 's/\([a-z]\)\([A-Z]\)/\1-\2/g' | tr '[:upper:]' '[:lower:]')
 
 # Check if mockup/design file exists
 MOCKUP_FOUND=""

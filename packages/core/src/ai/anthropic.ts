@@ -5,7 +5,8 @@
  * Uses claude-3-haiku for lightweight, cost-effective summaries.
  */
 
-import type { SummaryProvider, SummaryContext } from '../types.js';
+import type { SummaryContext } from '../types.js';
+import { BaseAnalysisProvider } from './base-analysis-provider.js';
 import { buildPrompt, AI_TIMEOUT_MS } from './utils.js';
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
@@ -13,10 +14,10 @@ const ANTHROPIC_MODEL = 'claude-3-haiku-20240307';
 const ANTHROPIC_VERSION = '2023-06-01';
 const MAX_TOKENS = 300;
 
-export class AnthropicProvider implements SummaryProvider {
+export class AnthropicProvider extends BaseAnalysisProvider {
   name = 'anthropic';
 
-  constructor(private apiKey?: string) {}
+  constructor(private apiKey?: string) { super(); }
 
   isConfigured(): boolean {
     return !!this.apiKey;

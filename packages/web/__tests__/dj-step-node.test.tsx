@@ -81,22 +81,22 @@ function makeNodeProps(
 // ---------------------------------------------------------------------------
 
 describe('DJStepNode — step number rendering', () => {
-  it('renders "Step 1" for stepIndex 0', () => {
+  it('renders "步驟 1" for stepIndex 0', () => {
     const props = makeNodeProps(0, makeStep(), 'unreached');
     const { container } = render(React.createElement(DJStepNode, props as any));
-    expect(container.textContent).toContain('Step 1');
+    expect(container.textContent).toContain('步驟 1');
   });
 
-  it('renders "Step 3" for stepIndex 2', () => {
+  it('renders "步驟 3" for stepIndex 2', () => {
     const props = makeNodeProps(2, makeStep(), 'unreached');
     const { container } = render(React.createElement(DJStepNode, props as any));
-    expect(container.textContent).toContain('Step 3');
+    expect(container.textContent).toContain('步驟 3');
   });
 
-  it('renders "Step 5" for stepIndex 4', () => {
+  it('renders "步驟 5" for stepIndex 4', () => {
     const props = makeNodeProps(4, makeStep(), 'active');
     const { container } = render(React.createElement(DJStepNode, props as any));
-    expect(container.textContent).toContain('Step 5');
+    expect(container.textContent).toContain('步驟 5');
   });
 });
 

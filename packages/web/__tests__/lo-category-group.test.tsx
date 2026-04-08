@@ -91,12 +91,12 @@ describe('LOCategoryGroup — category rendering', () => {
       makeNode('n5', 'formatDate', 'src/utils/date.ts'),
     ];
     const { container } = renderGroup(nodes);
-    // All 5 category labels should appear
-    expect(container.textContent).toContain('Routes / API');
-    expect(container.textContent).toContain('Middleware');
-    expect(container.textContent).toContain('Services');
-    expect(container.textContent).toContain('Models / DB');
-    expect(container.textContent).toContain('Utils / Tasks');
+    // All 5 category labels should appear (localized to Chinese in Sprint 13+)
+    expect(container.textContent).toContain('路線 / API');
+    expect(container.textContent).toContain('中間層');
+    expect(container.textContent).toContain('服務');
+    expect(container.textContent).toContain('模型 / 資料庫');
+    expect(container.textContent).toContain('工具 / 任務');
   });
 
   it('shows method count badge in category header', () => {

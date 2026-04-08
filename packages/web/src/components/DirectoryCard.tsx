@@ -1,5 +1,5 @@
 /**
- * CodeAtlas — DirectoryCard Component (Sprint 12)
+ * CodeAtlas — DirectoryCard Component (Sprint 12-15)
  *
  * Custom React Flow node for system-framework perspective.
  * Renders directory-level cards with type-specific colors,
@@ -19,6 +19,7 @@ import { memo, useState, type CSSProperties } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { NeonNodeData } from '../adapters/graph-adapter';
 import type { DirectoryType, DirectoryCategory } from '../types/graph';
+// AI analysis moved to SFDetailPanel (right side)
 
 // ---------------------------------------------------------------------------
 // Type-color map (from mockup SF_TYPE_COLOR)
@@ -85,11 +86,20 @@ const TYPE_ICONS: Record<DirectoryType, string> = {
 // Component
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// DirectoryCardInner
+// ---------------------------------------------------------------------------
+
 function DirectoryCardInner({ data, selected = false }: NodeProps) {
   const nodeData = data as unknown as NeonNodeData & {
     category?: DirectoryCategory;
     sublabel?: string;
     directoryType?: DirectoryType;
+    aiSummary?: string;
+    directoryRole?: string;
+    directoryPath?: string;
   };
   const [isHovered, setIsHovered] = useState(false);
 
@@ -104,7 +114,15 @@ function DirectoryCardInner({ data, selected = false }: NodeProps) {
 
   // Sprint 13: category accent color (5px left border)
   const category = nodeData.category as DirectoryCategory | undefined;
-  const categoryAccentColor = category ? CATEGORY_ACCENT_COLOR[category] : undefined;
+
+  // Sprint 15: enhance category from AI directoryRole if no category set
+  const resolvedCategory: DirectoryCategory | undefined = category ?? (
+    nodeData.directoryRole === '前端' ? 'frontend' :
+    nodeData.directoryRole === '路由層' || nodeData.directoryRole === '資料層' || nodeData.directoryRole === '服務層' ? 'backend' :
+    nodeData.directoryRole === '基礎設施' || nodeData.directoryRole === '設定' ? 'infra' :
+    undefined
+  );
+  const categoryAccentColor = resolvedCategory ? CATEGORY_ACCENT_COLOR[resolvedCategory] : undefined;
 
   // Sprint 13: sublabel (full path)
   const sublabel = nodeData.sublabel as string | undefined;
@@ -118,14 +136,18 @@ function DirectoryCardInner({ data, selected = false }: NodeProps) {
   // Sprint 13: selected state shows a blue glow border
   const isSelected = selected;
 
-  // Card height: taller when sublabel is present (add ~12px for sublabel row)
-  const cardHeight = sublabel ? 84 : 72;
+  // Card height: taller when sublabel or AI summary is present
+  const hasAiSummary = !!nodeData.aiSummary;
+  const cardHeight = sublabel
+    ? (hasAiSummary ? 96 : 84)
+    : (hasAiSummary ? 84 : 72);
 
-  // Card container — width 160px, height dynamic
+  // Outer wrapper — flex column, width 160px
+  // Card box has fixed height; AI button area sits below it
   const containerStyle: CSSProperties = {
     width: 160,
-    height: cardHeight,
-    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
     cursor: 'pointer',
     filter: isSelected
       ? 'drop-shadow(0 0 10px rgba(21,101,192,0.45))'
@@ -133,6 +155,14 @@ function DirectoryCardInner({ data, selected = false }: NodeProps) {
         ? 'drop-shadow(0 3px 8px rgba(21,101,192,0.2))'
         : 'drop-shadow(0 1px 3px rgba(0,0,0,0.08))',
     transition: 'filter 0.2s',
+  };
+
+  // Card box — fixed height, position relative for absolute children
+  const cardBoxStyle: CSSProperties = {
+    width: 160,
+    height: cardHeight,
+    position: 'relative',
+    flexShrink: 0,
   };
 
   // Card body rect
@@ -230,7 +260,9 @@ function DirectoryCardInner({ data, selected = false }: NodeProps) {
   };
 
   // Badge area: bottom section
-  const badgeTop = sublabel ? 52 : 40;
+  const badgeTop = sublabel
+    ? (hasAiSummary ? 64 : 52)
+    : (hasAiSummary ? 52 : 40);
   const badgeStyle: CSSProperties = {
     position: 'absolute',
     top: badgeTop,
@@ -271,34 +303,56 @@ function DirectoryCardInner({ data, selected = false }: NodeProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Card body rect with border and bg */}
-      <div style={cardBodyStyle} />
+      {/* Card box — fixed height section */}
+      <div style={cardBoxStyle}>
+        {/* Card body rect with border and bg */}
+        <div style={cardBodyStyle} />
 
-      {/* Sprint 13: Category left-border accent bar */}
-      {categoryBarStyle && <div style={categoryBarStyle} />}
+        {/* Sprint 13: Category left-border accent bar */}
+        {categoryBarStyle && <div style={categoryBarStyle} />}
 
-      {/* Top accent bar */}
-      <div style={accentBarStyle} />
+        {/* Top accent bar */}
+        <div style={accentBarStyle} />
 
-      {/* Content: dot + label (+ sublabel below) */}
-      <div style={contentStyle}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={dotStyle} title={icon} />
-          <span style={labelStyle}>{nodeData.label}</span>
-        </span>
-        {/* Sprint 13: sublabel (full path) */}
-        {sublabel && (
-          <div style={sublabelStyle} title={sublabel}>{sublabel}</div>
-        )}
+        {/* Content: dot + label (+ sublabel below) */}
+        <div style={contentStyle}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={dotStyle} title={icon} />
+            <span style={labelStyle}>{nodeData.label}</span>
+          </span>
+          {/* Sprint 13: sublabel (full path) */}
+          {sublabel && (
+            <div style={sublabelStyle} title={sublabel}>{sublabel}</div>
+          )}
+          {/* Sprint 15: AI summary */}
+          {nodeData.aiSummary && (
+            <div
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 9,
+                color: '#9e9e9e',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                marginTop: 2,
+                lineHeight: '12px',
+                paddingLeft: 14,
+              }}
+              title={nodeData.aiSummary}
+            >
+              {nodeData.aiSummary}
+            </div>
+          )}
+        </div>
+
+        {/* File count badge */}
+        <div style={badgeStyle}>
+          {fileCount} 個檔案
+        </div>
+
+        {/* SF-2: Directory icon — bottom-right corner */}
+        <span style={dirIconStyle} aria-hidden="true">📁</span>
       </div>
-
-      {/* File count badge */}
-      <div style={badgeStyle}>
-        {fileCount} 個檔案
-      </div>
-
-      {/* SF-2: Directory icon — bottom-right corner */}
-      <span style={dirIconStyle} aria-hidden="true">📁</span>
 
       {/* React Flow handles — hidden, required for edge connections */}
       <Handle type="target" position={Position.Top} style={handleStyle} />

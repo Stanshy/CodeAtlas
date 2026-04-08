@@ -28,12 +28,18 @@ if echo "$FILE_PATH" | grep -qE '(^|/)\.knowledge/'; then
   exit 0
 fi
 
-# Only trigger for architecture-critical directories:
-#   electron/services/  — 核心服務邏輯
-#   electron/ipc/       — IPC 通道定義
-#   electron/migrations/ — 資料庫 schema 變更
-#   electron/types/     — 共用型別定義
-if ! echo "$FILE_PATH" | grep -qE 'electron/(services|ipc|migrations|types)/'; then
+# Only trigger for architecture-critical directories (all project types):
+#   services/       — 業務邏輯服務層
+#   api/            — API 路由/呼叫層
+#   models/         — 資料模型
+#   migrations/     — 資料庫 schema 變更
+#   types/          — 共用型別定義
+#   ipc/            — IPC 通道定義（Electron）
+#   controllers/    — 控制器層（API Service）
+#   repositories/   — 資料存取層
+#   middleware/     — 中介層
+#   store/          — 狀態管理
+if ! echo "$FILE_PATH" | grep -qE '/(services|api|models|migrations|types|ipc|controllers|repositories|middleware|store)/'; then
   log_hook "passed" "non-critical path"
   exit 0
 fi
@@ -41,5 +47,5 @@ fi
 FILENAME=$(basename "$FILE_PATH")
 
 log_hook "warned" "architecture file changed"
-echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"📝 G4 文件同步提醒：你剛修改了 ${FILENAME}（架構關鍵路徑）。根據文件治理規則，此路徑的變更必須同步更新相關 .knowledge/ 文件（architecture.md、coding-standards.md 等）。請確認是否有需要更新的規範文件。\"}}"
+echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"📝 G4 文件同步提醒：你剛修改了 ${FILENAME}（架構關鍵路徑）。根據文件治理規則，此路徑的變更必須同步更新相關 .knowledge/ 文件（architecture.md、specs/ 等）。請確認是否有需要更新的規範文件。\"}}"
 exit 0

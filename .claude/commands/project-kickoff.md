@@ -1,7 +1,6 @@
 ---
 name: project-kickoff
 description: Initialize new project with CLAUDE.md, .knowledge/ structure, and company rules
-disable-model-invocation: true
 allowed-tools: Read, Write, Glob, Bash
 ---
 
@@ -26,14 +25,16 @@ PM 啟動新專案時使用，確保所有基礎結構就位。
    - 如已存在，提示確認是否覆蓋
 
 2. **部署 CLAUDE.md**
-   - 從對應模板生成（替換 {專案名稱} 佔位符）
-   - 模板位置：AgentHub `knowledge/company/project-templates/{type}/CLAUDE.md.template`
+   - 從對應模板生成（替換 `{專案名稱}` 佔位符）
+   - 模板位置：AgentHub `.knowledge/company/project-templates/{type}/CLAUDE.md.template`
 
 3. **建立 .knowledge/ 結構**
    - 建立 `.knowledge/` 目錄
    - 複製 `architecture.md`（從模板目錄）
    - 建立空的 `project-overview.md`（標題 + 佔位符）
    - 建立空的 `postmortem-log.md`（標題 + 空表格）
+   - 從模板部署 `file-index.md`（替換 `{專案名稱}`、填入今日日期）
+     - 模板位置：AgentHub `.knowledge/company/project-templates/{type}/file-index.md.template`
 
 4. **部署共用規則**
    - 複製 `company-rules.md` → `.knowledge/company-rules.md`

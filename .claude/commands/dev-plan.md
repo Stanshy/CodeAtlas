@@ -1,7 +1,6 @@
 ---
 name: dev-plan
 description: Generate a development plan with task breakdown and section 10 tracking tables
-disable-model-invocation: true
 allowed-tools: Read, Write, Glob, Grep
 ---
 
@@ -24,7 +23,7 @@ G0 通過後，由 L1 產出標準化開發計畫書。
 !`cat proposal/sprint$0-proposal.md 2>/dev/null || echo "找不到 Sprint $0 提案書"`
 
 2. 讀取開發計畫書範本：
-!`cat .knowledge/company/templates/dev-plan.md.template 2>/dev/null || echo "範本未找到"`
+!`cat .knowledge/templates/dev-plan.md.template 2>/dev/null || echo "範本未找到"`
 
 3. **建立規範文件**（若不存在則建立，已存在則跳過）：
 

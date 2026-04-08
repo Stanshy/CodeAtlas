@@ -12,7 +12,7 @@
  */
 
 import type { AstNode } from './ast-provider.js';
-import type { FunctionParam } from '../types.js';
+import type { FunctionParam, SupportedLanguage } from '../types.js';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -50,7 +50,7 @@ export interface FunctionExtractionResult {
 
 /** Returns true when the tree looks like it came from tree-sitter (snake_case). */
 function isTreeSitterAst(root: AstNode): boolean {
-  return root.type === 'program' || root.type === 'source_file';
+  return root.type === 'program' || root.type === 'source_file' || root.type === 'module';
 }
 
 // ---------------------------------------------------------------------------
@@ -378,6 +378,459 @@ function walkTreeSitterTopLevel(
 }
 
 // ---------------------------------------------------------------------------
+// Python dialect extraction
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract decorator names from a `decorated_definition` node.
+ * Decorator text is like "@property" or "@staticmethod"; we extract
+ * only the identifier (or attribute) part.
+ */
+function extractPythonDecorators(decoratedNode: AstNode): string[] {
+  const decorators: string[] = [];
+  for (const child of decoratedNode.children) {
+    if (child.type === 'decorator') {
+      const ident = findChild(child, 'identifier');
+      if (ident) decorators.push(ident.text);
+      const attr = findChild(child, 'attribute');
+      if (attr) decorators.push(attr.text);
+    }
+  }
+  return decorators;
+}
+
+/**
+ * Extract FunctionParam list from a Python `parameters` node.
+ * Handles plain identifiers, typed_parameter, default_parameter,
+ * typed_default_parameter, *args (list_splat_pattern), and **kwargs
+ * (dictionary_splat_pattern).
+ */
+function extractPythonParameters(paramsNode: AstNode): FunctionParam[] {
+  const params: FunctionParam[] = [];
+  for (const child of paramsNode.children) {
+    if (child.type === 'identifier') {
+      params.push({ name: child.text });
+    } else if (child.type === 'typed_parameter') {
+      const ident = findChild(child, 'identifier');
+      const typeNode = findChild(child, 'type');
+      if (ident) {
+        const param: FunctionParam = { name: ident.text };
+        if (typeNode) param.type = typeNode.text;
+        params.push(param);
+      }
+    } else if (child.type === 'default_parameter') {
+      const ident = findChild(child, 'identifier');
+      if (ident) {
+        params.push({ name: ident.text, isOptional: true });
+      }
+    } else if (child.type === 'typed_default_parameter') {
+      const ident = findChild(child, 'identifier');
+      const typeNode = findChild(child, 'type');
+      if (ident) {
+        const param: FunctionParam = { name: ident.text, isOptional: true };
+        if (typeNode) param.type = typeNode.text;
+        params.push(param);
+      }
+    } else if (child.type === 'list_splat_pattern') {
+      // *args
+      const ident = findChild(child, 'identifier');
+      if (ident) {
+        params.push({ name: ident.text, isRest: true });
+      }
+    } else if (child.type === 'dictionary_splat_pattern') {
+      // **kwargs
+      const ident = findChild(child, 'identifier');
+      if (ident) {
+        params.push({ name: ident.text, isRest: true });
+      }
+    }
+  }
+  return params;
+}
+
+/**
+ * Extract a ParsedFunction from a Python `function_definition` node.
+ * Optionally receives decorator names collected by the caller.
+ */
+function extractPythonFunction(
+  node: AstNode,
+  decorators?: string[],
+): ParsedFunction | null {
+  const nameNode = findChild(node, 'identifier');
+  if (!nameNode) return null;
+
+  const isAsync = node.children.some((c) => c.text === 'async');
+  const paramsNode = findChild(node, 'parameters');
+  const parameters = paramsNode ? extractPythonParameters(paramsNode) : [];
+
+  // Determine if this is a method (first param is 'self' or 'cls')
+  const isMethod =
+    parameters.length > 0 &&
+    (parameters[0].name === 'self' || parameters[0].name === 'cls');
+
+  // Return type annotation: look for a 'type' child after `parameters`
+  let returnType: string | undefined;
+  const returnTypeNode = findChild(node, 'type');
+  if (returnTypeNode) {
+    returnType = returnTypeNode.text;
+  }
+
+  // Determine kind
+  let kind: ParsedFunction['kind'] = 'function';
+  if (isMethod) kind = 'method';
+  if (
+    decorators?.includes('staticmethod') ||
+    decorators?.includes('classmethod')
+  ) {
+    kind = 'method';
+  }
+
+  return {
+    name: nameNode.text,
+    kind,
+    // Remove implicit self/cls parameter — it is not part of the public API
+    parameters: isMethod ? parameters.slice(1) : parameters,
+    returnType,
+    startLine: node.startLine,
+    endLine: node.endLine,
+    // Python has no export keyword; all top-level definitions are public
+    isExported: true,
+    isAsync,
+    isGenerator: false,
+  };
+}
+
+/**
+ * Extract a ParsedClass from a Python `class_definition` node.
+ * Optionally receives decorator names collected by the caller.
+ */
+function extractPythonClass(
+  node: AstNode,
+  decorators?: string[],
+): ParsedClass | null {
+  void decorators; // reserved for future use (e.g. @dataclass)
+
+  const nameNode = findChild(node, 'identifier');
+  if (!nameNode) return null;
+
+  const className = nameNode.text;
+  const methods: ParsedFunction[] = [];
+
+  const body = findChild(node, 'block');
+  if (body) {
+    for (const child of body.children) {
+      if (child.type === 'function_definition') {
+        const method = extractPythonFunction(child);
+        if (method) {
+          method.className = className;
+          methods.push(method);
+        }
+      } else if (child.type === 'decorated_definition') {
+        const inner = findChild(child, 'function_definition');
+        if (inner) {
+          const method = extractPythonFunction(inner, extractPythonDecorators(child));
+          if (method) {
+            method.className = className;
+            methods.push(method);
+          }
+        }
+      }
+    }
+  }
+
+  return {
+    name: className,
+    startLine: node.startLine,
+    endLine: node.endLine,
+    isExported: true,
+    methods,
+  };
+}
+
+/**
+ * Walk the top-level statements of a Python module AST, extracting
+ * functions and classes (including decorated definitions).
+ */
+function walkPythonTopLevel(
+  children: AstNode[],
+  functions: ParsedFunction[],
+  classes: ParsedClass[],
+): void {
+  for (const node of children) {
+    if (node.type === 'function_definition') {
+      const fn = extractPythonFunction(node);
+      if (fn) functions.push(fn);
+      continue;
+    }
+
+    if (node.type === 'class_definition') {
+      const cls = extractPythonClass(node);
+      if (cls) classes.push(cls);
+      continue;
+    }
+
+    if (node.type === 'decorated_definition') {
+      // decorated_definition wraps a function_definition or class_definition
+      const inner = findChild(node, 'function_definition', 'class_definition');
+      if (inner) {
+        if (inner.type === 'function_definition') {
+          const fn = extractPythonFunction(inner, extractPythonDecorators(node));
+          if (fn) functions.push(fn);
+        } else {
+          const cls = extractPythonClass(inner, extractPythonDecorators(node));
+          if (cls) classes.push(cls);
+        }
+      }
+      continue;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Java dialect extraction
+// ---------------------------------------------------------------------------
+
+/**
+ * Collect modifier keyword texts (public, private, protected, static, abstract,
+ * final, synchronized) from a `modifiers` child node, skipping annotations.
+ */
+function extractJavaModifiers(node: AstNode): string[] {
+  const modifiers: string[] = [];
+  const modsNode = findChild(node, 'modifiers');
+  if (modsNode) {
+    for (const child of modsNode.children) {
+      if (child.type === 'marker_annotation' || child.type === 'annotation') {
+        // Skip @Override, @SuppressWarnings, etc.
+        continue;
+      }
+      modifiers.push(child.text);
+    }
+  }
+  return modifiers;
+}
+
+/**
+ * Extract FunctionParam list from a Java `formal_parameters` node.
+ * Handles ordinary `formal_parameter` and variadic `spread_parameter`.
+ */
+function extractJavaParameters(paramsNode: AstNode): FunctionParam[] {
+  const params: FunctionParam[] = [];
+
+  for (const child of paramsNode.children) {
+    if (child.type === 'formal_parameter') {
+      // Children: modifiers? type_identifier identifier
+      // Find all identifier-type children; the LAST one is the parameter name
+      const idents = child.children.filter((c) => c.type === 'identifier');
+      const typeNodes = child.children.filter(
+        (c) =>
+          c.type === 'type_identifier' ||
+          c.type === 'integral_type' ||
+          c.type === 'floating_point_type' ||
+          c.type === 'boolean_type' ||
+          c.type === 'void_type' ||
+          c.type === 'generic_type' ||
+          c.type === 'array_type' ||
+          c.type === 'scoped_type_identifier',
+      );
+
+      const name = idents.length > 0 ? idents[idents.length - 1].text : undefined;
+      const typeStr = typeNodes.length > 0 ? typeNodes[0].text : undefined;
+      const isVarargs = child.children.some((c) => c.text === '...');
+
+      if (name) {
+        const param: FunctionParam = { name };
+        if (typeStr !== undefined) param.type = typeStr;
+        if (isVarargs) param.isRest = true;
+        params.push(param);
+      }
+    } else if (child.type === 'spread_parameter') {
+      // int... args  (tree-sitter uses spread_parameter for varargs in some grammars)
+      const ident = findChild(child, 'identifier');
+      const typeNode = findChild(child, 'type_identifier', 'integral_type');
+      if (ident) {
+        const param: FunctionParam = { name: ident.text, isRest: true };
+        if (typeNode !== undefined) param.type = typeNode.text;
+        params.push(param);
+      }
+    }
+  }
+
+  return params;
+}
+
+/**
+ * Extract the return type from a Java `method_declaration` node.
+ * In Java the return type appears BEFORE the method name identifier, so we
+ * scan direct children and stop as soon as we see `identifier` or
+ * `formal_parameters` (the method name / parameter list boundary).
+ */
+function extractJavaReturnType(node: AstNode): string | undefined {
+  for (const child of node.children) {
+    if (
+      child.type === 'type_identifier' ||
+      child.type === 'integral_type' ||
+      child.type === 'floating_point_type' ||
+      child.type === 'boolean_type' ||
+      child.type === 'void_type' ||
+      child.type === 'generic_type' ||
+      child.type === 'array_type' ||
+      child.type === 'scoped_type_identifier'
+    ) {
+      return child.text;
+    }
+    // Once we reach the method name or parameter list, stop looking
+    if (child.type === 'identifier' || child.type === 'formal_parameters') break;
+  }
+  return undefined;
+}
+
+/**
+ * Extract a ParsedFunction from a Java `method_declaration` or
+ * `constructor_declaration` node.
+ */
+function extractJavaMethod(
+  node: AstNode,
+  className?: string,
+): ParsedFunction | null {
+  const nameNode = findChild(node, 'identifier');
+  if (!nameNode) return null;
+
+  const modifiers = extractJavaModifiers(node);
+
+  const paramsNode = findChild(node, 'formal_parameters');
+  const parameters = paramsNode ? extractJavaParameters(paramsNode) : [];
+
+  const isConstructor = node.type === 'constructor_declaration';
+  const kind: ParsedFunction['kind'] = isConstructor ? 'constructor' : 'method';
+  const returnType = isConstructor ? undefined : extractJavaReturnType(node);
+
+  const fn: ParsedFunction = {
+    name: nameNode.text,
+    kind,
+    parameters,
+    returnType,
+    startLine: node.startLine,
+    endLine: node.endLine,
+    isExported: modifiers.includes('public'),
+    isAsync: false,
+    isGenerator: false,
+  };
+  if (className !== undefined) fn.className = className;
+  return fn;
+}
+
+/** Extract a ParsedClass from a Java `class_declaration` node. */
+function extractJavaClass(node: AstNode): ParsedClass | null {
+  const nameNode = findChild(node, 'identifier');
+  if (!nameNode) return null;
+
+  const className = nameNode.text;
+  const modifiers = extractJavaModifiers(node);
+  const methods: ParsedFunction[] = [];
+
+  const body = findChild(node, 'class_body');
+  if (body) {
+    for (const child of body.children) {
+      if (child.type === 'method_declaration' || child.type === 'constructor_declaration') {
+        const method = extractJavaMethod(child, className);
+        if (method) methods.push(method);
+      }
+    }
+  }
+
+  return {
+    name: className,
+    startLine: node.startLine,
+    endLine: node.endLine,
+    isExported: modifiers.includes('public'),
+    methods,
+  };
+}
+
+/** Extract a ParsedClass from a Java `interface_declaration` node. */
+function extractJavaInterface(node: AstNode): ParsedClass | null {
+  const nameNode = findChild(node, 'identifier');
+  if (!nameNode) return null;
+
+  const className = nameNode.text;
+  const modifiers = extractJavaModifiers(node);
+  const methods: ParsedFunction[] = [];
+
+  const body = findChild(node, 'interface_body');
+  if (body) {
+    for (const child of body.children) {
+      if (child.type === 'method_declaration') {
+        const method = extractJavaMethod(child, className);
+        if (method) methods.push(method);
+      }
+    }
+  }
+
+  return {
+    name: className,
+    startLine: node.startLine,
+    endLine: node.endLine,
+    isExported: modifiers.includes('public'),
+    methods,
+  };
+}
+
+/** Extract a ParsedClass from a Java `enum_declaration` node. */
+function extractJavaEnum(node: AstNode): ParsedClass | null {
+  const nameNode = findChild(node, 'identifier');
+  if (!nameNode) return null;
+
+  const modifiers = extractJavaModifiers(node);
+
+  return {
+    name: nameNode.text,
+    startLine: node.startLine,
+    endLine: node.endLine,
+    isExported: modifiers.includes('public'),
+    methods: [],
+  };
+}
+
+/**
+ * Walk the top-level statements of a Java `program` AST, extracting
+ * class, interface, and enum declarations (and any rare top-level methods).
+ */
+function walkJavaTopLevel(
+  children: AstNode[],
+  functions: ParsedFunction[],
+  classes: ParsedClass[],
+): void {
+  for (const node of children) {
+    if (node.type === 'class_declaration') {
+      const cls = extractJavaClass(node);
+      if (cls) classes.push(cls);
+      continue;
+    }
+
+    if (node.type === 'interface_declaration') {
+      const iface = extractJavaInterface(node);
+      if (iface) classes.push(iface);
+      continue;
+    }
+
+    if (node.type === 'enum_declaration') {
+      const enm = extractJavaEnum(node);
+      if (enm) classes.push(enm);
+      continue;
+    }
+
+    if (node.type === 'method_declaration') {
+      // Top-level methods are rare in Java but possible in some grammar targets
+      const fn = extractJavaMethod(node);
+      if (fn) functions.push(fn);
+      continue;
+    }
+
+    // Skip package_declaration, import_declaration, and other non-definition nodes
+  }
+}
+
+// ---------------------------------------------------------------------------
 // TypeScript Compiler API dialect extraction
 // ---------------------------------------------------------------------------
 
@@ -613,14 +1066,24 @@ function walkTsCompilerTopLevel(
 /**
  * Extract all top-level functions and classes from an AstNode tree.
  *
- * @param root  Root AstNode from any AstProvider (tree-sitter or TS Compiler)
+ * @param root      Root AstNode from any AstProvider (tree-sitter or TS Compiler)
+ * @param language  Optional language hint; selects the correct dialect walker
  */
-export function extractFunctions(root: AstNode): FunctionExtractionResult {
+export function extractFunctions(
+  root: AstNode,
+  language?: SupportedLanguage,
+): FunctionExtractionResult {
   const functions: ParsedFunction[] = [];
   const classes: ParsedClass[] = [];
 
   if (isTreeSitterAst(root)) {
-    walkTreeSitterTopLevel(root.children, functions, classes);
+    if (language === 'python') {
+      walkPythonTopLevel(root.children, functions, classes);
+    } else if (language === 'java') {
+      walkJavaTopLevel(root.children, functions, classes);
+    } else {
+      walkTreeSitterTopLevel(root.children, functions, classes);
+    }
   } else {
     // TS Compiler API root type is "SourceFile"
     walkTsCompilerTopLevel(root.children, functions, classes);

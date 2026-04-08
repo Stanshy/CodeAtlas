@@ -1,7 +1,6 @@
 ---
 name: pm-review
 description: PM reviews gate submission with 6-item checklist and recommendation
-disable-model-invocation: true
 allowed-tools: Read, Edit, Glob, Grep
 ---
 
@@ -31,10 +30,10 @@ PM 審核 L1 提交的 Gate 回報，執行 6 項 checklist。
 ## 執行步驟
 
 1. 讀取當前 dev-plan：
-!`ls -t proposal/sprint*-dev-plan.md 2>/dev/null | head -1 | xargs cat 2>/dev/null || echo "找不到 dev-plan"`
+   使用 Glob tool 搜尋 `proposal/sprint*-dev-plan.md`，取最新的，用 Read tool 讀取完整內容。
 
 2. 讀取提案書：
-!`ls -t proposal/sprint*-proposal.md 2>/dev/null | head -1 | xargs cat 2>/dev/null || echo "找不到提案書"`
+   使用 Glob tool 搜尋 `proposal/sprint*-proposal.md`，取最新的，用 Read tool 讀取完整內容。
 
 3. 逐項執行 6 項 checklist
 4. 產出 PM 建議（供老闆決策時參考，不直接寫入 Gate 紀錄）：

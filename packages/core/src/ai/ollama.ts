@@ -6,24 +6,26 @@
  * Sprint 6 — T2: OllamaProvider
  */
 
-import type { SummaryProvider, SummaryContext } from '../types.js';
+import type { SummaryContext } from '../types.js';
+import { BaseAnalysisProvider } from './base-analysis-provider.js';
 import { buildPrompt } from './utils.js';
 
 const OLLAMA_DEFAULT_BASE_URL = 'http://localhost:11434';
-const OLLAMA_DEFAULT_MODEL = 'codellama';
-const OLLAMA_TIMEOUT_MS = 30_000; // 30s — longer than cloud providers for local inference
+const OLLAMA_DEFAULT_MODEL = 'gemma3:4b';
+const OLLAMA_TIMEOUT_MS = 300_000; // 300s — local 8B models need generous time for analysis prompts
 
 export interface OllamaProviderOptions {
   baseUrl?: string;
   model?: string;
 }
 
-export class OllamaProvider implements SummaryProvider {
+export class OllamaProvider extends BaseAnalysisProvider {
   name = 'ollama';
   private baseUrl: string;
   private model: string;
 
   constructor(options?: OllamaProviderOptions) {
+    super();
     this.baseUrl = options?.baseUrl ?? OLLAMA_DEFAULT_BASE_URL;
     this.model = options?.model ?? OLLAMA_DEFAULT_MODEL;
   }
@@ -38,10 +40,21 @@ export class OllamaProvider implements SummaryProvider {
     return this.model;
   }
 
+  /**
+   * Send a raw prompt directly — no buildPrompt wrapping.
+   * Used by BaseAnalysisProvider for analyzeMethodBatch/explainChain.
+   */
+  async rawPrompt(prompt: string): Promise<string> {
+    return this.callOllama(prompt);
+  }
+
   async summarize(code: string, context: SummaryContext): Promise<string> {
     const { system, user } = buildPrompt(code, context);
     const prompt = `${system}\n\n${user}`;
+    return this.callOllama(prompt);
+  }
 
+  private async callOllama(prompt: string): Promise<string> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT_MS);
 

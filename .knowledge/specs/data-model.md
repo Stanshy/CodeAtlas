@@ -1,6 +1,6 @@
 # CodeAtlas 資料模型
 
-> 版本: v6.0 | Sprint 13 | 最後更新: 2026-04-02
+> 版本: v9.0 | Sprint 16 | 最後更新: 2026-04-07
 
 ## 概述
 
@@ -36,6 +36,86 @@ interface NodeMetadata {
 - `role` 為 optional 欄位，不破壞任何現有消費端
 - 舊版前端讀不到 role 等同不策展，全部顯示
 - undefined role 在 web 端當作 `infrastructure` 處理
+
+## Sprint 14 擴充 — MethodRole 9 分類 + AI Contract
+
+### MethodRole 型別
+
+```typescript
+// 9 種方法角色分類（zod enum）
+export const MethodRoleEnum = z.enum([
+  'entrypoint',        // 路由處理器、中間件入口
+  'business_core',     // 核心業務邏輯
+  'domain_rule',       // 業務規則驗證（計算、判斷）
+  'orchestration',     // 流程編排（呼叫多個服務）
+  'io_adapter',        // DB/API/檔案 I/O
+  'validation',        // 輸入驗證
+  'infra',             // 框架設定、中間件註冊
+  'utility',           // 工具函式（格式化、轉換）
+  'framework_glue',    // 框架膠水程式碼（ORM builder、query chain）
+]);
+```
+
+### NodeMetadata AI 擴充
+
+```typescript
+interface NodeMetadata {
+  // ...既有欄位...
+  methodRole?: string;        // MethodRole enum 值（Sprint 14）
+  roleConfidence?: number;    // 信心度 0-1（Sprint 14）
+  aiSummary?: string;         // AI 一句話摘要（Sprint 14）
+}
+```
+
+### AI Contract Schemas（zod validated）
+
+| Schema | 用途 | 欄位 |
+|--------|------|------|
+| MethodSummarySchema | 方法摘要 | id, role, confidence, oneLineSummary, businessRelevance?, evidence? |
+| MethodRoleClassificationSchema | 角色分類 | id, role, confidence, sourceSignals? |
+| ChainExplanationSchema | 呼叫鏈解釋 | chainId, overallPurpose, steps[{stepIndex, methodId, description}] |
+| BatchMethodSummarySchema | 批次摘要 | methods[] |
+| DirectorySummarySchema | 目錄摘要（Sprint 15） | directoryPath, role, oneLineSummary(max30), keyResponsibilities?, confidence |
+| EndpointDescriptionSchema | 端點描述（Sprint 15） | endpointId, method, path, chineseDescription(max20), purpose, confidence |
+| StepDetailSchema | 步驟詳情（Sprint 15） | stepIndex, methodId, description(max30), input, output, transform |
+
+### ChainStep 擴充（Sprint 15）
+
+```typescript
+export interface ChainStep {
+  name: string;
+  description?: string;
+  method: string;
+  className?: string;
+  fileId: string;
+  input?: string;
+  output?: string;
+  transform?: string;
+  role?: string;           // Sprint 15: MethodRole from rule engine
+  roleConfidence?: number; // Sprint 15: Classification confidence 0-1
+}
+```
+
+### AIAnalysisProvider 介面
+
+```typescript
+interface AIAnalysisProvider extends SummaryProvider {
+  analyzeMethodBatch(methods: MethodContext[], budget: PromptBudget): Promise<BatchMethodSummary>;
+  explainChain(chain: ChainContext, budget: PromptBudget): Promise<ChainExplanation>;
+  supportsAnalysis(): boolean;
+}
+```
+
+### Provider 層級
+
+| Provider | 類型 | 預設模型 |
+|----------|------|---------|
+| ClaudeCodeProvider | 本地 CLI | claude (已安裝) |
+| GeminiProvider | 雲端 API | gemini-2.0-flash |
+| OllamaProvider | 本地推論 | gemma3:4b |
+| OpenAIProvider | 雲端 API | gpt-4o-mini |
+| AnthropicProvider | 雲端 API | claude-3-haiku |
+| DisabledProvider | 停用 | — |
 
 ## 節點類型（Node Types）
 
@@ -462,3 +542,69 @@ export interface DirectoryNode {
 - `endpointGraph` 為 optional 欄位，舊版前端讀不到不影響
 - DirectoryNode 新增欄位（sublabel, category, autoExpand）均為 optional
 - 既有 Graph JSON schema 不變
+
+## Sprint 16 擴充 — AI 快取資料模型
+
+### AICacheEntry
+
+```typescript
+interface AICacheEntry {
+  /** Cache key = `${scope}:${targetId}:${provider}:${promptVersion}` */
+  key: string;
+  /** md5 hash of source content for staleness check */
+  contentHash: string;
+  /** AI provider that generated this result */
+  provider: string;
+  /** Prompt version used (e.g. 'v16.0') */
+  promptVersion: string;
+  /** The cached AI result (JSON-serializable) */
+  result: unknown;
+  /** ISO timestamp when this entry was created */
+  createdAt: string;
+}
+```
+
+### Cache Key 格式
+
+| Scope | Key 格式 | result 型別 |
+|-------|---------|------------|
+| method | `method:{nodeId}:{provider}:{promptVersion}` | `string` (oneLineSummary) |
+| directory | `directory:{dirPath}:{provider}:{promptVersion}` | `DirectorySummary` |
+| endpoint-desc | `endpoint-desc:{epId}:{provider}:{promptVersion}` | `string` (chineseDescription) |
+| endpoint-steps | `endpoint-steps:{epId}:{provider}:{promptVersion}` | `StepDetail[]` |
+
+### 失效規則
+
+- contentHash 變更 → stale（需重新分析）
+- promptVersion 變更 → 強制失效
+- provider 變更 → 不失效（結果仍可用）
+
+### 磁碟格式
+
+```json
+{
+  "version": 1,
+  "entries": [ AICacheEntry, ... ]
+}
+```
+
+儲存路徑：`.codeatlas/cache/ai-results.json`，5MB LRU eviction。
+
+### AIJob
+
+```typescript
+type AIJobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cached' | 'canceled';
+type AIJobScope = 'directory' | 'method' | 'method-group' | 'endpoint' | 'all' | 'core';
+
+interface AIJob {
+  jobId: string;
+  scope: AIJobScope;
+  target?: string;
+  status: AIJobStatus;
+  createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  error?: string;
+  force: boolean;
+}
+```

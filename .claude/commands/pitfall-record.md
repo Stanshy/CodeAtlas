@@ -1,7 +1,6 @@
 ---
 name: pitfall-record
 description: Record a pitfall or lesson learned in the postmortem log
-disable-model-invocation: true
 allowed-tools: Read, Edit, Glob
 ---
 

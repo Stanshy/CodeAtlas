@@ -1,7 +1,6 @@
 ---
 name: task-dispatch
 description: Boss dispatches tasks — auto-create .tasks/ files and record in dev-plan
-disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 

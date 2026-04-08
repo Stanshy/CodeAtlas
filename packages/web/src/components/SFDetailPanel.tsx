@@ -1,5 +1,5 @@
 /**
- * CodeAtlas — SFDetailPanel Component (Sprint 13)
+ * CodeAtlas — SFDetailPanel Component (Sprint 13-15)
  *
  * 300px-wide right-side panel for the System Framework perspective.
  * Shown when a directory card is selected (click-select).
@@ -12,11 +12,14 @@
  *
  * Design: white-paper theme (#fafafa background), consistent with Sprint 12.
  *
- * Sprint 13 — T4.
+ * Sprint 13 — T4. Sprint 15 — T6: AI summaries + MethodRole badges.
  */
 
-import { useState, useMemo, type CSSProperties } from 'react';
+import { useState, useMemo, useCallback, type CSSProperties } from 'react';
 import type { DirectoryGraph, GraphNode, GraphEdge } from '../types/graph';
+import { fetchFunctionNodes } from '../api/graph';
+import { useAIAnalysis } from '../hooks/useAIAnalysis';
+import { AIResultBlock } from './AIResultBlock';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -43,18 +46,97 @@ function estimateLines(fileCount: number): string {
 }
 
 // ---------------------------------------------------------------------------
+// Sprint 15: MethodRole display helpers (matching LODetailPanel pattern)
+// ---------------------------------------------------------------------------
+
+function getRoleLabel(role: string): string {
+  const labels: Record<string, string> = {
+    entrypoint: '入口',
+    business_core: '業務',
+    domain_rule: '規則',
+    orchestration: '編排',
+    io_adapter: 'I/O',
+    validation: '驗證',
+    infra: '基礎',
+    utility: '工具',
+    framework_glue: '框架',
+  };
+  return labels[role] ?? role;
+}
+
+function getRoleBadgeBg(role: string): string {
+  const colors: Record<string, string> = {
+    entrypoint: '#e3f2fd',
+    business_core: '#f3e5f5',
+    domain_rule: '#fff3e0',
+    orchestration: '#e8f5e9',
+    io_adapter: '#e0f2f1',
+    validation: '#fce4ec',
+    infra: '#eceff1',
+    utility: '#f5f5f5',
+    framework_glue: '#efebe9',
+  };
+  return colors[role] ?? '#f5f5f5';
+}
+
+function getRoleBadgeColor(role: string): string {
+  const colors: Record<string, string> = {
+    entrypoint: '#1565c0',
+    business_core: '#7b1fa2',
+    domain_rule: '#e65100',
+    orchestration: '#2e7d32',
+    io_adapter: '#00695c',
+    validation: '#c62828',
+    infra: '#546e7a',
+    utility: '#757575',
+    framework_glue: '#5d4037',
+  };
+  return colors[role] ?? '#757575';
+}
+
+// ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
 
 interface FileRowProps {
   filePath: string;
+  fileId: string;
   functions: GraphNode[];
 }
 
-function FileRow({ filePath, functions }: FileRowProps) {
+function FileRow({ filePath, fileId, functions }: FileRowProps) {
   const [expanded, setExpanded] = useState(false);
+  const [fetchedFns, setFetchedFns] = useState<GraphNode[] | null>(null);
+  const [loading, setLoading] = useState(false);
   const fileName = filePath.split('/').pop() ?? filePath;
-  const hasFunctions = functions.length > 0;
+
+  // Use pre-loaded functions if available, otherwise fetch on expand
+  const displayFunctions = fetchedFns ?? functions;
+  const hasFunctions = functions.length > 0 || true; // Always allow expand to try fetching
+
+  const handleExpand = useCallback(async () => {
+    if (expanded) {
+      setExpanded(false);
+      return;
+    }
+    setExpanded(true);
+    // If no pre-loaded functions, try fetching from API
+    if (functions.length === 0 && !fetchedFns) {
+      setLoading(true);
+      try {
+        const result = await fetchFunctionNodes(fileId);
+        if (result.ok && result.data.nodes.length > 0) {
+          setFetchedFns(result.data.nodes as unknown as GraphNode[]);
+        } else {
+          setFetchedFns([]);
+        }
+      } catch {
+        setFetchedFns([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+  }, [expanded, functions.length, fetchedFns, fileId]);
 
   const rowStyle: CSSProperties = {
     display: 'flex',
@@ -98,42 +180,97 @@ function FileRow({ filePath, functions }: FileRowProps) {
     <div>
       <div
         style={rowStyle}
-        onClick={() => hasFunctions && setExpanded((v) => !v)}
-        role={hasFunctions ? 'button' : undefined}
-        tabIndex={hasFunctions ? 0 : undefined}
+        onClick={handleExpand}
+        role="button"
+        tabIndex={0}
         onKeyDown={(e) => {
-          if (hasFunctions && (e.key === 'Enter' || e.key === ' ')) {
+          if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            setExpanded((v) => !v);
+            handleExpand();
           }
         }}
-        aria-expanded={hasFunctions ? expanded : undefined}
+        aria-expanded={expanded}
       >
         <span style={toggleStyle}>▶</span>
         <span style={fileNameStyle} title={filePath}>{fileName}</span>
-        {hasFunctions && (
+        {functions.length > 0 && (
           <span style={countStyle}>{functions.length} fn{functions.length !== 1 ? 's' : ''}</span>
         )}
       </div>
-      {expanded && hasFunctions && (
+      {expanded && (
         <div style={{ paddingLeft: 20, borderLeft: '1px solid #e0e0e0', marginLeft: 7 }}>
-          {functions.map((fn) => (
-            <div
-              key={fn.id}
-              style={{
-                padding: '2px 0 2px 8px',
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 10,
-                color: '#424242',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-              title={fn.label}
-            >
-              {fn.label}
+          {loading && (
+            <div style={{ padding: '4px 8px', fontSize: 10, color: '#9e9e9e', fontStyle: 'italic' }}>
+              載入中...
             </div>
-          ))}
+          )}
+          {!loading && displayFunctions.length === 0 && (
+            <div style={{ padding: '4px 8px', fontSize: 10, color: '#bdbdbd', fontStyle: 'italic' }}>
+              無函式資料
+            </div>
+          )}
+          {!loading && displayFunctions.map((fn) => {
+            const methodRole = fn.metadata?.methodRole as string | undefined;
+            const aiSummary = fn.metadata?.aiSummary as string | undefined;
+            return (
+              <div
+                key={fn.id}
+                style={{
+                  padding: '3px 0 3px 8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span
+                    style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 10,
+                      color: '#424242',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      flex: 1,
+                    }}
+                    title={fn.label}
+                  >
+                    {fn.label}()
+                  </span>
+                  {methodRole && (
+                    <span
+                      style={{
+                        fontSize: 8,
+                        fontWeight: 600,
+                        padding: '1px 4px',
+                        borderRadius: 3,
+                        background: getRoleBadgeBg(methodRole),
+                        color: getRoleBadgeColor(methodRole),
+                        flexShrink: 0,
+                        fontFamily: "'Inter', sans-serif",
+                      }}
+                    >
+                      {getRoleLabel(methodRole)}
+                    </span>
+                  )}
+                </div>
+                {aiSummary && (
+                  <div
+                    style={{
+                      fontSize: 9,
+                      color: '#9e9e9e',
+                      fontFamily: "'Inter', sans-serif",
+                      paddingLeft: 0,
+                      lineHeight: 1.3,
+                    }}
+                    title={aiSummary}
+                  >
+                    {aiSummary}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -377,6 +514,7 @@ export function SFDetailPanel({ selectedNodeId, directoryGraph, graphNodes, grap
               <FileRow
                 key={file.id}
                 filePath={file.filePath}
+                fileId={file.id}
                 functions={functionsByFileId.get(file.id) ?? []}
               />
             ))}
@@ -421,6 +559,113 @@ export function SFDetailPanel({ selectedNodeId, directoryGraph, graphNodes, grap
           </div>
         )}
       </div>
+
+      {/* AI Analysis section — bottom of detail panel */}
+      <SFAISection directoryPath={selectedNodeId} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SF AI Analysis section — button + result at bottom of detail panel
+// ---------------------------------------------------------------------------
+
+function SFAISection({ directoryPath }: { directoryPath: string }) {
+  const { status, error, job, analyze } = useAIAnalysis('directory', directoryPath);
+  const isDisabled = error === 'AI_DISABLED';
+
+  const sectionStyle: CSSProperties = {
+    padding: '10px 16px',
+    borderTop: '1px solid #f0f0f0',
+  };
+
+  const btnStyle: CSSProperties = {
+    width: '100%',
+    fontSize: 11,
+    fontWeight: 500,
+    padding: '6px 10px',
+    borderRadius: 6,
+    border: '1px solid #1565c0',
+    background: 'transparent',
+    color: '#1565c0',
+    cursor: 'pointer',
+    fontFamily: "'Inter', sans-serif",
+    textAlign: 'center',
+  };
+
+  // Succeeded → show result
+  if (status === 'succeeded' && job) {
+    const aiResult = (job.result ?? {}) as Record<string, unknown>;
+    const summary = typeof aiResult.oneLineSummary === 'string' ? aiResult.oneLineSummary
+      : typeof aiResult.summary === 'string' ? aiResult.summary : undefined;
+    const responsibilities = Array.isArray(aiResult.keyResponsibilities) ? aiResult.keyResponsibilities as string[]
+      : Array.isArray(aiResult.responsibilities) ? aiResult.responsibilities as string[] : undefined;
+    const role = typeof aiResult.role === 'string' ? aiResult.role : undefined;
+    const confidence = typeof aiResult.confidence === 'number' ? aiResult.confidence : undefined;
+    const provider = typeof aiResult.provider === 'string' ? aiResult.provider : undefined;
+    const result: { role?: string; summary?: string; responsibilities?: string[]; confidence?: number } = {};
+    if (role) result.role = role;
+    if (summary) result.summary = summary;
+    if (responsibilities) result.responsibilities = responsibilities;
+    if (confidence) result.confidence = confidence;
+
+    return (
+      <div style={sectionStyle}>
+        <AIResultBlock
+          variant="full"
+          result={result}
+          {...(provider ? { provider } : {})}
+          {...(job.completedAt ? { analyzedAt: job.completedAt } : {})}
+          onReanalyze={() => analyze(true)}
+        />
+      </div>
+    );
+  }
+
+  // Analyzing
+  if (status === 'analyzing') {
+    return (
+      <div style={sectionStyle}>
+        <div style={{ ...btnStyle, border: '1px solid #d0d0d8', color: '#8888aa', opacity: 0.6, cursor: 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <span style={{ width: 10, height: 10, borderRadius: '50%', border: '1.5px solid currentColor', borderTopColor: 'transparent', animation: 'ca-spin 0.8s linear infinite', display: 'inline-block' }} />
+          分析中...
+        </div>
+      </div>
+    );
+  }
+
+  // Failed
+  if (status === 'failed' && !isDisabled) {
+    return (
+      <div style={sectionStyle}>
+        <button
+          style={{ ...btnStyle, border: '1px solid #ef9a9a', background: '#fff5f5', color: '#c62828' }}
+          onClick={() => analyze(true)}
+          type="button"
+        >
+          ⚠️ 分析失敗，點擊重試
+        </button>
+      </div>
+    );
+  }
+
+  // Disabled
+  if (isDisabled) {
+    return (
+      <div style={sectionStyle}>
+        <button style={{ ...btnStyle, border: '1px solid #d0d0d8', color: '#8888aa', opacity: 0.55, cursor: 'not-allowed' }} disabled type="button" title="請先在設定中啟用 AI Provider">
+          ✨ AI 分析此目錄
+        </button>
+      </div>
+    );
+  }
+
+  // Idle
+  return (
+    <div style={sectionStyle}>
+      <button style={btnStyle} onClick={() => analyze()} type="button">
+        ✨ AI 分析此目錄
+      </button>
     </div>
   );
 }
