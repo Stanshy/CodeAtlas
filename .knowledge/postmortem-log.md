@@ -15,6 +15,7 @@
 | 2026-03-30 | 1 | runtime | Fastify 無安全限制 | 預設無 bodyLimit/timeout | 加入 bodyLimit 1MB + requestTimeout 30s | resolved |
 | 2026-03-30 | 1 | build | tsup DTS + composite:true 衝突 | tsup worker 不認 composite 專案引用 | tsup dts.compilerOptions 覆寫 composite:false | resolved |
 | 2026-03-30 | 2 | runtime | resolveWebDir 路徑錯誤 | tsup 打平後 __dirname 是 cli/dist/ 而非 cli/dist/commands/，往上 4 層多跳一層 | 改為 3 層：path.resolve(__dirname, '..', '..', '..') | resolved |
+| 2026-04-09 | 20 | process | harness runtime 檔案被 git 追蹤 | .claude/hook-execution.jsonl 未加入 .gitignore | 加入 .gitignore + git rm --cached | resolved |
 
 > 使用 `/pitfall-record` 新增紀錄，`/pitfall-resolve` 標記已解決。
 
@@ -43,3 +44,15 @@
 | 預防 | 新 package 建立時，tsup.config.ts 一律加 dts.compilerOptions.composite: false |
 | 狀態 | resolved |
 | 到期日 | 2026-04-13 |
+
+### 2026-04-09 — harness runtime 檔案被 git 追蹤導致 merge 失敗
+
+| 項目 | 內容 |
+|------|------|
+| 分類 | process |
+| 問題 | .claude/hook-execution.jsonl 被 git 追蹤，harness 持續寫入導致每次 stash/checkout/merge 操作都因 dirty state 失敗 |
+| 原因 | 專案初始化時未將 harness runtime 檔案加入 .gitignore，hook-execution.jsonl 和 settings.local.json 是 session 級別的檔案不應被版控 |
+| 解法 | 在 .gitignore 加入 .claude/hook-execution.jsonl 和 .claude/settings.local.json，並用 git rm --cached 移除追蹤 |
+| 預防 | (1) project-kickoff 模板的 .gitignore 加入 harness runtime 檔案 (2) 所有 .claude/ 下非 commands/ 非 settings.json 的檔案都應 gitignore |
+| 狀態 | resolved |
+| 到期日 | 2026-04-23 |
