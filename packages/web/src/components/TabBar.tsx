@@ -5,6 +5,7 @@
  * Styled to match the Sprint 12 approved mockup exactly.
  *
  * Sprint 12 — T4.
+ * Sprint 19 — T13: Wiki Knowledge Graph tab added.
  */
 
 import { memo } from 'react';
@@ -19,17 +20,18 @@ import { THEME } from '../styles/theme';
 interface TabBarProps {
   activePerspective: PerspectiveName;
   onPerspectiveChange: (perspective: PerspectiveName) => void;
-  counts: { sf: number; lo: number; dj: number };
+  counts: { sf: number; lo: number; dj: number; wiki: number };
 }
 
 // ---------------------------------------------------------------------------
 // Tab definitions
 // ---------------------------------------------------------------------------
 
-const TABS: { key: PerspectiveName; label: string; dotClass: 'blue' | 'multi' | 'green'; countKey: keyof TabBarProps['counts'] }[] = [
-  { key: 'system-framework', label: '系統框架', dotClass: 'blue', countKey: 'sf' },
-  { key: 'logic-operation', label: '邏輯運作', dotClass: 'multi', countKey: 'lo' },
-  { key: 'data-journey', label: '資料旅程', dotClass: 'green', countKey: 'dj' },
+const TABS: { key: PerspectiveName; label: string; dotClass: 'blue' | 'multi' | 'green' | 'amber'; countKey: keyof TabBarProps['counts'] }[] = [
+  { key: 'system-framework', label: '系統框架', dotClass: 'blue',  countKey: 'sf'   },
+  { key: 'logic-operation',  label: '邏輯運作', dotClass: 'multi', countKey: 'lo'   },
+  { key: 'data-journey',     label: '資料旅程', dotClass: 'green', countKey: 'dj'   },
+  { key: 'wiki',             label: '知識圖',   dotClass: 'amber', countKey: 'wiki' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -38,6 +40,11 @@ const TABS: { key: PerspectiveName; label: string; dotClass: 'blue' | 'multi' | 
 
 const styles = {
   tabBar: {
+    position: 'fixed',
+    top: 48,
+    left: 0,
+    right: 0,
+    zIndex: 39,
     height: '48px',
     background: '#ffffff',
     borderBottom: `1.5px solid ${THEME.borderDefault}`,
@@ -80,7 +87,7 @@ const styles = {
     background: '#ffffff',
   } satisfies React.CSSProperties,
 
-  dot: (dotClass: 'blue' | 'multi' | 'green'): React.CSSProperties => {
+  dot: (dotClass: 'blue' | 'multi' | 'green' | 'amber'): React.CSSProperties => {
     const base: React.CSSProperties = {
       width: '8px',
       height: '8px',
@@ -95,6 +102,10 @@ const styles = {
         ...base,
         background: `conic-gradient(${THEME.loRoutes} 0deg 120deg, ${THEME.loServices} 120deg 240deg, ${THEME.loControllers} 240deg 360deg)`,
       };
+    }
+    if (dotClass === 'amber') {
+      // Wiki amber — matches G1 mockup .tab-dot-amber
+      return { ...base, background: '#f59e0b' };
     }
     // green
     return { ...base, background: THEME.djBorder };
@@ -156,7 +167,16 @@ export const TabBar = memo(function TabBar({
             <span style={styles.dot(dotClass)} aria-hidden="true" />
             {label}
             {count > 0 && (
-              <span style={styles.count}>{count}</span>
+              <span style={
+                key === 'wiki'
+                  ? {
+                      ...styles.count,
+                      background: 'rgba(245, 158, 11, 0.1)',
+                      borderColor: 'rgba(245, 158, 11, 0.3)',
+                      color: '#f59e0b',
+                    }
+                  : styles.count
+              }>{count}</span>
             )}
             {/* White bar that covers the container's border-bottom on the active tab */}
             {isActive && <span style={styles.tabBtnActiveBar} aria-hidden="true" />}

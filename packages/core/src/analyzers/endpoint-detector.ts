@@ -18,6 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import type { GraphNode, AnalysisResult } from '../types.js';
+import { classifyMethodRole } from '../ai/method-role-classifier.js';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -52,6 +53,10 @@ export interface ChainStep {
   input?: string;
   output?: string;
   transform?: string;
+  /** Sprint 15: MethodRole from rule engine */
+  role?: string;
+  /** Sprint 15: Classification confidence 0-1 */
+  roleConfidence?: number;
 }
 
 export interface EndpointChain {
@@ -387,7 +392,11 @@ function buildChainSteps(
     }
   }
 
-  return steps;
+  // Sprint 15: enrich each step with MethodRole classification
+  return steps.map(step => {
+    const roleInfo = classifyStepRole(step);
+    return { ...step, role: roleInfo.role, roleConfidence: roleInfo.roleConfidence };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -610,6 +619,22 @@ function findPythonFiles(dir: string, maxDepth = 8, depth = 0): string[] {
 }
 
 /**
+ * Sprint 15: Classify a chain step's MethodRole using the rule engine.
+ * Falls back to 'utility' with 0.5 confidence if classification fails.
+ */
+function classifyStepRole(step: ChainStep): { role: string; roleConfidence: number } {
+  try {
+    const result = classifyMethodRole({
+      name: step.method || step.name,
+      filePath: step.fileId,
+    });
+    return { role: result.role, roleConfidence: result.confidence };
+  } catch {
+    return { role: 'utility', roleConfidence: 0.5 };
+  }
+}
+
+/**
  * Build synthetic chain steps from a Python handler function body.
  *
  * Heuristic: look for function calls in the handler body (lines between
@@ -732,7 +757,11 @@ function buildPythonChainSteps(
     }
   }
 
-  return steps;
+  // Sprint 15: enrich each step with MethodRole classification
+  return steps.map(step => {
+    const roleInfo = classifyStepRole(step);
+    return { ...step, role: roleInfo.role, roleConfidence: roleInfo.roleConfidence };
+  });
 }
 
 /**

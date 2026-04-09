@@ -81,7 +81,8 @@ describe('SFDetailPanel — empty state', () => {
         graphEdges: [],
       }),
     );
-    expect(screen.getByText('Click a directory card to inspect it')).toBeTruthy();
+    // UI localized to Chinese in Sprint 13+
+    expect(screen.getByText('點擊目錄卡片查看詳情')).toBeTruthy();
   });
 
   it('shows empty state when selectedNodeId is set but directoryGraph is null', () => {
@@ -93,7 +94,7 @@ describe('SFDetailPanel — empty state', () => {
         graphEdges: [],
       }),
     );
-    expect(screen.getByText('Click a directory card to inspect it')).toBeTruthy();
+    expect(screen.getByText('點擊目錄卡片查看詳情')).toBeTruthy();
   });
 
   it('shows empty state when node id not found in directoryGraph', () => {
@@ -106,7 +107,7 @@ describe('SFDetailPanel — empty state', () => {
         graphEdges: [],
       }),
     );
-    expect(screen.getByText('Click a directory card to inspect it')).toBeTruthy();
+    expect(screen.getByText('點擊目錄卡片查看詳情')).toBeTruthy();
   });
 });
 
@@ -157,7 +158,8 @@ describe('SFDetailPanel — statistics section', () => {
         graphEdges: [],
       }),
     );
-    expect(screen.getByText('Statistics')).toBeTruthy();
+    // Section heading is "統計" (Chinese) in Sprint 13+
+    expect(screen.getByText('統計')).toBeTruthy();
   });
 
   it('shows Files row in statistics', () => {
@@ -170,7 +172,8 @@ describe('SFDetailPanel — statistics section', () => {
         graphEdges: [],
       }),
     );
-    expect(screen.getByText('Files')).toBeTruthy();
+    // "檔案" = Files in Chinese
+    expect(screen.getByText('檔案')).toBeTruthy();
   });
 
   it('shows Lines row in statistics', () => {
@@ -183,7 +186,8 @@ describe('SFDetailPanel — statistics section', () => {
         graphEdges: [],
       }),
     );
-    expect(screen.getByText('Lines')).toBeTruthy();
+    // "行數" = Lines in Chinese
+    expect(screen.getByText('行數')).toBeTruthy();
   });
 
   it('shows function count in statistics when functions exist', () => {
@@ -198,7 +202,8 @@ describe('SFDetailPanel — statistics section', () => {
         graphEdges: [],
       }),
     );
-    expect(screen.getByText('Functions')).toBeTruthy();
+    // "函式" = Functions in Chinese
+    expect(screen.getByText('函式')).toBeTruthy();
   });
 
   it('does not show Functions row when no functions exist', () => {
@@ -231,10 +236,8 @@ describe('SFDetailPanel — files section', () => {
         graphEdges: [],
       }),
     );
-    // "Files" appears in statistics AND in the Files section heading
-    const filesElements = screen.getAllByText('Files');
-    // At least one in statistics + one in section title
-    expect(filesElements.length).toBeGreaterThanOrEqual(1);
+    // "檔案" appears in statistics row and "檔案列表" as section heading (Chinese)
+    expect(screen.getByText('檔案列表')).toBeTruthy();
   });
 
   it('shows file names in the files list', () => {
@@ -264,15 +267,17 @@ describe('SFDetailPanel — files section', () => {
       }),
     );
 
-    // Function should not be visible initially
-    expect(screen.queryByText('createUser')).toBeNull();
+    // Function label is rendered as "createUser()" (with parens)
+    expect(screen.queryByText('createUser()')).toBeNull();
 
-    // Click the file row to expand
-    const fileRow = screen.getByRole('button');
+    // Sprint 16: panel now includes an AI button — use getAllByRole and pick the
+    // file row (role="button" div), which is always the first button element
+    const buttons = screen.getAllByRole('button');
+    const fileRow = buttons[0]!;
     fireEvent.click(fileRow);
 
-    // Function should now be visible
-    expect(screen.getByText('createUser')).toBeTruthy();
+    // Function should now be visible (rendered as fn.label + "()")
+    expect(screen.getByText('createUser()')).toBeTruthy();
   });
 
   it('collapses an expanded file row on second click', () => {
@@ -288,12 +293,14 @@ describe('SFDetailPanel — files section', () => {
       }),
     );
 
-    const fileRow = screen.getByRole('button');
+    // Sprint 16: panel now includes an AI button — pick the file row (first button)
+    const fileRow = screen.getAllByRole('button')[0]!;
     fireEvent.click(fileRow);
-    expect(screen.getByText('deleteUser')).toBeTruthy();
+    // Function label rendered as "deleteUser()"
+    expect(screen.getByText('deleteUser()')).toBeTruthy();
 
     fireEvent.click(fileRow);
-    expect(screen.queryByText('deleteUser')).toBeNull();
+    expect(screen.queryByText('deleteUser()')).toBeNull();
   });
 
   it('shows fns count badge for a file with functions', () => {
@@ -320,7 +327,7 @@ describe('SFDetailPanel — files section', () => {
 describe('SFDetailPanel — upstream section', () => {
   it('shows Upstream section heading', () => {
     const graph = makeDirectoryGraph([{ id: 'src/routes', label: 'routes' }]);
-    render(
+    const { container } = render(
       React.createElement(SFDetailPanel, {
         selectedNodeId: 'src/routes',
         directoryGraph: graph,
@@ -328,7 +335,8 @@ describe('SFDetailPanel — upstream section', () => {
         graphEdges: [],
       }),
     );
-    expect(screen.getByText(/Upstream/)).toBeTruthy();
+    // "上游依賴" = Upstream dependencies in Chinese (text is split across spans)
+    expect(container.textContent).toContain('上游依賴');
   });
 
   it('shows "No upstream dependencies" when no upstream edges', () => {
@@ -341,7 +349,8 @@ describe('SFDetailPanel — upstream section', () => {
         graphEdges: [],
       }),
     );
-    expect(screen.getByText('No upstream dependencies')).toBeTruthy();
+    // "無上游依賴" = No upstream dependencies in Chinese
+    expect(screen.getByText('無上游依賴')).toBeTruthy();
   });
 
   it('shows upstream directory when edge targets the selected node', () => {
@@ -367,7 +376,7 @@ describe('SFDetailPanel — upstream section', () => {
 describe('SFDetailPanel — downstream section', () => {
   it('shows Downstream section heading', () => {
     const graph = makeDirectoryGraph([{ id: 'src/routes', label: 'routes' }]);
-    render(
+    const { container } = render(
       React.createElement(SFDetailPanel, {
         selectedNodeId: 'src/routes',
         directoryGraph: graph,
@@ -375,7 +384,8 @@ describe('SFDetailPanel — downstream section', () => {
         graphEdges: [],
       }),
     );
-    expect(screen.getByText(/Downstream/)).toBeTruthy();
+    // "下游依賴" = Downstream dependencies in Chinese (text is split across spans)
+    expect(container.textContent).toContain('下游依賴');
   });
 
   it('shows "No downstream dependencies" when no downstream edges', () => {
@@ -388,7 +398,8 @@ describe('SFDetailPanel — downstream section', () => {
         graphEdges: [],
       }),
     );
-    expect(screen.getByText('No downstream dependencies')).toBeTruthy();
+    // "無下游依賴" = No downstream dependencies in Chinese
+    expect(screen.getByText('無下游依賴')).toBeTruthy();
   });
 
   it('shows downstream directory when edge originates from selected node', () => {

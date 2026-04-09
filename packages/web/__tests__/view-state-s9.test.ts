@@ -43,9 +43,9 @@ describe('viewStateReducer Sprint 9 — initial state', () => {
     expect(result.current.state.activeViewMode).toBe('panorama');
   });
 
-  it('isControlPanelOpen is true', () => {
+  it('isSettingsPanelOpen is false initially', () => {
     const { result } = renderHook(() => useViewState(), { wrapper });
-    expect(result.current.state.isControlPanelOpen).toBe(true);
+    expect(result.current.state.isSettingsPanelOpen).toBe(false);
   });
 
   it('displayPrefs.showEdgeLabels defaults to false', () => {
@@ -168,23 +168,23 @@ describe('viewStateReducer Sprint 9 — SET_VIEW_MODE', () => {
 });
 
 // ---------------------------------------------------------------------------
-// TOGGLE_CONTROL_PANEL
+// TOGGLE_SETTINGS_PANEL
 // ---------------------------------------------------------------------------
 
-describe('viewStateReducer Sprint 9 — TOGGLE_CONTROL_PANEL', () => {
-  it('toggles isControlPanelOpen from true to false', () => {
+describe('viewStateReducer Sprint 9 — TOGGLE_SETTINGS_PANEL', () => {
+  it('toggles isSettingsPanelOpen from false to true', () => {
     const { result } = renderHook(() => useViewState(), { wrapper });
-    // Initial state is true
-    expect(result.current.state.isControlPanelOpen).toBe(true);
-    act(() => { result.current.dispatch({ type: 'TOGGLE_CONTROL_PANEL' }); });
-    expect(result.current.state.isControlPanelOpen).toBe(false);
+    // Initial state is false
+    expect(result.current.state.isSettingsPanelOpen).toBe(false);
+    act(() => { result.current.dispatch({ type: 'TOGGLE_SETTINGS_PANEL' }); });
+    expect(result.current.state.isSettingsPanelOpen).toBe(true);
   });
 
-  it('toggles isControlPanelOpen back to true', () => {
+  it('toggles isSettingsPanelOpen back to false', () => {
     const { result } = renderHook(() => useViewState(), { wrapper });
-    act(() => { result.current.dispatch({ type: 'TOGGLE_CONTROL_PANEL' }); });
-    act(() => { result.current.dispatch({ type: 'TOGGLE_CONTROL_PANEL' }); });
-    expect(result.current.state.isControlPanelOpen).toBe(true);
+    act(() => { result.current.dispatch({ type: 'TOGGLE_SETTINGS_PANEL' }); });
+    act(() => { result.current.dispatch({ type: 'TOGGLE_SETTINGS_PANEL' }); });
+    expect(result.current.state.isSettingsPanelOpen).toBe(false);
   });
 });
 

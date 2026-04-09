@@ -93,14 +93,106 @@ export interface WebCommandOptions {
 /**
  * Implementation of the `codeatlas web [path]` CLI sub-command.
  *
- * @param targetPath  Directory to serve.  Defaults to `process.cwd()`.
+ * When `targetPath` is undefined the server starts in `mode='idle'` —
+ * the web UI shows the welcome page and the user picks a project there.
+ *
+ * When `targetPath` is provided the existing behaviour is preserved:
+ * auto-analyze if needed, then start in `mode='ready'`.
+ *
+ * @param targetPath  Directory to serve. Omit for idle (welcome page) mode.
  * @param options     CLI flag values.
  */
 export async function webCommand(
   targetPath: string | undefined,
   options: WebCommandOptions,
 ): Promise<void> {
-  const resolvedPath = path.resolve(targetPath ?? process.cwd());
+  // --- Idle mode: no path provided ---
+  if (targetPath === undefined) {
+    return webCommandIdle(options);
+  }
+
+  // --- Path mode: existing behaviour ---
+  return webCommandWithPath(targetPath, options);
+}
+
+/**
+ * Start server in idle mode (welcome page, no project pre-loaded).
+ */
+async function webCommandIdle(options: WebCommandOptions): Promise<void> {
+  const cliOptions: import('../config.js').CliOptions = {};
+  if (options.port !== undefined) cliOptions.port = options.port;
+  if (options.aiKey !== undefined) cliOptions.aiKey = options.aiKey;
+  if (options.aiProvider !== undefined) cliOptions.aiProvider = options.aiProvider;
+  if (options.ollamaModel !== undefined) cliOptions.ollamaModel = options.ollamaModel;
+
+  // Resolve config without a project path (use cwd as a placeholder for port resolution)
+  const config = resolveConfig(cliOptions, process.cwd());
+  const port = config.port;
+
+  // --- Resolve static directory ---
+  const staticDir = resolveWebDir();
+
+  try {
+    await fs.access(staticDir);
+  } catch {
+    console.error(
+      `Error: Web UI directory not found at "${staticDir}".\n` +
+        `Make sure packages/web/ exists in the repository.`,
+    );
+    process.exit(1);
+  }
+
+  // Use a placeholder analysisPath — it will be overridden when the user
+  // triggers POST /api/project/analyze from the welcome page.
+  const placeholderAnalysisPath = path.join(process.cwd(), '.codeatlas', 'analysis.json');
+
+  try {
+    const serverOpts: import('../server.js').ServerOptions = {
+      port,
+      analysisPath: placeholderAnalysisPath,
+      staticDir,
+      mode: 'idle',
+    };
+    if (config.aiKey !== undefined) serverOpts.aiKey = config.aiKey;
+    if (config.aiProvider !== undefined) serverOpts.aiProvider = config.aiProvider;
+    if (config.ollamaModel !== undefined) serverOpts.ollamaModel = config.ollamaModel;
+    await startServer(serverOpts);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`Error: Failed to start server — ${message}`);
+    process.exit(1);
+  }
+
+  const url = `http://localhost:${port}`;
+
+  console.log('CodeAtlas v0.1.0');
+  console.log('');
+  console.log(`Server  : ${url}`);
+  console.log('');
+  console.log('Select a project in the browser to get started.');
+  console.log('Press Ctrl+C to stop.');
+
+  openBrowser(url);
+
+  process.on('SIGINT', () => {
+    console.log('');
+    console.log('Shutting down...');
+    process.exit(0);
+  });
+
+  await new Promise<never>(() => {
+    // intentionally left empty — process lives until SIGINT
+  });
+}
+
+/**
+ * Start server with a specific project path (original behaviour).
+ */
+async function webCommandWithPath(
+  targetPath: string,
+  options: WebCommandOptions,
+): Promise<void> {
+  const resolvedPath = path.resolve(targetPath);
   const cliOptions: import('../config.js').CliOptions = {};
   if (options.port !== undefined) cliOptions.port = options.port;
   if (options.aiKey !== undefined) cliOptions.aiKey = options.aiKey;
@@ -158,7 +250,7 @@ export async function webCommand(
 
   // --- Start Fastify server ---
   try {
-    const serverOpts: import('../server.js').ServerOptions = { port, analysisPath, staticDir };
+    const serverOpts: import('../server.js').ServerOptions = { port, analysisPath, staticDir, mode: 'ready' };
     if (aiKey !== undefined) serverOpts.aiKey = aiKey;
     if (aiProvider !== undefined) serverOpts.aiProvider = aiProvider;
     if (ollamaModel !== undefined) serverOpts.ollamaModel = ollamaModel;

@@ -12,6 +12,9 @@ export type NodeType = 'directory' | 'file' | 'function' | 'class';
 // Sprint 10: Node Role Classification
 export type NodeRole = 'business-logic' | 'cross-cutting' | 'infrastructure' | 'utility' | 'noise';
 
+// Sprint 18: Multi-language support
+export type SupportedLanguage = 'javascript' | 'typescript' | 'python' | 'java';
+
 // Sprint 7: function parameter descriptor
 export interface FunctionParam {
   name: string;
@@ -37,9 +40,16 @@ export interface NodeMetadata {
   parameters?: FunctionParam[];
   returnType?: string;
   lineCount?: number;
+  startLine?: number;          // 0-based line number of function/class start
+  endLine?: number;            // 0-based line number of function/class end
   isAsync?: boolean;
   isExported?: boolean;
   methodCount?: number;
+
+  // Sprint 14: AI method analysis
+  methodRole?: string;        // MethodRole enum value
+  roleConfidence?: number;    // 0-1 confidence score
+  aiSummary?: string;         // AI one-line summary
 }
 
 export interface GraphNode {
@@ -123,3 +133,102 @@ export interface SummaryProvider {
   isConfigured(): boolean;
   summarize(code: string, context: SummaryContext): Promise<string>;
 }
+
+// Sprint 20: Launch Experience — Server Mode, Analysis Progress, Recent Projects
+
+/** Server operating mode: idle (no project), analyzing, or ready */
+export type ServerMode = 'idle' | 'analyzing' | 'ready';
+
+/** GET /api/project/status response */
+export interface ServerStatus {
+  mode: ServerMode;
+  currentPath?: string;
+  projectName?: string;
+}
+
+/** POST /api/project/validate request body */
+export interface ValidateRequest {
+  path: string;
+}
+
+/** Reason a path validation failed */
+export type ValidateFailReason = 'not_found' | 'not_directory' | 'no_source_files' | 'path_too_long';
+
+/** POST /api/project/validate response */
+export interface ValidateResponse {
+  valid: boolean;
+  reason?: ValidateFailReason;
+  stats?: {
+    fileCount: number;
+    languages: string[];
+  };
+}
+
+/** Status of a single analysis stage */
+export type StageStatus = 'pending' | 'running' | 'completed' | 'skipped' | 'failed';
+
+/** Progress of a single analysis stage */
+export interface StageProgress {
+  status: StageStatus;
+  progress: number;         // 0-100
+  current?: string;         // current file name
+  total?: number;           // total items
+  done?: number;            // completed items
+}
+
+/** Overall status of an analysis job */
+export type AnalysisJobStatus =
+  | 'queued'
+  | 'scanning'
+  | 'parsing'
+  | 'building'
+  | 'ai_analyzing'
+  | 'completed'
+  | 'failed';
+
+/** GET /api/project/progress/:jobId response (also SSE payload) */
+export interface AnalysisProgress {
+  jobId: string;
+  status: AnalysisJobStatus;
+  stages: {
+    scanning: StageProgress;
+    parsing: StageProgress;
+    building: StageProgress;
+    ai_analyzing?: StageProgress;
+  };
+  error?: string;
+  startedAt: string;
+  completedAt?: string;
+}
+
+/** A recently opened project */
+export interface RecentProject {
+  path: string;             // absolute path
+  name: string;             // directory name
+  lastOpened: string;       // ISO timestamp
+  stats?: {
+    fileCount: number;
+    languages: string[];
+  };
+}
+
+/** Frontend app page state */
+export type AppPage = 'welcome' | 'progress' | 'analysis';
+
+// Sprint 19: Wiki Knowledge Export types
+export type {
+  WikiNode,
+  WikiEdge,
+  WikiNodeType,
+  WikiEdgeType,
+  WikiPageMeta,
+  WikiManifest,
+  WikiExportStats,
+  WikiPageDetail,
+  WikiExportResult,
+  SlugRegistryEntry,
+  ISlugRegistry,
+  ExtractedConcept,
+  ConceptExtractionResult,
+  ProjectContext,
+} from './wiki-exporter/types.js';

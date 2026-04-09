@@ -1,10 +1,9 @@
 /**
  * CodeAtlas — ContextMenu Component
  *
- * Right-click context menu for graph nodes (2D and 3D modes).
+ * Right-click context menu for graph nodes.
  * Pure UI component — all state and handlers are passed in via props.
- * Parent components (GraphCanvas / Graph3DCanvas) are responsible for
- * triggering visibility and providing handlers.
+ * GraphCanvas is responsible for triggering visibility and providing handlers.
  *
  * Sprint 8 — T4: ContextMenu 元件
  */

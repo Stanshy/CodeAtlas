@@ -1,0 +1,2 @@
+# No runtime dependencies — pure stdlib only.
+# This fixture is for static analysis by CodeAtlas; it does not need to be installed.

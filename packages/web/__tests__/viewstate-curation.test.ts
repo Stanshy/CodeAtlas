@@ -192,12 +192,12 @@ describe('useViewStateSelector — Sprint 10', () => {
     expect(result.current).toBeNull();
   });
 
-  it('selector for isControlPanelOpen returns true initially', () => {
+  it('selector for isSettingsPanelOpen returns false initially', () => {
     const { result } = renderHook(
-      () => useViewStateSelector(s => s.isControlPanelOpen),
+      () => useViewStateSelector(s => s.isSettingsPanelOpen),
       { wrapper },
     );
-    expect(result.current).toBe(true);
+    expect(result.current).toBe(false);
   });
 
   it('selector updates when unrelated action changes tracked field', () => {

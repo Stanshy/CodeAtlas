@@ -1,0 +1,40 @@
+{
+  "description": "Java Spring Boot-like sample with orders, customers, services, repositories, and controllers",
+  "language": "java",
+  "fileCount": 11,
+  "expectations": {
+    "minPageCount": 12,
+    "maxPageCount": 22,
+    "minLinkCount": 18,
+    "maxLinkCount": 50,
+    "maxDeadLinks": 0,
+    "minCoverage": 0.75,
+    "requiredModules": ["controller", "service", "model", "repository"],
+    "requiredEndpoints": [
+      "GET /orders",
+      "POST /orders",
+      "GET /customers",
+      "GET /customers/{id}"
+    ],
+    "requiredFiles": [
+      "OrderController.java",
+      "CustomerController.java",
+      "OrderService.java",
+      "CustomerService.java",
+      "Order.java",
+      "Customer.java",
+      "OrderRepository.java",
+      "CustomerRepository.java"
+    ],
+    "importEdges": [
+      { "from": "controller/OrderController.java", "to": "service/OrderService.java" },
+      { "from": "controller/OrderController.java", "to": "model/Order.java" },
+      { "from": "controller/CustomerController.java", "to": "service/CustomerService.java" },
+      { "from": "controller/CustomerController.java", "to": "model/Customer.java" },
+      { "from": "service/OrderService.java", "to": "model/Order.java" },
+      { "from": "service/OrderService.java", "to": "repository/OrderRepository.java" },
+      { "from": "service/CustomerService.java", "to": "model/Customer.java" },
+      { "from": "service/CustomerService.java", "to": "repository/CustomerRepository.java" }
+    ]
+  }
+}

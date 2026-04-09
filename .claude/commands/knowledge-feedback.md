@@ -93,10 +93,10 @@ allowed-tools: Read, Edit, Glob, Grep, Bash
 
 老闆確認後：
 
-1. 修改 `knowledge/company/` 下的對應文件
+1. 修改 `.knowledge/company/` 下的對應文件
 2. 每個修改都說明：改了什麼、為什麼、影響範圍
 3. 更新完成後，整理變更摘要
-4. 對標記為「強通用」或「通用」的踩坑紀錄，寫入 `knowledge/company/standards/postmortem-common.md`，格式：
+4. 對標記為「強通用」或「通用」的踩坑紀錄，寫入 `.knowledge/company/standards/postmortem-common.md`，格式：
 
 | 日期 | 來源專案 | 分類 | 問題摘要 | 解法 | 相關規範 |
 |------|---------|------|---------|------|---------|
@@ -104,13 +104,13 @@ allowed-tools: Read, Edit, Glob, Grep, Bash
 
 ## 可寫入的路徑
 
-- `knowledge/company/sop/*.md`
-- `knowledge/company/standards/*.md`
-- `knowledge/company/standards/postmortem-common.md`
-- `knowledge/company/templates/*.md`
+- `.knowledge/company/sop/*.md`
+- `.knowledge/company/standards/*.md`
+- `.knowledge/company/standards/postmortem-common.md`
+- `.knowledge/company/templates/*.md`
 
 ## 不可寫入的路徑
 
 - 子專案的任何檔案（唯讀）
-- `knowledge/company/skill-templates/`（Skill 模板由開發流程管理）
-- `knowledge/company/project-templates/`（專案模板由開發流程管理）
+- `.knowledge/company/skill-templates/`（Skill 模板由開發流程管理）
+- `.knowledge/company/project-templates/`（專案模板由開發流程管理）

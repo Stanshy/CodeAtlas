@@ -1,7 +1,6 @@
 ---
 name: task-dispatch
 description: Boss dispatches tasks — auto-create .tasks/ files and record in dev-plan
-disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
@@ -67,6 +66,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 | 優先級 | `P0`/`P1`/`P2` | `P0` | — |
 | 建立時間 | ISO 8601 | `2026-03-26T12:00:00.000Z` | — |
 | 依賴 | 逗號分隔 ID | `T1,T3` | 無依賴填 `—` |
+| 並行組 | 字母或 `—` | `A` | 同組任務可並行；循序任務填 `—` |
 
 ```markdown
 # {任務名稱}
@@ -80,6 +80,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 | 優先級 | {P0/P1/P2} |
 | 狀態 | assigned |
 | 依賴 | {依賴任務 ID，無則填 —} |
+| 並行組 | {A/B/C... 或 —} |
 | 預估 | {預估工時，無則填 —} |
 | 建立時間 | $NOW |
 | 開始時間 | — |

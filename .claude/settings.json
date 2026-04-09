@@ -11,6 +11,10 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/g5-pre-deploy.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/git-commit-check.sh"
           }
         ]
       },
@@ -26,7 +30,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Edit",
+        "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
@@ -35,6 +39,16 @@
         ]
       }
     ],
-    "Stop": []
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/stop-validator.sh",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
   }
 }

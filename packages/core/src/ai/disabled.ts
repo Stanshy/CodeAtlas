@@ -5,12 +5,18 @@
  * Returns a human-readable message instead of throwing.
  */
 
-import type { SummaryProvider, SummaryContext } from './types.js';
+import type { SummaryContext } from '../types.js';
+import { BaseAnalysisProvider } from './base-analysis-provider.js';
 
-export class DisabledProvider implements SummaryProvider {
+export class DisabledProvider extends BaseAnalysisProvider {
   name = 'disabled';
 
   isConfigured(): boolean {
+    return false;
+  }
+
+  /** Disabled provider never supports analysis regardless of configuration */
+  override supportsAnalysis(): boolean {
     return false;
   }
 

@@ -43,6 +43,8 @@ export interface LOChainNodeData {
   category: LoCategory;
   filePath: string;
   state: 'unreached' | 'active' | 'completed';
+  /** Whether this node is the user-selected node (for right panel detail) */
+  selected?: boolean;
   [key: string]: unknown;
 }
 
@@ -51,32 +53,37 @@ export interface LOChainNodeData {
 // ---------------------------------------------------------------------------
 
 export const LOChainNode = memo(function LOChainNode({ data }: NodeProps) {
-  const { stepIndex, methodName, className, category, state } = data as LOChainNodeData;
+  const { stepIndex, methodName, className, category, state, selected } = data as LOChainNodeData;
 
   const colors = CATEGORY_COLORS[category] ?? CATEGORY_COLORS.utils;
 
   const isActive = state === 'active';
   const isCompleted = state === 'completed';
+  const isSelected = !!selected;
 
   const outerStyle: CSSProperties = {
     width: 280,
     minHeight: 58,
-    background: isActive
+    background: isSelected
       ? colors.bg
-      : isCompleted
-        ? '#ffffff'
+      : isActive
+        ? colors.bg
         : '#ffffff',
-    border: isActive
+    border: isSelected
       ? `2px solid ${colors.bar}`
-      : `1.5px solid ${isCompleted ? colors.bar + '66' : '#e0e0e0'}`,
+      : isActive
+        ? `2px solid ${colors.bar}`
+        : `1.5px solid ${isCompleted ? colors.bar + '66' : '#e0e0e0'}`,
     borderRadius: 6,
     position: 'relative',
     overflow: 'hidden',
-    boxShadow: isActive
-      ? `0 0 0 3px ${colors.bar}22, 0 4px 16px ${colors.bar}18`
-      : isCompleted
-        ? `0 1px 6px ${colors.bar}10`
-        : '0 1px 4px rgba(0,0,0,0.07)',
+    boxShadow: isSelected
+      ? `0 0 0 3px ${colors.bar}33, 0 4px 16px ${colors.bar}22`
+      : isActive
+        ? `0 0 0 3px ${colors.bar}22, 0 4px 16px ${colors.bar}18`
+        : isCompleted
+          ? `0 1px 6px ${colors.bar}10`
+          : '0 1px 4px rgba(0,0,0,0.07)',
     transition: 'border 0.25s ease, box-shadow 0.25s ease, background 0.25s ease',
     cursor: 'pointer',
   };

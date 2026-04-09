@@ -1,11 +1,13 @@
 /**
  * CodeAtlas — ViewStateContext
  *
- * Centralised view state for 2D/3D mode, node selection/hover,
+ * Centralised view state for node selection/hover,
  * search, panel open/close, path tracing, and heatmap.
  *
- * Sprint 4 — T3: 3d-force-graph Integration
+ * Sprint 4 — T3: initial integration
  * Sprint 5 — T2: ViewState 擴充（路徑追蹤 + 熱力圖 + 邊 hover）
+ * Sprint 19 — T12: 3D removal — SET_3D_MODE removed, mode locked to '2d'
+ * Sprint 19 — T13: Wiki tab — selectedWikiNode + SET_WIKI_NODE added
  */
 
 import {
@@ -97,13 +99,24 @@ export interface ViewState {
   activeViewMode: ViewModeName;
   // === Sprint 11: Perspective (Story View) ===
   activePerspective: PerspectiveName;
-  isControlPanelOpen: boolean;
+  isSettingsPanelOpen: boolean;
   displayPrefs: DisplayPrefs;
   e2eTracing: E2ETracingState | null;
   isE2ESelecting: boolean;
 
   // Sprint 10: Smart Curation — pinned hidden nodes
   pinnedNodeIds: string[];
+
+  // Sprint 14: AI Settings
+  aiProvider: string;           // 'claude-code' | 'gemini' | 'ollama' | 'openai' | 'anthropic' | 'disabled'
+  aiApiKey: string;             // API key for cloud providers
+  enableAiSummary: boolean;     // Toggle AI method summaries
+  enableAiRoleClassification: boolean; // Toggle AI role classification
+  hiddenMethodRoles: string[];  // Roles to hide in LO view (default: ['utility', 'framework_glue'])
+
+  // Sprint 19: Wiki tab
+  /** Currently selected wiki node slug (null = nothing selected) */
+  selectedWikiNode: string | null;
 }
 
 export type ViewAction =
@@ -147,8 +160,7 @@ export type ViewAction =
   | { type: 'SET_VIEW_MODE'; mode: ViewModeName }
   // === Sprint 11: Perspective ===
   | { type: 'SET_PERSPECTIVE'; perspective: PerspectiveName }
-  | { type: 'SET_3D_MODE'; mode: ViewMode }
-  | { type: 'TOGGLE_CONTROL_PANEL' }
+  | { type: 'TOGGLE_SETTINGS_PANEL' }
   | { type: 'SET_DISPLAY_PREFS'; prefs: Partial<DisplayPrefs> }
   | { type: 'START_E2E_TRACING'; startNodeId: string;
       path: string[]; edges: string[]; steps: E2EStep[]; truncated: boolean }
@@ -158,7 +170,16 @@ export type ViewAction =
   | { type: 'SET_E2E_SELECTING'; selecting: boolean }
   // Sprint 10: Pin/Unpin hidden nodes
   | { type: 'PIN_NODE'; nodeId: string }
-  | { type: 'UNPIN_NODE'; nodeId: string };
+  | { type: 'UNPIN_NODE'; nodeId: string }
+  // Sprint 14: AI Settings
+  | { type: 'SET_AI_PROVIDER'; provider: string }
+  | { type: 'SET_AI_API_KEY'; apiKey: string }
+  | { type: 'SET_ENABLE_AI_SUMMARY'; enabled: boolean }
+  | { type: 'SET_ENABLE_AI_ROLE_CLASSIFICATION'; enabled: boolean }
+  | { type: 'SET_HIDDEN_METHOD_ROLES'; roles: string[] }
+  | { type: 'TOGGLE_HIDDEN_METHOD_ROLE'; role: string }
+  // Sprint 19: Wiki tab
+  | { type: 'SET_WIKI_NODE'; slug: string | null };
 
 // ---------------------------------------------------------------------------
 // Initial state
@@ -196,7 +217,7 @@ const initialState: ViewState = {
   activeViewMode: 'panorama' as ViewModeName,
   // Sprint 11 additions
   activePerspective: 'logic-operation' as PerspectiveName,
-  isControlPanelOpen: true,
+  isSettingsPanelOpen: false,
   displayPrefs: {
     showEdgeLabels: false,
     showParticles: true,
@@ -206,6 +227,14 @@ const initialState: ViewState = {
   e2eTracing: null,
   isE2ESelecting: false,
   pinnedNodeIds: [],
+  // Sprint 14: AI Settings
+  aiProvider: 'disabled',
+  aiApiKey: '',
+  enableAiSummary: false,
+  enableAiRoleClassification: false,
+  hiddenMethodRoles: ['utility', 'framework_glue'],
+  // Sprint 19: Wiki tab
+  selectedWikiNode: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -399,24 +428,6 @@ function viewStateReducer(state: ViewState, action: ViewAction): ViewState {
 
     case 'SET_PERSPECTIVE': {
       const perspective = action.perspective;
-      const is3D = state.mode === '3d';
-
-      // system-framework does not support 3D — auto-switch to 2D
-      if (perspective === 'system-framework' && is3D) {
-        return {
-          ...state,
-          activePerspective: perspective,
-          mode: '2d',
-          // Clear conflicting states
-          impactAnalysis: null,
-          isSearchFocused: false,
-          searchFocusNodes: [],
-          searchFocusEdges: [],
-          e2eTracing: null,
-          isE2ESelecting: false,
-          filter: { directories: [], nodeTypes: [], edgeTypes: [] },
-        };
-      }
 
       return {
         ...state,
@@ -432,20 +443,8 @@ function viewStateReducer(state: ViewState, action: ViewAction): ViewState {
       };
     }
 
-    case 'SET_3D_MODE': {
-      // If switching to 3D while system-framework is active, auto-switch to logic-operation
-      if (action.mode === '3d' && state.activePerspective === 'system-framework') {
-        return {
-          ...state,
-          mode: action.mode,
-          activePerspective: 'logic-operation',
-        };
-      }
-      return { ...state, mode: action.mode };
-    }
-
-    case 'TOGGLE_CONTROL_PANEL':
-      return { ...state, isControlPanelOpen: !state.isControlPanelOpen };
+    case 'TOGGLE_SETTINGS_PANEL':
+      return { ...state, isSettingsPanelOpen: !state.isSettingsPanelOpen };
 
     case 'SET_DISPLAY_PREFS':
       return {
@@ -510,6 +509,31 @@ function viewStateReducer(state: ViewState, action: ViewAction): ViewState {
         pinnedNodeIds: state.pinnedNodeIds.filter(id => id !== action.nodeId),
       };
 
+    // --- Sprint 14: AI Settings ---
+
+    case 'SET_AI_PROVIDER':
+      return { ...state, aiProvider: action.provider };
+    case 'SET_AI_API_KEY':
+      return { ...state, aiApiKey: action.apiKey };
+    case 'SET_ENABLE_AI_SUMMARY':
+      return { ...state, enableAiSummary: action.enabled };
+    case 'SET_ENABLE_AI_ROLE_CLASSIFICATION':
+      return { ...state, enableAiRoleClassification: action.enabled };
+    case 'SET_HIDDEN_METHOD_ROLES':
+      return { ...state, hiddenMethodRoles: action.roles };
+    case 'TOGGLE_HIDDEN_METHOD_ROLE':
+      return {
+        ...state,
+        hiddenMethodRoles: state.hiddenMethodRoles.includes(action.role)
+          ? state.hiddenMethodRoles.filter(r => r !== action.role)
+          : [...state.hiddenMethodRoles, action.role],
+      };
+
+    // --- Sprint 19: Wiki tab ---
+
+    case 'SET_WIKI_NODE':
+      return { ...state, selectedWikiNode: action.slug };
+
     default:
       return state;
   }
@@ -549,6 +573,20 @@ interface ViewStateProviderProps {
 
 export function ViewStateProvider({ children }: ViewStateProviderProps) {
   const [state, dispatch] = useReducer(viewStateReducer, initialState);
+
+  // Sprint 20: Sync AI provider from server on mount
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/ai/status')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!cancelled && data && data.provider && data.provider !== 'disabled') {
+          dispatch({ type: 'SET_AI_PROVIDER', provider: data.provider });
+        }
+      })
+      .catch(() => { /* server not ready */ });
+    return () => { cancelled = true; };
+  }, []);
 
   // Sprint 10: Store ref for selector mechanism
   const stateRef = useRef(state);

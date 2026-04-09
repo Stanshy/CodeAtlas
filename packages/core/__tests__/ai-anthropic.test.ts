@@ -68,7 +68,7 @@ describe('AnthropicProvider', () => {
     expect(options.headers['anthropic-version']).toBe('2023-06-01');
 
     const body = JSON.parse(options.body);
-    expect(body.model).toBe('claude-3-haiku-20240307');
+    expect(body.model).toBe('claude-haiku-4-5-20251001');
     expect(body.messages).toHaveLength(1);
     expect(body.messages[0].role).toBe('user');
     expect(typeof body.system).toBe('string');

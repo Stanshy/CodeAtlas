@@ -115,11 +115,12 @@ describe('RightPanel — system-framework perspective', () => {
 // ---------------------------------------------------------------------------
 
 describe('RightPanel — logic-operation perspective', () => {
-  it('renders null when perspective is logic-operation and loSelectedStep is null', () => {
-    const { container } = render(
+  it('renders LODetailPanel (with empty state) when perspective is logic-operation and loSelectedStep is null', () => {
+    // RightPanel always renders the wrapper div; LODetailPanel handles its own empty state
+    const { getByTestId } = render(
       React.createElement(RightPanel, makeProps({ perspective: 'logic-operation', loSelectedStep: null })),
     );
-    expect(container.firstChild).toBeNull();
+    expect(getByTestId('lo-detail-panel')).toBeTruthy();
   });
 
   it('renders LODetailPanel when perspective is logic-operation and loSelectedStep is set', () => {
@@ -142,18 +143,19 @@ describe('RightPanel — logic-operation perspective', () => {
 // ---------------------------------------------------------------------------
 
 describe('RightPanel — data-journey perspective', () => {
-  it('renders null when perspective is data-journey and djEndpointId is null', () => {
-    const { container } = render(
+  it('renders DJPanel (with empty state) when perspective is data-journey and djEndpointId is null', () => {
+    // RightPanel always renders the wrapper div; DJPanel handles its own empty/null state
+    const { getByTestId } = render(
       React.createElement(RightPanel, makeProps({ perspective: 'data-journey', djEndpointId: null, djChain: null })),
     );
-    expect(container.firstChild).toBeNull();
+    expect(getByTestId('dj-panel')).toBeTruthy();
   });
 
-  it('renders null when perspective is data-journey and djChain is null', () => {
-    const { container } = render(
+  it('renders DJPanel (with empty state) when perspective is data-journey and djChain is null', () => {
+    const { getByTestId } = render(
       React.createElement(RightPanel, makeProps({ perspective: 'data-journey', djEndpointId: 'ep-1', djChain: null })),
     );
-    expect(container.firstChild).toBeNull();
+    expect(getByTestId('dj-panel')).toBeTruthy();
   });
 
   it('renders DJPanel when perspective is data-journey with endpointId and chain', () => {
@@ -216,12 +218,14 @@ describe('RightPanel — perspective switching', () => {
     expect(queryByTestId('sf-detail-panel')).toBeNull();
   });
 
-  it('hides LODetailPanel when switching lo→sf and lo had no selection', () => {
+  it('switches from lo to sf perspective and shows SFDetailPanel instead', () => {
+    // RightPanel renders LODetailPanel (with empty state) when loSelectedStep is null
     const loProps = makeProps({ perspective: 'logic-operation', loSelectedStep: null });
-    const { rerender, container, queryByTestId } = render(React.createElement(RightPanel, loProps));
-    expect(container.firstChild).toBeNull();
+    const { rerender, queryByTestId } = render(React.createElement(RightPanel, loProps));
+    expect(queryByTestId('lo-detail-panel')).toBeTruthy();
 
     rerender(React.createElement(RightPanel, makeProps({ perspective: 'system-framework' })));
     expect(queryByTestId('sf-detail-panel')).toBeTruthy();
+    expect(queryByTestId('lo-detail-panel')).toBeNull();
   });
 });

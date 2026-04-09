@@ -1,10 +1,6 @@
 /**
  * graph-3d-data unit tests
  *
- * Tests pure helper functions extracted from Graph3DCanvas:
- * - hexToRgba: hex colour + alpha → rgba string
- * - resolveLinkEndId: NodeObject | string | number → string id
- *
  * Tests GraphNode → FG3DNode-equivalent transformation logic:
  * - id, name, nodeType, depth derivation from filePath
  *
@@ -14,75 +10,13 @@
  * Tests adjacency map construction correctness.
  *
  * Sprint 4 — T9: Unit + Integration Tests
+ * Sprint 19 — T12: 3D removal — hexToRgba and resolveLinkEndId tests removed
+ *   (three-helpers.ts deleted). Graph transformation and adjacency tests retained
+ *   as they only depend on GraphNode/GraphEdge types and local helpers.
  */
 
 import { describe, it, expect } from 'vitest';
-import { hexToRgba, resolveLinkEndId } from '../src/utils/three-helpers';
 import type { GraphNode, GraphEdge } from '../src/types/graph';
-
-// ---------------------------------------------------------------------------
-// hexToRgba
-// ---------------------------------------------------------------------------
-
-describe('hexToRgba', () => {
-  it('converts pure red #ff0000 at full opacity', () => {
-    expect(hexToRgba('#ff0000', 1)).toBe('rgba(255,0,0,1)');
-  });
-
-  it('converts pure green #00ff00 at half opacity', () => {
-    expect(hexToRgba('#00ff00', 0.5)).toBe('rgba(0,255,0,0.5)');
-  });
-
-  it('converts pure blue #0000ff at zero opacity', () => {
-    expect(hexToRgba('#0000ff', 0)).toBe('rgba(0,0,255,0)');
-  });
-
-  it('converts a mixed colour #1a2b3c', () => {
-    // 0x1a=26, 0x2b=43, 0x3c=60
-    expect(hexToRgba('#1a2b3c', 0.8)).toBe('rgba(26,43,60,0.8)');
-  });
-
-  it('converts white #ffffff', () => {
-    expect(hexToRgba('#ffffff', 1)).toBe('rgba(255,255,255,1)');
-  });
-
-  it('converts black #000000', () => {
-    expect(hexToRgba('#000000', 0.3)).toBe('rgba(0,0,0,0.3)');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// resolveLinkEndId
-// ---------------------------------------------------------------------------
-
-describe('resolveLinkEndId', () => {
-  it('returns a string endpoint unchanged', () => {
-    expect(resolveLinkEndId('src/index.ts')).toBe('src/index.ts');
-  });
-
-  it('converts a numeric endpoint to a string', () => {
-    expect(resolveLinkEndId(42)).toBe('42');
-  });
-
-  it('extracts id from a NodeObject with string id', () => {
-    const node = { id: 'src/utils/helper.ts' };
-    expect(resolveLinkEndId(node)).toBe('src/utils/helper.ts');
-  });
-
-  it('extracts id from a NodeObject with numeric id', () => {
-    const node = { id: 7 };
-    expect(resolveLinkEndId(node)).toBe('7');
-  });
-
-  it('returns empty string for a NodeObject with no id', () => {
-    const node = {};
-    expect(resolveLinkEndId(node)).toBe('');
-  });
-
-  it('returns empty string for undefined', () => {
-    expect(resolveLinkEndId(undefined)).toBe('');
-  });
-});
 
 // ---------------------------------------------------------------------------
 // GraphNode → FG3DNode field mapping

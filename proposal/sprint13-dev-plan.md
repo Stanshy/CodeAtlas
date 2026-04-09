@@ -852,21 +852,75 @@ Phase 5: 測試
 | T7 | 2026-04-02 | ✅ 完成 | RightPanel 統一切換容器，移除重複面板渲染 |
 | T8 | 2026-04-02 | ✅ 完成 | 91 新測試 + 1344 全過（916 web + 428 core）+ pnpm build 通過 |
 
+### 差異報告修正紀錄
+
+> 老闆 2026-04-03 用 VideoBrief 驗收後駁回初版交付，產出差異報告 `proposal/sprint13-diff-report.md`（15 項），要求逐項修正。
+
+| 項目 | 完成日期 | 結果 | 備註 |
+|------|---------|------|------|
+| SHARED-1 Python 噪音過濾 | 2026-04-05 | ✅ 完成 | skip list 擴充（Python 內建 + SQLAlchemy + Pydantic + datetime + 通用 noise） |
+| SF-1 卡片色條 | 2026-04-05 | ✅ 完成 | 左側 5px 色條（Frontend 紫/Backend 藍/Infra 灰） |
+| SF-2 📁 圖標 | 2026-04-05 | ✅ 完成 | 卡片右下角 📁 |
+| SF-3 節點連接線 | 2026-04-05 | ✅ 完成 | Bezier 曲線 import 依賴 |
+| SF-4 FUNCTIONS 統計 | 2026-04-05 | ✅ 完成 | 右面板三項：FILES / FUNCTIONS / LINES |
+| SF-5 檔案展開函式 | 2026-04-05 | ✅ 完成 | 每檔 fn 數量 + ▶ 展開函式列表（GET /api/graph/functions/:fileId） |
+| LO-1 噪音方法 | 2026-04-05 | ✅ 完成 | 同 SHARED-1，方法數降至合理範圍 |
+| LO-2 卡片點擊 | 2026-04-05 | ✅ 完成 | loCategoryCard 合成 ID 處理修正 |
+| LO-3 佈局順序 | 2026-04-05 | ✅ 完成 | Middleware → Services → Routes + Models + Utils |
+| LO-4 方法來源標註 | 2026-04-05 | ✅ 完成 | 方法旁顯示來源檔案名 + chain 呼叫者/被呼叫者 |
+| LO-5 ★ 標記 | 2026-04-05 | ✅ 完成 | 推薦入口 ★ 標記 |
+| LO-6 提示文字 | 2026-04-05 | ✅ 完成 | 頂部「點擊任一方法查看呼叫鏈 · ★ 為推薦入口」 |
+| DJ-1 噪音步驟 | 2026-04-05 | ✅ 完成 | 同 SHARED-1，每鏈步驟數降至合理範圍 |
+| DJ-2 步驟描述 | 2026-04-05 | ✅ 完成 | 有意義描述取代方法名重複 |
+| DJ-3 I/O/Transform | 2026-04-05 | ✅ 完成 | 點擊步驟顯示 INPUT/OUTPUT/TRANSFORM/METHOD 四區塊 |
+| DJ-4 中文描述 | 2026-04-05 | ✅ 完成 | 端點卡片加中文描述 |
+| UI-1 清除選取按鈕 | 2026-04-05 | ✅ 完成 | LO + DJ 底部 footer 加清除按鈕 |
+
+### 版面改版紀錄
+
+> 老闆 2026-04-05 指示版面大改版，計畫書見 `~/.claude/plans/shiny-juggling-flute.md`，12 步全部完成。
+
+| 項目 | 完成日期 | 結果 | 備註 |
+|------|---------|------|------|
+| ControlPanel → SettingsPopover | 2026-04-05 | ✅ 完成 | 齒輪 icon + 白色 Popover（5 區塊） |
+| TabBar 固定可見 | 2026-04-05 | ✅ 完成 | fixed top:48px zIndex:39 |
+| 右面板永遠顯示 | 2026-04-05 | ✅ 完成 | 三視角各有空狀態 |
+| SF/LO/DJ footer 統一骨架 | 2026-04-05 | ✅ 完成 | 6 種 footer 狀態（含清除/返回按鈕） |
+| LO chain 頂部→底部 | 2026-04-05 | ✅ 完成 | 返回群組 + chain 標題 + 圖例 |
+| DJ footer 新建 | 2026-04-05 | ✅ 完成 | selector + playing 兩態 |
+
+### 額外修正紀錄
+
+| 項目 | 完成日期 | 結果 | 備註 |
+|------|---------|------|------|
+| LO/DJ 動畫完成後停止發光 | 2026-04-05 | ✅ 完成 | animDone 後全部轉 completed 狀態 |
+| DJ 步驟節點可點擊 + 面板連動 | 2026-04-05 | ✅ 完成 | djClickedStep 雙向同步 |
+| LO chain 點擊高亮 | 2026-04-05 | ✅ 完成 | selected 藍色邊框 + 陰影 |
+| LO 呼叫者/被呼叫者 | 2026-04-05 | ✅ 完成 | chain 上下文推算 + 位置/分類資訊 |
+
 ### Review 紀錄
 
 | Review 步驟 | 日期 | 結果 | Review 文件連結 |
 |------------|------|------|---------------|
-| 實作 Review（對程式碼+對規範+對設計稿） | 2026-04-02 | 通過 | Blocker:0 Major:0 Minor:3 — task 文件缺完工時間/驗收未勾/已修正 |
-| 測試 Review（對功能+對規範） | 2026-04-02 | 通過 | Blocker:0 Major:0 Minor:0 — 1344 tests 全過，pnpm build 通過 |
+| 實作 Review（初版） | 2026-04-02 | 通過 | Blocker:0 Major:0 Minor:3 |
+| 測試 Review（初版） | 2026-04-02 | 通過 | 1344 tests 全過 |
+| 圖稿校正 Review | 2026-04-03 | ❌ 駁回 | 差異報告 15 項（2 致命 + 4 嚴重 + 7 中等），見 sprint13-diff-report.md |
+| 差異修正 Review | 2026-04-05 | 通過 | 15 項全部修正完成 |
+| 版面改版 Review | 2026-04-05 | 通過 | 12 步全部完成，build + test 通過 |
+| 綜合 Review（程式碼+規範+文件） | 2026-04-05 | 通過 | Blocker:0 Major:0 Minor:3 — 死碼殘留/mega-component 技術債/Web 型別命名差異，均為後續處理 |
+| G3 測試驗收 Review | 2026-04-05 | 通過 | 1344 tests（57 檔）全過，覆蓋率達標，零回歸 |
+| G4 文件審查 Review | 2026-04-05 | 通過 | feature-spec/data-model/api-design/架構文件/CLAUDE.md 全部與程式碼同步 |
 
 ### Gate 紀錄
 
 | Gate | 日期 | 決策 | 審核意見 |
 |------|------|------|---------|
 | G0 | 2026-04-02 | ✅ 通過 | 老闆確認通過。無需 G1，核准圖稿 + 技術規格書直接作為實作規範 |
-| G2 | 2026-04-02 | ✅ 通過 | L1 Review 通過（Blocker:0 Major:0 Minor:3 已修正）。程式碼品質合格，規範一致，設計稿對照通過 |
-| G3 | 2026-04-02 | ✅ 通過 | 1344 tests 全過（916 web + 428 core，+91 新增），pnpm build 通過，零回歸 |
+| G2 | 2026-04-03 | ❌ 駁回 | 老闆 VideoBrief 驗收：差異報告 15 項未達標。要求逐項修正後重新提交 |
+| G2 重審 | 2026-04-05 | ✅ 通過 | 綜合 Review 通過（Blocker:0 Major:0 Minor:3）。差異 15 項 + 版面改版 + 額外修正共 33 項全部完成。PM 審核通過。老闆 2026-04-05 確認通過，Minor:3 技術債帶入後續 Sprint |
+| G3 | 2026-04-05 | ✅ 通過 | 1344 tests 全過（916 web + 428 core），91 新增測試，覆蓋率達標（core 80%/web 70%），pnpm build 通過。老闆 2026-04-05 確認通過 |
+| G4 | 2026-04-05 | ✅ 通過 | feature-spec v13.0 + data-model v6.0 + api-design v6.0 + 架構文件 547 行 + CLAUDE.md 索引，全部與程式碼同步。老闆 2026-04-05 確認通過 |
 
 ---
 
-**確認**: [ ] L1 確認 / [ ] Tech Lead 確認
+**確認**: [x] L1 確認 / [x] Tech Lead 確認

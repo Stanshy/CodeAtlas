@@ -58,9 +58,9 @@ describe('OllamaProvider — basic properties', () => {
     expect(provider.isConfigured()).toBe(true);
   });
 
-  it('getModel() returns default "codellama"', () => {
+  it('getModel() returns default "gemma3:4b"', () => {
     const provider = new OllamaProvider();
-    expect(provider.getModel()).toBe('codellama');
+    expect(provider.getModel()).toBe('gemma3:4b');
   });
 
   it('constructor with custom model: getModel() returns the custom value', () => {
@@ -109,7 +109,7 @@ describe('OllamaProvider — summarize() successful response', () => {
     await provider.summarize(dummyCode, dummyContext);
     const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
     const body = JSON.parse(requestInit.body as string) as Record<string, unknown>;
-    expect(body.model).toBe('codellama');
+    expect(body.model).toBe('gemma3:4b');
     expect(typeof body.prompt).toBe('string');
     expect(body.stream).toBe(false);
   });

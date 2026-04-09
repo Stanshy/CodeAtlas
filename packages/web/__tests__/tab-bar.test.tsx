@@ -2,7 +2,7 @@
  * TabBar component unit tests
  *
  * Coverage:
- *   - Renders three tabs with correct Chinese labels
+ *   - Renders four tabs with correct Chinese labels (SF, LO, DJ, Wiki added Sprint 19 T13)
  *   - Active tab has fontWeight 600 in its inline style
  *   - Inactive tabs have fontWeight 500 in their inline style
  *   - Clicking a tab calls onPerspectiveChange with the correct perspective name
@@ -10,6 +10,7 @@
  *   - Count badges are hidden when count is 0
  *
  * Sprint 12 — T11
+ * Sprint 19 — T13: Wiki tab added (four tabs total)
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -25,7 +26,7 @@ import type { PerspectiveName } from '../src/types/graph';
 function renderTabBar(
   activePerspective: PerspectiveName = 'system-framework',
   onPerspectiveChange = vi.fn(),
-  counts = { sf: 0, lo: 0, dj: 0 },
+  counts = { sf: 0, lo: 0, dj: 0, wiki: 0 },
 ) {
   return render(
     React.createElement(TabBar, {
@@ -41,10 +42,10 @@ function renderTabBar(
 // ---------------------------------------------------------------------------
 
 describe('TabBar — tab rendering', () => {
-  it('renders exactly three tabs', () => {
+  it('renders exactly four tabs', () => {
     renderTabBar();
     const tabs = screen.getAllByRole('tab');
-    expect(tabs).toHaveLength(3);
+    expect(tabs).toHaveLength(4);
   });
 
   it('renders the 系統框架 label', () => {
@@ -97,7 +98,8 @@ describe('TabBar — active tab styling', () => {
     const inactiveTabs = tabs.filter(
       (tab) => tab.getAttribute('aria-selected') === 'false',
     );
-    expect(inactiveTabs).toHaveLength(2);
+    // Four tabs total (SF, LO, DJ, Wiki added Sprint 19 T13) — 3 inactive when SF is active
+    expect(inactiveTabs).toHaveLength(3);
   });
 
   it('inactive tabs have fontWeight 500 in inline style', () => {
@@ -132,7 +134,7 @@ describe('TabBar — click interaction', () => {
       React.createElement(TabBar, {
         activePerspective: 'logic-operation',
         onPerspectiveChange,
-        counts: { sf: 0, lo: 0, dj: 0 },
+        counts: { sf: 0, lo: 0, dj: 0, wiki: 0 },
       }),
     );
     fireEvent.click(screen.getByText('系統框架'));
@@ -145,7 +147,7 @@ describe('TabBar — click interaction', () => {
       React.createElement(TabBar, {
         activePerspective: 'system-framework',
         onPerspectiveChange,
-        counts: { sf: 0, lo: 0, dj: 0 },
+        counts: { sf: 0, lo: 0, dj: 0, wiki: 0 },
       }),
     );
     fireEvent.click(screen.getByText('邏輯運作'));
@@ -158,7 +160,7 @@ describe('TabBar — click interaction', () => {
       React.createElement(TabBar, {
         activePerspective: 'system-framework',
         onPerspectiveChange,
-        counts: { sf: 0, lo: 0, dj: 0 },
+        counts: { sf: 0, lo: 0, dj: 0, wiki: 0 },
       }),
     );
     fireEvent.click(screen.getByText('資料旅程'));
@@ -171,7 +173,7 @@ describe('TabBar — click interaction', () => {
       React.createElement(TabBar, {
         activePerspective: 'system-framework',
         onPerspectiveChange,
-        counts: { sf: 0, lo: 0, dj: 0 },
+        counts: { sf: 0, lo: 0, dj: 0, wiki: 0 },
       }),
     );
     fireEvent.click(screen.getByText('邏輯運作'));

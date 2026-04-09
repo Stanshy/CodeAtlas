@@ -11,7 +11,7 @@ import type { SummaryContext } from '../types.js';
 const MAX_CODE_LINES = 200;
 
 /** Default timeout for external AI API calls (ms) */
-export const AI_TIMEOUT_MS = 10_000;
+export const AI_TIMEOUT_MS = 120_000;
 
 /**
  * Truncate source code to prevent token overflow.
@@ -42,11 +42,11 @@ export function buildPrompt(
   context: SummaryContext,
 ): { system: string; user: string } {
   const system = [
-    'You are a code analyst for a codebase visualization tool called CodeAtlas.',
-    'Given source code and its import/export context, provide a concise 2-3 sentence summary',
-    'explaining what this module does, in plain language that a non-engineer can understand.',
-    'Focus on the purpose and role of the module within the project.',
-    'Do NOT list individual functions or variables — describe the big picture.',
+    '你是 CodeAtlas 程式碼視覺化工具的程式碼分析專家。',
+    '根據原始碼及其 import/export 關係，用繁體中文提供簡潔的 2-3 句摘要，',
+    '說明此模組的用途，用非工程師也能理解的語言。',
+    '聚焦於模組在專案中的角色與用途。',
+    '不要逐一列出函式或變數，描述整體功能。',
   ].join(' ');
 
   const importsList = context.imports.length > 0 ? context.imports.join(', ') : 'none';

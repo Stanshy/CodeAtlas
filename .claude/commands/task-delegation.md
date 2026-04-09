@@ -1,7 +1,6 @@
 ---
 name: task-delegation
 description: Create task breakdown in dev plan section 6 and generate .tasks/ files
-disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
@@ -28,7 +27,11 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 | T1 | ... | backend-architect | — | 1h |
 ```
 
-4. 為每個任務建立 `.tasks/sprint-{N}/TN-{kebab-case-name}.md`：
+4. **取得真實時間（必要，不可跳過）**：
+!`node -e "console.log(new Date().toISOString())"`
+   > ⚠️ **禁止自行編造時間**。將輸出存為 `$NOW` 供後續步驟使用（建立時間與事件紀錄 timestamp）。
+
+5. 為每個任務建立 `.tasks/sprint-{N}/TN-{kebab-case-name}.md`：
 
 > **⚠️ Sprint 子目錄規則**：任務檔案必須放在對應 Sprint 的子目錄下。
 > - Sprint 1 的任務 → `.tasks/sprint-1/T1-xxx.md`
@@ -42,7 +45,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 |------|------|------|
 | ID | `TN` | T + 數字，如 T1, T2, T10 |
 | Sprint | `Sprint N` | **必須用 `Sprint N` 格式**（如 `Sprint 1`），系統用此名稱對應 DB 中的 Sprint UUID |
-| 狀態 | 英文小寫 | `created` / `assigned` / `in_progress` / `in_review` / `blocked` / `done` |
+| 狀態 | 英文小寫 | 初始值為 `assigned`（L1 拆解時已知指派對象） |
 | 優先級 | `P0` / `P1` / `P2` | — |
 | 建立時間 | ISO 8601 | 如 `2026-03-26T12:00:00.000Z` |
 | 依賴 | 逗號分隔 ID | 如 `T1,T3`，無則填 `—` |
@@ -57,10 +60,10 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 | Sprint | Sprint {N} |
 | 指派給 | {agent-id} |
 | 優先級 | P0/P1 |
-| 狀態 | created |
+| 狀態 | assigned |
 | 依賴 | {依賴任務 ID，無則填 —} |
 | 預估 | {預估工時，無則填 —} |
-| 建立時間 | {ISO timestamp} |
+| 建立時間 | $NOW |
 
 ---
 
@@ -76,8 +79,8 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## 事件紀錄
 
-### {ISO timestamp} — 建立任務
+### $NOW — 建立任務（assigned）
 由 L1 透過 /task-delegation 建立
 ```
 
-5. 畫出依賴圖（ASCII art）
+6. 畫出依賴圖（ASCII art）

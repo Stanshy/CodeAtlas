@@ -111,3 +111,106 @@
 .particles-disabled .edge-particle--active {
   display: none;
 }
+
+/* Spinner animation for AI analyze buttons */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ─────────────────────────────────────────────────
+   WikiPreviewPanel — Sprint 19 T14
+   ───────────────────────────────────────────────── */
+
+/* Skeleton shimmer for loading state */
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Markdown content classes rendered via dangerouslySetInnerHTML */
+.wp-h1 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 12px 0 6px;
+  letter-spacing: -0.01em;
+}
+
+.wp-h2 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 10px 0 5px;
+}
+
+.wp-h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a4a6a;
+  margin: 8px 0 4px;
+}
+
+.wp-para {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.65;
+  color: #4a4a6a;
+}
+
+.wp-para:last-child { margin-bottom: 0; }
+
+.wp-wiki-link {
+  color: #1976d2;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.wp-wiki-link:hover { color: #1565c0; }
+
+.wp-codeblock {
+  background: #f5f5f8;
+  border: 1px solid #e0e0e8;
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin: 6px 0;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  line-height: 1.6;
+  color: #4a4a6a;
+  white-space: pre;
+}
+
+.wp-inline-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  background: #f5f5f8;
+  border: 1px solid #e0e0e8;
+  border-radius: 3px;
+  padding: 1px 4px;
+  color: #1565c0;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes skeleton-shimmer {
+    0%   { background-position: 0 0; }
+    100% { background-position: 0 0; }
+  }
+}
+
+/* Wiki pulse ring — selected node indicator */
+@keyframes wiki-pulse-ring {
+  0% {
+    opacity: 0.8;
+    r: inherit;
+    stroke-width: 2;
+  }
+  100% {
+    opacity: 0;
+    stroke-width: 0.5;
+    transform: scale(2.2);
+  }
+}

@@ -1,16 +1,16 @@
 /**
  * camera-presets component tests
  *
- * Tests the CameraPresets button rendering behaviour:
- * - Hidden in 2D mode (returns null)
- * - Renders 3 preset buttons in 3D mode
- * - Clicking a button dispatches SET_CAMERA_PRESET
+ * Tests the CameraPresets component rendering behaviour.
+ * Note: 3D mode was removed in Sprint 19 T12. CameraPresets is now a no-op
+ * placeholder that always returns null. Only the 2D mode (null render) tests remain.
  *
  * Sprint 4 — T9: Unit + Integration Tests
+ * Sprint 19 — T12: 3D removal — 3D mode tests removed
  */
 
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import React from 'react';
 import { ViewStateProvider, useViewState } from '../src/contexts/ViewStateContext';
 import { CameraPresets } from '../src/components/CameraPresets';
@@ -48,142 +48,11 @@ describe('CameraPresets — 2D mode', () => {
   });
 });
 
-describe('CameraPresets — 3D mode', () => {
-  it('renders exactly 3 buttons', () => {
-    renderIn3DMode();
-    expect(screen.getAllByRole('button')).toHaveLength(3);
-  });
-
-  it('renders a button with text "Default"', () => {
-    renderIn3DMode();
-    const buttons = screen.getAllByRole('button');
-    const labels = buttons.map((b) => b.textContent ?? '');
-    expect(labels.some((l) => l.includes('Default'))).toBe(true);
-  });
-
-  it('renders a button with text "Top"', () => {
-    renderIn3DMode();
-    const buttons = screen.getAllByRole('button');
-    const labels = buttons.map((b) => b.textContent ?? '');
-    expect(labels.some((l) => l.includes('Top'))).toBe(true);
-  });
-
-  it('renders a button with text "Side"', () => {
-    renderIn3DMode();
-    const buttons = screen.getAllByRole('button');
-    const labels = buttons.map((b) => b.textContent ?? '');
-    expect(labels.some((l) => l.includes('Side'))).toBe(true);
-  });
-
-  it('each preset button has an aria-label attribute', () => {
-    renderIn3DMode();
-    const buttons = screen.getAllByRole('button');
-    buttons.forEach((btn) => {
-      expect(btn.getAttribute('aria-label')).not.toBeNull();
-    });
-  });
-});
-
-describe('CameraPresets — preset button click dispatches SET_CAMERA_PRESET', () => {
-  it('clicking Default button dispatches SET_CAMERA_PRESET with default', () => {
-    let capturedPreset: string | null | undefined;
-
-    function Observer() {
-      const { state } = useViewState();
-      capturedPreset = state.cameraPreset;
-      return null;
-    }
-
-    function Harness() {
-      const { dispatch } = useViewState();
-      const [ready, setReady] = React.useState(false);
-
-      React.useEffect(() => {
-        dispatch({ type: 'SET_MODE', mode: '3d' });
-        setReady(true);
-      }, [dispatch]);
-
-      if (!ready) return null;
-      return React.createElement(
-        React.Fragment,
-        null,
-        React.createElement(CameraPresets),
-        React.createElement(Observer),
-      );
-    }
-
-    render(React.createElement(ViewStateProvider, null, React.createElement(Harness)));
-
-    const defaultBtn = screen.getByLabelText('Camera preset: Default');
-    fireEvent.click(defaultBtn);
-    expect(capturedPreset).toBe('default');
-  });
-
-  it('clicking Top button dispatches SET_CAMERA_PRESET with topDown', () => {
-    let capturedPreset: string | null | undefined;
-
-    function Observer() {
-      const { state } = useViewState();
-      capturedPreset = state.cameraPreset;
-      return null;
-    }
-
-    function Harness() {
-      const { dispatch } = useViewState();
-      const [ready, setReady] = React.useState(false);
-
-      React.useEffect(() => {
-        dispatch({ type: 'SET_MODE', mode: '3d' });
-        setReady(true);
-      }, [dispatch]);
-
-      if (!ready) return null;
-      return React.createElement(
-        React.Fragment,
-        null,
-        React.createElement(CameraPresets),
-        React.createElement(Observer),
-      );
-    }
-
-    render(React.createElement(ViewStateProvider, null, React.createElement(Harness)));
-
-    const topBtn = screen.getByLabelText('Camera preset: Top');
-    fireEvent.click(topBtn);
-    expect(capturedPreset).toBe('topDown');
-  });
-
-  it('clicking Side button dispatches SET_CAMERA_PRESET with sideView', () => {
-    let capturedPreset: string | null | undefined;
-
-    function Observer() {
-      const { state } = useViewState();
-      capturedPreset = state.cameraPreset;
-      return null;
-    }
-
-    function Harness() {
-      const { dispatch } = useViewState();
-      const [ready, setReady] = React.useState(false);
-
-      React.useEffect(() => {
-        dispatch({ type: 'SET_MODE', mode: '3d' });
-        setReady(true);
-      }, [dispatch]);
-
-      if (!ready) return null;
-      return React.createElement(
-        React.Fragment,
-        null,
-        React.createElement(CameraPresets),
-        React.createElement(Observer),
-      );
-    }
-
-    render(React.createElement(ViewStateProvider, null, React.createElement(Harness)));
-
-    const sideBtn = screen.getByLabelText('Camera preset: Side');
-    fireEvent.click(sideBtn);
-    expect(capturedPreset).toBe('sideView');
+// Sprint 19 T12: 3D has been removed. CameraPresets is now a no-op placeholder that returns null.
+// All 3D mode rendering and click tests removed — the component renders nothing regardless of mode.
+describe('CameraPresets — 3D mode (removed in Sprint 19 T12)', () => {
+  it('renders nothing in 3D mode (3D removed, component is no-op)', () => {
+    const { container } = renderIn3DMode();
+    expect(container.firstChild).toBeNull();
   });
 });

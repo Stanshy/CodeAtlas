@@ -1,7 +1,6 @@
 ---
 name: review
 description: L1 internal review with auto-detection, design comparison, and Gate escalation path
-disable-model-invocation: true
 allowed-tools: Read, Edit, Glob, Grep, Bash
 ---
 

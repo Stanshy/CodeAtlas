@@ -11,6 +11,8 @@
 | 依賴 | T1 |
 | 預估 | 4h |
 | 建立時間 | 2026-04-02T10:00:00.000Z |
+| 開始時間 | 2026-04-02T10:00:00.000Z |
+| 完工時間 | 2026-04-02T23:59:00.000Z |
 
 ---
 
@@ -41,11 +43,11 @@
 
 ## 驗收標準
 
-- [ ] 用 VideoBrief 驗證識別出 API 端點（Express 標準寫法）
-- [ ] 請求鏈 BFS 正確追蹤（endpoint → middleware → service → model）
-- [ ] API 回應含 endpointGraph 欄位
-- [ ] 非 web 專案回退 null
-- [ ] 單元測試覆蓋 happy path + 非標準框架 fallback
+- [x] 用 VideoBrief 驗證識別出 API 端點（Express 標準寫法）
+- [x] 請求鏈 BFS 正確追蹤（endpoint → middleware → service → model）
+- [x] API 回應含 endpointGraph 欄位
+- [x] 非 web 專案回退 null
+- [x] 單元測試覆蓋 happy path + 非標準框架 fallback
 
 ---
 
@@ -53,3 +55,6 @@
 
 ### 2026-04-02T10:00:00.000Z — 建立任務
 由 L1 透過 /task-delegation 建立
+
+### 2026-04-02T23:59:00.000Z — 狀態變更 → done
+任務完成，所有驗收標準通過

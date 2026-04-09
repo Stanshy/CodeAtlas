@@ -67,7 +67,7 @@ const UTILITY_BASENAME_RE = /^(types\.ts|interfaces\.ts|enums\.ts|constants\.ts|
 const UTILITY_DTS_RE = /\.d\.ts$/i;
 
 /** Step 3 — directory names → business-logic. */
-const BUSINESS_LOGIC_DIRS = new Set([
+export const BUSINESS_LOGIC_DIRS = new Set([
   'routes',
   'controllers',
   'services',
@@ -85,7 +85,7 @@ const BUSINESS_LOGIC_DIRS = new Set([
 ]);
 
 /** Step 3 — directory names → cross-cutting. */
-const CROSS_CUTTING_DIRS = new Set([
+export const CROSS_CUTTING_DIRS = new Set([
   'middleware',
   'middlewares',
   'auth',
@@ -101,7 +101,7 @@ const CROSS_CUTTING_DIRS = new Set([
 ]);
 
 /** Step 3 — directory names → infrastructure. */
-const INFRA_DIRS = new Set([
+export const INFRA_DIRS = new Set([
   'config',
   'configs',
   'database',
@@ -116,7 +116,7 @@ const INFRA_DIRS = new Set([
 ]);
 
 /** Step 3 — directory names → utility. */
-const UTILITY_DIRS = new Set([
+export const UTILITY_DIRS = new Set([
   'utils',
   'helpers',
   'lib',

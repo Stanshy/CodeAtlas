@@ -40,6 +40,11 @@ export interface NodeMetadata {
   isAsync?: boolean;
   isExported?: boolean;
   methodCount?: number;
+
+  // Sprint 14: AI method analysis
+  methodRole?: string;        // MethodRole enum value
+  roleConfidence?: number;    // 0-1 confidence score
+  aiSummary?: string;         // AI one-line summary
 }
 
 export interface GraphNode {
@@ -101,6 +106,8 @@ export interface EndpointNode {
   path?: string;
   filePath: string;
   kind: 'endpoint' | 'method' | 'handler';
+  /** Sprint 15.1: AI-generated description */
+  description?: string;
 }
 
 export interface EndpointEdge {
@@ -244,7 +251,7 @@ export type ViewModeName = 'panorama' | 'dependency' | 'dataflow' | 'callchain';
 
 // === Sprint 11: Perspective (Story View) Types ===
 
-export type PerspectiveName = 'system-framework' | 'logic-operation' | 'data-journey';
+export type PerspectiveName = 'system-framework' | 'logic-operation' | 'data-journey' | 'wiki';
 
 export type LayoutEngine = 'dagre-hierarchical' | 'force-directed' | 'path-tracing';
 export type ColorScheme =
@@ -375,4 +382,52 @@ export interface E2ETracingState {
   steps: E2EStep[];
   maxDepth: number;
   truncated: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Sprint 16: AI Job & Configure types
+// ---------------------------------------------------------------------------
+
+export type AIJobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cached' | 'canceled';
+
+export type AIJobScope = 'directory' | 'method' | 'method-group' | 'endpoint' | 'all' | 'core';
+
+export interface AIJob {
+  jobId: string;
+  scope: AIJobScope;
+  target?: string;
+  status: AIJobStatus;
+  createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  error?: string;
+  force: boolean;
+  /** AI analysis result (populated on succeeded/cached) */
+  result?: Record<string, unknown> | null;
+}
+
+export interface AIAnalyzeResponse {
+  ok: boolean;
+  job: AIJob;
+}
+
+export interface AIJobResponse {
+  ok: boolean;
+  job: AIJob;
+}
+
+export interface AIConfigureResult {
+  ok: boolean;
+  provider: string;
+  persisted: boolean;
+  message: string;
+}
+
+export interface AIJobMetrics {
+  totalJobs: number;
+  successCount: number;
+  failCount: number;
+  cacheHitCount: number;
+  cacheHitRate: number;
+  analyzeSuccessRate: number;
 }

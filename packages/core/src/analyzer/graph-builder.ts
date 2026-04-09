@@ -8,7 +8,7 @@
 
 import { readFile } from 'fs/promises';
 import { resolve } from 'path';
-import type { GraphNode, GraphEdge, AnalysisError, AnalysisStats } from '../types.js';
+import type { GraphNode, GraphEdge, AnalysisError, AnalysisStats, SupportedLanguage } from '../types.js';
 import type { ScanResult } from '../scanner/index.js';
 import { parseFileImports } from '../parser/import-extractor.js';
 import { resolveAllEdges } from '../parser/import-resolver.js';
@@ -16,6 +16,8 @@ import { parseSource } from '../parser/parser-factory.js';
 import { extractFunctions } from '../parser/function-extractor.js';
 import { analyzeCallRelations } from './call-analyzer.js';
 import { classifyNodeRole, computeDependencyStats } from './role-classifier.js';
+import { classifyMethodRole } from '../ai/method-role-classifier.js';
+import type { MethodClassificationInput } from '../ai/method-role-classifier.js';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -115,8 +117,8 @@ export async function buildGraph(
     if (skippedPaths.has(relPath)) continue;
 
     // Determine language from scanner-populated metadata.
-    const language =
-      node.metadata.language === 'typescript' ? 'typescript' : 'javascript';
+    const language: SupportedLanguage =
+      (node.metadata.language as SupportedLanguage | undefined) ?? 'javascript';
 
     // --- Read source ---
     let sourceCode: string;
@@ -158,6 +160,7 @@ export async function buildGraph(
       parseResult.exports,
       projectRoot,
       existingFiles,
+      language,
     );
 
     for (const msg of resolveResult.errors) {
@@ -297,8 +300,8 @@ export async function buildFunctionGraph(
       }
 
       // Detect language
-      const language: 'typescript' | 'javascript' =
-        fileNode.metadata.language === 'typescript' ? 'typescript' : 'javascript';
+      const language: SupportedLanguage =
+        (fileNode.metadata.language as SupportedLanguage | undefined) ?? 'javascript';
 
       // Parse source → AST
       let parseResult: Awaited<ReturnType<typeof parseSource>>;
@@ -316,7 +319,7 @@ export async function buildFunctionGraph(
       const { root } = parseResult;
 
       // Extract functions and classes
-      const { functions, classes } = extractFunctions(root);
+      const { functions, classes } = extractFunctions(root, language);
 
       // Build imported functions map for this file
       const importedFunctions: Map<string, { fileId: string; functionName: string }> =
@@ -339,6 +342,8 @@ export async function buildFunctionGraph(
           kind: fn.kind,
           parameters: fn.parameters,
           lineCount: fn.endLine - fn.startLine + 1,
+          startLine: fn.startLine,
+          endLine: fn.endLine,
           language,
         };
         if (fn.returnType !== undefined) fnMeta.returnType = fn.returnType;
@@ -369,6 +374,8 @@ export async function buildFunctionGraph(
           parentFileId: fileId,
           kind: 'class',
           lineCount: cls.endLine - cls.startLine + 1,
+          startLine: cls.startLine,
+          endLine: cls.endLine,
           methodCount: cls.methods.length,
           language,
         };
@@ -394,6 +401,8 @@ export async function buildFunctionGraph(
             kind: method.kind,
             parameters: method.parameters,
             lineCount: method.endLine - method.startLine + 1,
+            startLine: method.startLine,
+            endLine: method.endLine,
             language,
           };
           if (method.returnType !== undefined) methodMeta.returnType = method.returnType;
@@ -421,6 +430,7 @@ export async function buildFunctionGraph(
         fileId,
         allLocalFunctions,
         importedFunctions,
+        language,
       );
 
       // --- Create call GraphEdges ---
@@ -454,6 +464,27 @@ export async function buildFunctionGraph(
         error: err instanceof Error ? err.message : String(err),
         phase: 'analyze',
       });
+    }
+  }
+
+  // --- Sprint 15.1: Classify method roles (rule engine, zero cost) ---
+  for (const node of functionNodes) {
+    if (node.type === 'function') {
+      const input: MethodClassificationInput = {
+        name: node.label,
+        filePath: node.filePath,
+        isExported: node.metadata.isExported,
+        isAsync: node.metadata.isAsync,
+        parameters: node.metadata.parameters?.map((p) => ({
+          name: p.name,
+          type: p.type,
+        })),
+        returnType: node.metadata.returnType,
+        callOutDegree: callEdges.filter((e) => e.source === node.id).length,
+      };
+      const result = classifyMethodRole(input);
+      node.metadata.methodRole = result.role;
+      node.metadata.roleConfidence = result.confidence;
     }
   }
 

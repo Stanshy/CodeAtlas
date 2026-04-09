@@ -1,7 +1,6 @@
 ---
 name: harness-audit
 description: Periodic Harness health audit based on 7 design principles
-disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, Bash
 ---
 
@@ -35,9 +34,9 @@ allowed-tools: Read, Glob, Grep, Bash
 - [ ] 專案級規範與公司級不衝突
 
 ### 原則 4: 技能即流程（Skill 覆蓋）
-- [ ] .claude/skills/ 目錄存在
+- [ ] ~/.claude/commands/ 或 .claude/commands/ 目錄存在且有 skill 檔案
 - [ ] 掃描已部署的 Skill 數量
-- [ ] 列出未部署但可用的公司 Skill
+- [ ] 列出未部署但可用的公司 Skill（對照 AgentHub skill-templates/）
 
 ### 原則 5: Hook 健康
 - [ ] .claude/settings.json 存在且 JSON 合法

@@ -1,19 +1,22 @@
 /**
  * CodeAtlas — Main App Component
  *
- * Integrates Toolbar, ControlPanel, GraphContainer, NodePanel, SearchBar,
+ * Integrates Toolbar, GraphContainer, NodePanel, SearchBar,
  * E2EPanel, TracingPanel, and CameraPresets. Handles loading, error, and
  * empty states.
  *
- * Sprint 4 — T3: 3d-force-graph Integration
  * Sprint 9 — T9: Toolbar + ControlPanel integration
+ * Sprint 19 — T12: 3D removal
+ * Sprint 19 — T13: Wiki Knowledge Graph tab
+ * Sprint 20 — T9: AppState routing (welcome / progress / analysis)
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react';
 import { useGraphData } from './hooks/useGraphData';
 import { useSearch } from './hooks/useSearch';
 import { useE2ETracing } from './hooks/useE2ETracing';
+import { useToast } from './hooks/useToast';
 import { GraphContainer } from './components/GraphContainer';
 import { NodePanel } from './components/NodePanel';
 import { SearchBar } from './components/SearchBar';
@@ -21,11 +24,16 @@ import { CodePreview } from './components/CodePreview';
 import { AiSummary } from './components/AiSummary';
 import { CameraPresets } from './components/CameraPresets';
 import { TracingPanel } from './components/TracingPanel';
-import { ControlPanel } from './components/ControlPanel';
+import { SettingsPopover } from './components/SettingsPopover';
 import { Toolbar } from './components/Toolbar';
 import { E2EPanel } from './components/E2EPanel';
 import { TabBar } from './components/TabBar';
+import { WikiGraph } from './components/WikiGraph';
+import { ToastStack } from './components/Toast';
 import { ViewStateProvider, useViewState } from './contexts/ViewStateContext';
+import { AppStateProvider, useAppState } from './contexts/AppStateContext';
+import { WelcomePage } from './pages/WelcomePage';
+import { ProgressPage } from './pages/ProgressPage';
 import type { PerspectiveName } from './types/graph';
 
 // ---------------------------------------------------------------------------
@@ -35,9 +43,12 @@ import type { PerspectiveName } from './types/graph';
 function AppInner() {
   const { nodes, edges, rawNodes, rawEdges, directoryGraph, endpointGraph, isLoading, error, refetch } = useGraphData();
   const { state, dispatch } = useViewState();
-  const { selectedNodeId, isPanelOpen, mode, tracingSymbol, e2eTracing, activePerspective } = state;
+  const { selectedNodeId, isPanelOpen, tracingSymbol, e2eTracing, activePerspective, isSettingsPanelOpen } = state;
 
   const reactFlow = useReactFlow();
+
+  // Toast hook
+  const { toasts, show: showToast, dismiss: dismissToast } = useToast();
 
   // E2E Tracing hook
   const {
@@ -46,25 +57,21 @@ function AppInner() {
     clearTracing: e2eClearTracing,
   } = useE2ETracing({ nodes: rawNodes, edges: rawEdges });
 
-  // Focus a node: for 2D use ReactFlow viewport; for 3D dispatch FOCUS_NODE
+  // Focus a node: select it and pan the ReactFlow viewport to it
   const focusNode = useCallback(
     (nodeId: string) => {
       dispatch({ type: 'SELECT_NODE', nodeId });
 
-      if (mode === '2d') {
-        const rfNode = reactFlow.getNode(nodeId);
-        if (rfNode) {
-          reactFlow.setCenter(
-            rfNode.position.x + (rfNode.measured?.width ?? 100) / 2,
-            rfNode.position.y + (rfNode.measured?.height ?? 40) / 2,
-            { zoom: 1.2, duration: 500 },
-          );
-        }
-      } else {
-        dispatch({ type: 'FOCUS_NODE', nodeId });
+      const rfNode = reactFlow.getNode(nodeId);
+      if (rfNode) {
+        reactFlow.setCenter(
+          rfNode.position.x + (rfNode.measured?.width ?? 100) / 2,
+          rfNode.position.y + (rfNode.measured?.height ?? 40) / 2,
+          { zoom: 1.2, duration: 500 },
+        );
       }
     },
-    [reactFlow, dispatch, mode],
+    [reactFlow, dispatch],
   );
 
   // Search hook
@@ -94,16 +101,84 @@ function AppInner() {
     [dispatch],
   );
 
+  // Sprint 15.1: Poll AI analysis status and auto-refresh graph on each phase completion
+  const [aiProgress, setAiProgress] = useState('');
+  const [aiDone, setAiDone] = useState(false);
+  const lastPhaseRef = useRef(0);
+
+  useEffect(() => {
+    if (aiDone) return;
+    let cancelled = false;
+
+    const poll = async () => {
+      if (cancelled) return;
+
+      try {
+        const res = await fetch('/api/ai/status');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // If AI is disabled, don't poll
+        if (!data.enabled || data.provider === 'disabled') return;
+
+        setAiProgress(data.progress ?? '');
+
+        // Refetch graph whenever a new phase completes
+        const phases = data.completedPhases ?? 0;
+        if (phases > lastPhaseRef.current) {
+          lastPhaseRef.current = phases;
+          refetch();
+        }
+
+        // Pipeline fully done — stop polling
+        if (data.analysisStatus === 'done' || data.analysisStatus === 'error') {
+          setAiDone(true);
+          if (data.analysisStatus === 'error') {
+            setAiProgress(`AI analysis failed: ${data.progress ?? ''}`);
+          }
+          return;
+        }
+
+        // Still running — schedule next poll
+        if (!cancelled) {
+          setTimeout(poll, 3000);
+        }
+      } catch {
+        // AI status unavailable — stop polling
+      }
+    };
+
+    const timer = setTimeout(poll, 1000);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [aiDone, refetch]);
+
+  // Wiki page count — fetch manifest on mount
+  const [wikiPageCount, setWikiPageCount] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/wiki')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!cancelled && data && data.status === 'ready' && Array.isArray(data.pages)) {
+          setWikiPageCount(data.pages.length);
+        }
+      })
+      .catch(() => { /* wiki not generated yet */ });
+    return () => { cancelled = true; };
+  }, []);
+
   // Compute per-tab node counts for the badge
   const tabCounts = useMemo(() => {
-    // sf: directory nodes (system-framework reads directory-level data)
+    // sf: directory count
     const sf = directoryGraph ? directoryGraph.nodes.length : rawNodes.filter(n => n.type === 'directory').length;
-    // lo: all file nodes
-    const lo = rawNodes.filter(n => n.type === 'file').length;
-    // dj: file nodes with data-flow edges
-    const dj = lo;
-    return { sf, lo, dj };
-  }, [rawNodes, directoryGraph]);
+    // lo: function/class count
+    const lo = rawNodes.filter(n => n.type === 'function' || n.type === 'class').length;
+    // dj: API endpoint count
+    const dj = endpointGraph ? endpointGraph.nodes.length : 0;
+    // wiki: knowledge document page count
+    const wiki = wikiPageCount;
+    return { sf, lo, dj, wiki };
+  }, [rawNodes, directoryGraph, endpointGraph, wikiPageCount]);
 
   if (isLoading) {
     return (
@@ -149,10 +224,20 @@ function AppInner() {
       {/* Unified Toolbar — fixed top */}
       <Toolbar onSearchClick={() => dispatch({ type: 'SET_SEARCH_OPEN', open: true })} />
 
-      {/* Control Panel — fixed left sidebar */}
-      <ControlPanel graphNodes={rawNodes} graphEdges={rawEdges} />
+      {/* Settings Popover — replaces ControlPanel */}
+      {isSettingsPanelOpen && (
+        <SettingsPopover
+          graphNodes={rawNodes}
+          directoryGraph={directoryGraph ?? null}
+          onClose={() => dispatch({ type: 'TOGGLE_SETTINGS_PANEL' })}
+          onShowToast={showToast}
+        />
+      )}
 
-      {/* Camera Presets — 3D only, keep existing position */}
+      {/* Toast notifications — fixed top:60px right:16px */}
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
+
+      {/* Camera Presets — renders null in 2D mode (kept for future use) */}
       <CameraPresets />
 
       {/* Tab Bar — perspective switcher, positioned below Toolbar */}
@@ -162,16 +247,48 @@ function AppInner() {
         counts={tabCounts}
       />
 
-      {/* Graph renderer — switches between 2D and 3D */}
-      <GraphContainer
-        rfNodes={nodes}
-        rfEdges={edges}
-        graphNodes={rawNodes}
-        graphEdges={rawEdges}
-        directoryGraph={directoryGraph}
-        endpointGraph={endpointGraph}
-        onStartE2ETracing={e2eStartTracing}
-      />
+      {/* Sprint 15.1: AI analysis progress indicator */}
+      {aiProgress && !aiDone && (
+        <div style={{
+          position: 'fixed',
+          bottom: 12,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(20, 20, 30, 0.85)',
+          border: '1px solid rgba(100, 140, 255, 0.3)',
+          borderRadius: 8,
+          padding: '6px 14px',
+          fontSize: 11,
+          color: 'rgba(180, 200, 255, 0.8)',
+          zIndex: 999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          backdropFilter: 'blur(8px)',
+        }}>
+          <div style={{
+            width: 6, height: 6, borderRadius: '50%',
+            background: '#648cff',
+            animation: 'pulse 1.5s ease-in-out infinite',
+          }} />
+          {aiProgress}
+        </div>
+      )}
+
+      {/* Graph renderer — Wiki tab gets its own D3 canvas; all other tabs use GraphContainer */}
+      {activePerspective === 'wiki' ? (
+        <WikiGraph />
+      ) : (
+        <GraphContainer
+          rfNodes={nodes}
+          rfEdges={edges}
+          graphNodes={rawNodes}
+          graphEdges={rawEdges}
+          directoryGraph={directoryGraph}
+          endpointGraph={endpointGraph}
+          onStartE2ETracing={e2eStartTracing}
+        />
+      )}
 
       {/* Search Bar — toggle with Ctrl+K */}
       <SearchBar search={search} />
@@ -180,28 +297,71 @@ function AppInner() {
        * Right-side panels — mutually exclusive, priority: E2E > Tracing > Node.
        * Sprint 12 T7: data-journey perspective uses JourneyPanel (inside GraphCanvas);
        * E2EPanel is suppressed in that case to prevent overlap.
+       * Sprint 19 T13: all right-side panels are suppressed in wiki perspective —
+       * the wiki tab manages its own preview panel (T14).
        */}
-      {e2eTracing?.active && activePerspective !== 'data-journey' ? (
-        <E2EPanel
-          onFocusNode={focusNode}
-          onUpdateDepth={e2eUpdateDepth}
-          onClose={e2eClearTracing}
-        />
-      ) : tracingSymbol !== null ? (
-        <TracingPanel />
-      ) : (
-        <NodePanel
-          nodeId={isPanelOpen ? selectedNodeId : null}
-          onClose={handleClosePanel}
-          onNavigate={handleNavigate}
-          renderCodePreview={(sourceCode, language) => (
-            <CodePreview sourceCode={sourceCode} language={language} />
-          )}
-          renderAiSummary={(nodeId) => <AiSummary nodeId={nodeId} />}
-        />
+      {activePerspective !== 'wiki' && (
+        e2eTracing?.active && activePerspective !== 'data-journey' ? (
+          <E2EPanel
+            onFocusNode={focusNode}
+            onUpdateDepth={e2eUpdateDepth}
+            onClose={e2eClearTracing}
+          />
+        ) : tracingSymbol !== null ? (
+          <TracingPanel />
+        ) : (
+          <NodePanel
+            nodeId={isPanelOpen ? selectedNodeId : null}
+            onClose={handleClosePanel}
+            onNavigate={handleNavigate}
+            renderCodePreview={(sourceCode, language) => (
+              <CodePreview sourceCode={sourceCode} language={language} />
+            )}
+            renderAiSummary={(nodeId) => <AiSummary nodeId={nodeId} />}
+          />
+        )
       )}
     </>
   );
+}
+
+// ---------------------------------------------------------------------------
+// AnalysisView — the full graph UI (only rendered when page='analysis')
+// ---------------------------------------------------------------------------
+
+function AnalysisView() {
+  return (
+    <ViewStateProvider>
+      <ReactFlowProvider>
+        <AppInner />
+      </ReactFlowProvider>
+    </ViewStateProvider>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AppRouter — switches between welcome / progress / analysis
+// ---------------------------------------------------------------------------
+
+function AppRouter() {
+  const { page, jobId, projectPath, projectName } = useAppState();
+
+  if (page === 'welcome') {
+    return <WelcomePage />;
+  }
+
+  if (page === 'progress') {
+    return (
+      <ProgressPage
+        jobId={jobId ?? ''}
+        projectPath={projectPath ?? ''}
+        projectName={projectName ?? ''}
+      />
+    );
+  }
+
+  // page === 'analysis'
+  return <AnalysisView />;
 }
 
 // ---------------------------------------------------------------------------
@@ -210,10 +370,8 @@ function AppInner() {
 
 export function App() {
   return (
-    <ViewStateProvider>
-      <ReactFlowProvider>
-        <AppInner />
-      </ReactFlowProvider>
-    </ViewStateProvider>
+    <AppStateProvider>
+      <AppRouter />
+    </AppStateProvider>
   );
 }

@@ -91,12 +91,12 @@ describe('LOCategoryGroup — category rendering', () => {
       makeNode('n5', 'formatDate', 'src/utils/date.ts'),
     ];
     const { container } = renderGroup(nodes);
-    // All 5 category labels should appear
-    expect(container.textContent).toContain('Routes / API');
-    expect(container.textContent).toContain('Middleware');
-    expect(container.textContent).toContain('Services');
-    expect(container.textContent).toContain('Models / DB');
-    expect(container.textContent).toContain('Utils / Tasks');
+    // All 5 category labels should appear (localized to Chinese in Sprint 13+)
+    expect(container.textContent).toContain('路線 / API');
+    expect(container.textContent).toContain('中間層');
+    expect(container.textContent).toContain('服務');
+    expect(container.textContent).toContain('模型 / 資料庫');
+    expect(container.textContent).toContain('工具 / 任務');
   });
 
   it('shows method count badge in category header', () => {
@@ -233,13 +233,25 @@ describe('LOCategoryGroup — collapse behavior', () => {
 // Click interaction
 // ---------------------------------------------------------------------------
 
+// Sprint 18/19: onMethodClick only fires when the method has hasChain === true
+// (i.e. the method appears in an endpointGraph chain). Tests must supply an
+// endpointGraph that marks the test method as a chain participant.
+
+function makeEndpointGraph(methodLabel: string, filePath: string): EndpointGraph {
+  return {
+    nodes: [{ id: `ep-${methodLabel}`, label: methodLabel, filePath, kind: 'method' }],
+    edges: [],
+  };
+}
+
 describe('LOCategoryGroup — click interaction', () => {
   it('calls onMethodClick when a method row is clicked', () => {
     const onMethodClick = vi.fn();
     const nodes = [makeNode('n1', 'handleRequest', 'src/routes/api.ts')];
-    const { container } = renderGroup(nodes, [], null, onMethodClick);
+    const endpointGraph = makeEndpointGraph('handleRequest', 'src/routes/api.ts');
+    const { container } = renderGroup(nodes, [], endpointGraph, onMethodClick);
 
-    // The method row has a title attribute with the method name and file path
+    // The chain method row title does not include （無呼叫鏈） — match by the non-chain title pattern
     const methodRow = container.querySelector('[title*="handleRequest"]') as HTMLElement;
     expect(methodRow).toBeTruthy();
     fireEvent.click(methodRow!);
@@ -249,7 +261,8 @@ describe('LOCategoryGroup — click interaction', () => {
   it('calls onMethodClick with the method name and category', () => {
     const onMethodClick = vi.fn();
     const nodes = [makeNode('n1', 'getUser', 'src/services/user.ts')];
-    renderGroup(nodes, [], null, onMethodClick);
+    const endpointGraph = makeEndpointGraph('getUser', 'src/services/user.ts');
+    renderGroup(nodes, [], endpointGraph, onMethodClick);
 
     fireEvent.click(screen.getByText('getUser()'));
     expect(onMethodClick).toHaveBeenCalledWith('getUser', 'services');
@@ -258,7 +271,8 @@ describe('LOCategoryGroup — click interaction', () => {
   it('calls onMethodClick with routes category for route methods', () => {
     const onMethodClick = vi.fn();
     const nodes = [makeNode('n1', 'listItems', 'src/routes/items.ts')];
-    renderGroup(nodes, [], null, onMethodClick);
+    const endpointGraph = makeEndpointGraph('listItems', 'src/routes/items.ts');
+    renderGroup(nodes, [], endpointGraph, onMethodClick);
 
     fireEvent.click(screen.getByText('listItems()'));
     expect(onMethodClick).toHaveBeenCalledWith('listItems', 'routes');
@@ -267,7 +281,8 @@ describe('LOCategoryGroup — click interaction', () => {
   it('calls onMethodClick once per click', () => {
     const onMethodClick = vi.fn();
     const nodes = [makeNode('n1', 'processData', 'src/services/data.ts')];
-    renderGroup(nodes, [], null, onMethodClick);
+    const endpointGraph = makeEndpointGraph('processData', 'src/services/data.ts');
+    renderGroup(nodes, [], endpointGraph, onMethodClick);
 
     fireEvent.click(screen.getByText('processData()'));
     fireEvent.click(screen.getByText('processData()'));

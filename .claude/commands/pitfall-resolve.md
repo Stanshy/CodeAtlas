@@ -1,7 +1,6 @@
 ---
 name: pitfall-resolve
 description: Mark a pitfall record as resolved in the postmortem log
-disable-model-invocation: true
 allowed-tools: Read, Edit, Grep
 ---
 

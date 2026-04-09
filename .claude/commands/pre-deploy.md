@@ -1,7 +1,6 @@
 ---
 name: pre-deploy
 description: Pre-deployment checklist for G5 submission
-disable-model-invocation: true
 allowed-tools: Read, Bash, Glob, Grep
 ---
 

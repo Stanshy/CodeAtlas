@@ -13,6 +13,7 @@
 
 import type { AstNode } from '../parser/ast-provider.js';
 import type { ParsedFunction } from '../parser/function-extractor.js';
+import type { SupportedLanguage } from '../types.js';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -63,6 +64,26 @@ const SKIP_NAMES = new Set<string>([
   'Date',
   'RegExp',
 ]);
+
+/** Python built-in names to skip. */
+const PYTHON_SKIP_NAMES = new Set<string>([
+  'len', 'print', 'dict', 'list', 'range', 'type', 'isinstance',
+  'str', 'int', 'float', 'bool', 'set', 'tuple', 'sorted',
+  'enumerate', 'zip', 'map', 'filter', 'super', 'hasattr',
+  'getattr', 'setattr', 'delattr', 'id', 'repr', 'abs',
+  'min', 'max', 'sum', 'round', 'open', 'input', 'hex', 'oct',
+  'bin', 'ord', 'chr', 'dir', 'vars', 'callable', 'iter', 'next',
+  'property', 'staticmethod', 'classmethod',
+]);
+
+/** Java built-in names to skip. */
+const JAVA_SKIP_NAMES = new Set<string>([
+  'System', 'String', 'Integer', 'Long', 'Double', 'Float',
+  'Boolean', 'Object', 'Arrays', 'Collections', 'Math', 'Optional',
+  'List', 'Map', 'Set', 'HashMap', 'ArrayList', 'HashSet',
+  'Exception', 'RuntimeException', 'Thread', 'Runnable',
+]);
+
 
 // ---------------------------------------------------------------------------
 // AST traversal helper
@@ -212,6 +233,134 @@ function extractTsCalleeInfo(callNode: AstNode, isNew: boolean): CalleeInfo | nu
   return null;
 }
 
+function extractPythonCalleeInfo(callNode: AstNode): CalleeInfo | null {
+  // Python call node: first child is the function expression
+  const funcChild = callNode.children[0];
+  if (!funcChild) return null;
+
+  // Direct call: foo()
+  if (funcChild.type === 'identifier') {
+    if (PYTHON_SKIP_NAMES.has(funcChild.text)) return null;
+    return {
+      name: funcChild.text,
+      callType: 'direct',
+      isThisCall: false,
+      objectName: null,
+      isDynamic: false,
+    };
+  }
+
+  // Method call: obj.method() or self.method()
+  if (funcChild.type === 'attribute') {
+    // attribute children: [object, '.', identifier]
+    const objectChild = funcChild.children[0];
+    const propChild = funcChild.children.find(
+      (c) => c.type === 'identifier' && c !== objectChild,
+    );
+    if (!propChild) return null;
+
+    const objectName = objectChild?.text ?? null;
+    const isSelf = objectName === 'self' || objectName === 'cls';
+
+    if (objectName && PYTHON_SKIP_NAMES.has(objectName)) return null;
+
+    return {
+      name: propChild.text,
+      callType: 'method',
+      isThisCall: isSelf,
+      objectName,
+      isDynamic: false,
+    };
+  }
+
+  return null;
+}
+
+function extractJavaCalleeInfo(callNode: AstNode): CalleeInfo | null {
+  if (callNode.type === 'method_invocation') {
+    // method_invocation children patterns:
+    // Simple: identifier argument_list → direct call
+    // Method: object '.' identifier argument_list → method call
+
+    const children = callNode.children.filter(
+      (c) => c.type !== '.' && c.type !== 'argument_list',
+    );
+
+    if (children.length === 1 && children[0].type === 'identifier') {
+      // Direct call: foo()
+      if (JAVA_SKIP_NAMES.has(children[0].text)) return null;
+      return {
+        name: children[0].text,
+        callType: 'direct',
+        isThisCall: false,
+        objectName: null,
+        isDynamic: false,
+      };
+    }
+
+    // Method call: obj.method() or this.method()
+    const identifiers = callNode.children.filter((c) => c.type === 'identifier');
+    const hasThis = callNode.children.some((c) => c.type === 'this');
+
+    // The method name is the identifier immediately before argument_list
+    const argListIdx = callNode.children.findIndex((c) => c.type === 'argument_list');
+    let methodName: string | null = null;
+    if (argListIdx > 0) {
+      const prev = callNode.children[argListIdx - 1];
+      if (prev.type === 'identifier') {
+        methodName = prev.text;
+      }
+    }
+    if (!methodName && identifiers.length > 0) {
+      methodName = identifiers[identifiers.length - 1].text;
+    }
+
+    if (!methodName) return null;
+
+    // Determine object name
+    let objectName: string | null = null;
+    if (hasThis) {
+      objectName = 'this';
+    } else if (identifiers.length > 1) {
+      objectName = identifiers[0].text;
+    } else {
+      const firstChild = callNode.children[0];
+      if (firstChild && firstChild.type !== 'identifier') {
+        objectName = firstChild.text;
+      }
+    }
+
+    if (objectName && JAVA_SKIP_NAMES.has(objectName)) return null;
+
+    return {
+      name: methodName,
+      callType: 'method',
+      isThisCall: hasThis,
+      objectName,
+      isDynamic: false,
+    };
+  }
+
+  if (callNode.type === 'object_creation_expression') {
+    // new Foo() → find type_identifier or identifier
+    const typeIdent = callNode.children.find(
+      (c) => c.type === 'type_identifier' || c.type === 'identifier',
+    );
+    if (!typeIdent) return null;
+    if (JAVA_SKIP_NAMES.has(typeIdent.text)) return null;
+
+    return {
+      name: typeIdent.text,
+      callType: 'new',
+      isThisCall: false,
+      objectName: null,
+      isDynamic: false,
+    };
+  }
+
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Lookup helpers
 // ---------------------------------------------------------------------------
@@ -245,14 +394,17 @@ function buildLocalFunctionMap(
  * @param fileId            Relative file ID (e.g. "src/auth.ts")
  * @param localFunctions    ParsedFunction list from function-extractor for this file
  * @param importedFunctions Map from symbol name → { fileId, functionName }
+ * @param language          Source language (defaults to JS/TS behaviour)
  */
 export function analyzeCallRelations(
   root: AstNode,
   fileId: string,
   localFunctions: ParsedFunction[],
   importedFunctions: Map<string, { fileId: string; functionName: string }>,
+  language?: SupportedLanguage,
 ): CallRelation[] {
-  const isTreeSitter = root.type === 'program' || root.type === 'source_file';
+  const isTreeSitter =
+    root.type === 'program' || root.type === 'source_file' || root.type === 'module';
   const relations: CallRelation[] = [];
   const localMap = buildLocalFunctionMap(localFunctions);
 
@@ -292,18 +444,38 @@ export function analyzeCallRelations(
   const seenEdges = new Set<string>();
 
   walkAst(root, (node) => {
-    const isCallExpr = isTreeSitter
-      ? node.type === 'call_expression'
-      : node.type === 'CallExpression';
-    const isNewExpr = isTreeSitter
-      ? node.type === 'new_expression'
-      : node.type === 'NewExpression';
+    let calleeInfo: CalleeInfo | null = null;
+    let isNewExpr = false;
 
-    if (!isCallExpr && !isNewExpr) return;
+    if (language === 'python') {
+      // Python: 'call' for all function/method calls; no 'new' expression syntax
+      if (node.type !== 'call') return;
+      calleeInfo = extractPythonCalleeInfo(node);
+    } else if (language === 'java') {
+      // Java: 'method_invocation' for calls, 'object_creation_expression' for new
+      if (node.type === 'method_invocation') {
+        calleeInfo = extractJavaCalleeInfo(node);
+      } else if (node.type === 'object_creation_expression') {
+        isNewExpr = true;
+        calleeInfo = extractJavaCalleeInfo(node);
+      } else {
+        return;
+      }
+    } else {
+      // JS/TS: existing tree-sitter and TS Compiler API paths (unchanged)
+      const isCallExpr = isTreeSitter
+        ? node.type === 'call_expression'
+        : node.type === 'CallExpression';
+      isNewExpr = isTreeSitter
+        ? node.type === 'new_expression'
+        : node.type === 'NewExpression';
 
-    const calleeInfo = isTreeSitter
-      ? extractTreeSitterCalleeInfo(node, isNewExpr)
-      : extractTsCalleeInfo(node, isNewExpr);
+      if (!isCallExpr && !isNewExpr) return;
+
+      calleeInfo = isTreeSitter
+        ? extractTreeSitterCalleeInfo(node, isNewExpr)
+        : extractTsCalleeInfo(node, isNewExpr);
+    }
 
     if (!calleeInfo || calleeInfo.isDynamic) return;
 

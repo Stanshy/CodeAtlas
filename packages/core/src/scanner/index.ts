@@ -22,6 +22,16 @@ const DEFAULT_IGNORE_DIRS = new Set([
   '.next',
   'coverage',
   '.cache',
+  // Python virtual environments and cache
+  '__pycache__',
+  '.venv',
+  'venv',
+  '.tox',
+  '.mypy_cache',
+  // Java build artifacts and IDE files
+  'target',
+  '.gradle',
+  '.idea',
 ]);
 
 const DEFAULT_EXTENSIONS = new Set([
@@ -31,6 +41,9 @@ const DEFAULT_EXTENSIONS = new Set([
   '.tsx',
   '.mjs',
   '.cjs',
+  '.py',
+  '.pyw',
+  '.java',
 ]);
 
 const LARGE_FILE_THRESHOLD = 1_048_576; // 1 MB in bytes
@@ -65,6 +78,8 @@ function toForwardSlash(p: string): string {
 
 function detectLanguage(ext: string): string {
   if (ext === '.ts' || ext === '.tsx') return 'typescript';
+  if (ext === '.py' || ext === '.pyw') return 'python';
+  if (ext === '.java') return 'java';
   return 'javascript';
 }
 

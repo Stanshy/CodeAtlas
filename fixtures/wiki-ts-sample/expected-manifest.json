@@ -1,0 +1,37 @@
+{
+  "description": "TypeScript Express-like sample project with auth and user management",
+  "language": "typescript",
+  "fileCount": 9,
+  "expectations": {
+    "minPageCount": 10,
+    "maxPageCount": 20,
+    "minLinkCount": 14,
+    "maxLinkCount": 40,
+    "maxDeadLinks": 0,
+    "minCoverage": 0.75,
+    "requiredModules": ["routes", "services", "models", "middleware"],
+    "requiredEndpoints": [
+      "POST /auth/login",
+      "POST /auth/register",
+      "GET /users",
+      "GET /users/:id",
+      "PUT /users/:id"
+    ],
+    "requiredFiles": [
+      "auth-service.ts",
+      "user-service.ts",
+      "auth-guard.ts",
+      "user.ts",
+      "token.ts"
+    ],
+    "importEdges": [
+      { "from": "routes/auth.ts", "to": "services/auth-service.ts" },
+      { "from": "routes/users.ts", "to": "services/user-service.ts" },
+      { "from": "services/auth-service.ts", "to": "models/user.ts" },
+      { "from": "services/auth-service.ts", "to": "models/token.ts" },
+      { "from": "services/user-service.ts", "to": "models/user.ts" },
+      { "from": "middleware/auth-guard.ts", "to": "services/auth-service.ts" },
+      { "from": "middleware/auth-guard.ts", "to": "models/token.ts" }
+    ]
+  }
+}

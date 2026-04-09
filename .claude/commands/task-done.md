@@ -1,8 +1,7 @@
 ---
 name: task-done
 description: Mark a task as in_review (pending L1 review) and record in dev plan section 10
-disable-model-invocation: true
-allowed-tools: Read, Edit, Glob
+allowed-tools: Read, Edit, Glob, Bash
 ---
 
 # 任務完成提交
@@ -42,7 +41,8 @@ allowed-tools: Read, Edit, Glob
 ## 執行步驟
 
 1. 找到對應的任務檔案（支援 Sprint 子目錄）：
-!`find .tasks -name "$0-*" -o -name "$0.*" 2>/dev/null | head -1`
+使用 Glob tool 搜尋 `.tasks/**/$0-*.md`，若無結果再搜尋 `.tasks/**/$0.md`。
+   取得檔案路徑後用 Read tool 讀取內容。
 
 > 任務檔案可能在 `.tasks/sprint-{N}/T1-xxx.md`，不再只在 `.tasks/` 根目錄。
 
@@ -67,10 +67,21 @@ allowed-tools: Read, Edit, Glob
    {備註}
    ```
 
-5. 找到當前 dev-plan：
-!`ls -t proposal/sprint*-dev-plan.md 2>/dev/null | head -1`
+5. **Git Commit**：
+   - 讀取任務檔的 `| 並行組 |` 欄位
+   - **若循序任務（並行組 = —）**：確認當前在 `sprint-{N}` branch
+   - **若並行任務**：確認當前在 `task/s{N}-$0-*` branch
+   - 判斷 commit type（feat / fix / refactor / docs / test / chore）
+   - 執行：
+     ```bash
+     git add -A
+     git commit -m "{type}: {任務標題} ($0)"
+     ```
 
-6. 在 dev-plan 第 10 節「任務完成紀錄」表格，找到對應任務行並更新：
+6. 找到當前 dev-plan：
+   使用 Glob tool 搜尋 `proposal/sprint*-dev-plan.md`，取最新一份用 Read tool 讀取。
+
+7. 在 dev-plan 第 10 節「任務完成紀錄」表格，找到對應任務行並更新：
 ```
 | $0 | {YYYY-MM-DD} | 🔍 待審查 | {備註} |
 ```

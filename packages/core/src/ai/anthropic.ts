@@ -5,32 +5,62 @@
  * Uses claude-3-haiku for lightweight, cost-effective summaries.
  */
 
-import type { SummaryProvider, SummaryContext } from '../types.js';
+import type { SummaryContext } from '../types.js';
+import { BaseAnalysisProvider } from './base-analysis-provider.js';
 import { buildPrompt, AI_TIMEOUT_MS } from './utils.js';
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const ANTHROPIC_MODEL = 'claude-3-haiku-20240307';
+const ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
 const ANTHROPIC_VERSION = '2023-06-01';
-const MAX_TOKENS = 300;
+const MAX_TOKENS = 16384;
 
-export class AnthropicProvider implements SummaryProvider {
+export class AnthropicProvider extends BaseAnalysisProvider {
   name = 'anthropic';
 
-  constructor(private apiKey?: string) {}
+  constructor(private apiKey?: string) { super(); }
 
   isConfigured(): boolean {
     return !!this.apiKey;
+  }
+
+  /**
+   * Send a raw prompt directly — no system prompt wrapping.
+   * Used by wiki concept extraction which provides its own full prompt.
+   */
+  async rawPrompt(prompt: string): Promise<string> {
+    if (!this.apiKey) {
+      throw new Error('Anthropic API key not configured.');
+    }
+    return this._callMessages(undefined, prompt, MAX_TOKENS);
   }
 
   async summarize(code: string, context: SummaryContext): Promise<string> {
     if (!this.apiKey) {
       throw new Error('Anthropic API key not configured.');
     }
-
     const { system, user } = buildPrompt(code, context);
+    return this._callMessages(system, user, MAX_TOKENS);
+  }
 
+  // ---- Shared API call ----
+
+  private async _callMessages(
+    system: string | undefined,
+    userContent: string,
+    maxTokens: number,
+  ): Promise<string> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+
+    const payload: Record<string, unknown> = {
+      model: ANTHROPIC_MODEL,
+      messages: [{ role: 'user', content: userContent }],
+      max_tokens: maxTokens,
+      temperature: 0.3,
+    };
+    if (system !== undefined) {
+      payload.system = system;
+    }
 
     let response: Response;
     try {
@@ -38,16 +68,10 @@ export class AnthropicProvider implements SummaryProvider {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': this.apiKey,
+          'x-api-key': this.apiKey!,
           'anthropic-version': ANTHROPIC_VERSION,
         },
-        body: JSON.stringify({
-          model: ANTHROPIC_MODEL,
-          system,
-          messages: [{ role: 'user', content: user }],
-          max_tokens: MAX_TOKENS,
-          temperature: 0.3,
-        }),
+        body: JSON.stringify(payload),
         signal: controller.signal,
       });
     } catch (err: unknown) {

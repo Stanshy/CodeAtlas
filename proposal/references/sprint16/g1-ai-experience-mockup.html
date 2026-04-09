@@ -1,0 +1,2267 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprint 16 G1 — AI 體驗完整化 UI 圖稿</title>
+  <style>
+    /* ─────────────────────────────────────────
+       DESIGN TOKENS — White Paper Theme
+       ───────────────────────────────────────── */
+    :root {
+      --bg-paper: #fafafa;
+      --bg-surface: #ffffff;
+      --ink-primary: #1a1a2e;
+      --ink-secondary: #4a4a6a;
+      --ink-muted: #8888aa;
+      --border-default: #d0d0d8;
+      --border-light: #e8e8f0;
+
+      /* SF blue */
+      --sf-blue: #1565c0;
+      --sf-blue-accent: #1976d2;
+      --sf-blue-bg: #e3f2fd;
+
+      /* LO purple */
+      --lo-purple: #7b1fa2;
+      --lo-purple-bg: #f3e5f5;
+
+      /* DJ green */
+      --dj-green: #2e7d32;
+      --dj-green-bg: #e8f5e9;
+
+      /* AI block */
+      --ai-bg: rgba(21, 101, 192, 0.06);
+      --ai-border: #1976d2;
+
+      /* Status */
+      --error: #c62828;
+      --success: #2e7d32;
+      --warning: #f59e0b;
+
+      /* Spacing */
+      --r4: 4px;
+      --r6: 6px;
+      --r8: 8px;
+      --r12: 12px;
+      --r16: 16px;
+    }
+
+    /* ─────────────────────────────────────────
+       GLOBAL RESET & BASE
+       ───────────────────────────────────────── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      background: var(--bg-paper);
+      color: var(--ink-primary);
+      padding: 40px;
+    }
+
+    code, .mono {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+
+    /* ─────────────────────────────────────────
+       PAGE HEADER
+       ───────────────────────────────────────── */
+    .page-header {
+      border-bottom: 2px solid var(--border-default);
+      padding-bottom: 24px;
+      margin-bottom: 48px;
+    }
+
+    .page-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--ink-primary);
+      letter-spacing: -0.5px;
+    }
+
+    .page-header .meta {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--ink-muted);
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .page-header .meta .badge-sprint {
+      background: var(--sf-blue-bg);
+      color: var(--sf-blue);
+      border: 1px solid var(--sf-blue);
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* ─────────────────────────────────────────
+       SECTION LAYOUT
+       ───────────────────────────────────────── */
+    .scene {
+      margin-bottom: 72px;
+    }
+
+    .scene-header {
+      background: var(--ink-primary);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: var(--r8) var(--r8) 0 0;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .scene-header .task-ref {
+      font-size: 11px;
+      font-weight: 400;
+      opacity: 0.65;
+      margin-left: 8px;
+    }
+
+    .scene-body {
+      border: 1px solid var(--border-default);
+      border-top: none;
+      border-radius: 0 0 var(--r8) var(--r8);
+      padding: 32px;
+      background: #f5f5f8;
+    }
+
+    .sub-section {
+      margin-bottom: 40px;
+    }
+
+    .sub-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .sub-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .states-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      align-items: flex-start;
+    }
+
+    .state-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .state-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .state-label.active { color: var(--sf-blue); }
+    .state-label.error  { color: var(--error); }
+    .state-label.success{ color: var(--success); }
+    .state-label.warning{ color: var(--warning); }
+
+    /* ─────────────────────────────────────────
+       SPINNER ANIMATION
+       ───────────────────────────────────────── */
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border: 1.5px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 4px;
+      opacity: 0.6;
+    }
+
+    /* ─────────────────────────────────────────
+       SCENE 1: DIRECTORY CARD (SF)
+       Width: 160px, border-radius 8px
+       ───────────────────────────────────────── */
+    .dir-card {
+      width: 160px; /* 卡片固定寬 160px */
+      background: var(--bg-surface);
+      border: 1.5px solid var(--sf-blue);
+      border-radius: var(--r8);
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      flex-shrink: 0;
+    }
+
+    /* 頂部 accent bar — 4px */
+    .dir-card .accent-top {
+      height: 4px;
+      background: var(--lo-purple);
+    }
+
+    .dir-card .card-body {
+      padding: 8px 10px 6px;
+      position: relative;
+    }
+
+    /* 左側 5px category bar */
+    .dir-card .accent-left {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 5px;
+      background: var(--lo-purple);
+    }
+
+    .dir-card .card-body-inner {
+      padding-left: 8px; /* offset for accent-left */
+    }
+
+    .dir-card .dir-name-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 2px;
+    }
+
+    .dir-card .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--lo-purple);
+      flex-shrink: 0;
+    }
+
+    .dir-card .dir-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dir-card .dir-path {
+      font-size: 9px;
+      color: #9e9e9e;
+      font-family: 'Inter', sans-serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 6px;
+    }
+
+    .dir-card .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px 6px 18px;
+    }
+
+    .badge-files {
+      font-size: 10px;
+      color: var(--ink-muted);
+      background: var(--border-light);
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    .icon-folder {
+      font-size: 14px;
+      opacity: 0.45;
+    }
+
+    /* AI 分析按鈕 — 在 footer 下方 */
+    .dir-card .ai-btn-area {
+      padding: 4px 8px 8px;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .btn-analyze {
+      width: 100%;
+      padding: 4px 8px; /* 4px 8px */
+      font-size: 10px; /* 10px */
+      border-radius: var(--r4);
+      cursor: pointer;
+      text-align: center;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    /* 未分析 — 藍色邊框透明 bg */
+    .btn-analyze.idle {
+      border: 1px solid var(--sf-blue); /* 1px solid #1565c0 */
+      background: transparent;
+      color: var(--sf-blue);
+    }
+
+    /* 分析中 — disabled 灰色 opacity 0.6 */
+    .btn-analyze.loading {
+      border: 1px solid var(--border-default);
+      background: transparent;
+      color: var(--ink-muted);
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* 失敗 — 紅色文字 */
+    .btn-analyze.failed {
+      border: 1px solid #ef9a9a;
+      background: #fff5f5;
+      color: var(--error);
+    }
+
+    /* AI disabled — 灰色 + cursor not-allowed */
+    .btn-analyze.ai-disabled {
+      border: 1px solid var(--border-default);
+      background: transparent;
+      color: var(--ink-muted);
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    /* 已分析 — AI 結果區塊精簡版 */
+    .dir-card .ai-result-compact {
+      margin: 0 8px 6px;
+      background: var(--ai-bg);
+      border-radius: var(--r6);
+      padding: 6px 8px;
+      border-left: 3px solid var(--ai-border);
+    }
+
+    .dir-card .ai-result-compact .ai-header {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--sf-blue-accent);
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .dir-card .ai-result-compact .role-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: var(--lo-purple-bg);
+      color: var(--lo-purple);
+      display: inline-block;
+      margin-bottom: 2px;
+    }
+
+    .dir-card .ai-result-compact .ai-summary {
+      font-size: 9.5px;
+      color: var(--ink-secondary);
+      line-height: 1.4;
+    }
+
+    .dir-card .analyzed-footer {
+      padding: 4px 8px 6px;
+      font-size: 11px; /* 11px */
+      color: var(--ink-muted); /* #8888aa */
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    /* AI disabled tooltip container */
+    .tooltip-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .tooltip-bubble {
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--ink-primary);
+      color: #fff;
+      font-size: 10px;
+      font-family: 'Inter', sans-serif;
+      padding: 5px 8px;
+      border-radius: var(--r4);
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
+      line-height: 1.4;
+    }
+
+    .tooltip-bubble::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-top-color: var(--ink-primary);
+    }
+
+    /* ─────────────────────────────────────────
+       SCENE 1B: LO METHOD GROUP
+       Width: 240px
+       ───────────────────────────────────────── */
+    .lo-group {
+      width: 240px; /* 固定寬 240px */
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--r6);
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      flex-shrink: 0;
+    }
+
+    .lo-group .group-header {
+      height: 36px; /* 36px */
+      padding: 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fafafa;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .lo-group .group-icon { font-size: 14px; }
+
+    .lo-group .group-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-primary);
+      flex: 1;
+    }
+
+    .lo-group .group-count {
+      font-size: 11px;
+      color: var(--ink-muted);
+      background: var(--border-light);
+      padding: 1px 6px;
+      border-radius: 8px;
+    }
+
+    /* 按需分析按鈕 in header right side */
+    .lo-group .group-ai-btn {
+      font-size: 10px;
+      padding: 3px 7px; /* compact */
+      border-radius: var(--r4);
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .lo-group .group-ai-btn.idle {
+      border: 1px solid var(--lo-purple);
+      background: transparent;
+      color: var(--lo-purple);
+    }
+
+    .lo-group .group-ai-btn.loading {
+      border: 1px solid var(--border-default);
+      background: transparent;
+      color: var(--ink-muted);
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .lo-group .group-ai-btn.failed {
+      border: 1px solid #ef9a9a;
+      background: #fff5f5;
+      color: var(--error);
+    }
+
+    .lo-group .group-ai-btn.ai-disabled {
+      border: 1px solid var(--border-default);
+      background: transparent;
+      color: var(--ink-muted);
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .lo-group .method-list {
+      padding: 4px 0;
+    }
+
+    .lo-group .method-row {
+      height: 24px; /* 每行 24px */
+      padding: 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--ink-secondary);
+    }
+
+    .lo-group .method-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--lo-purple);
+      flex-shrink: 0;
+    }
+
+    .lo-group .method-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      flex: 1;
+    }
+
+    /* MethodRole badges — 加大加色版 (11px, padding 3px 8px) */
+    .role-badge-lg {
+      font-size: 11px; /* 11px */
+      padding: 3px 8px; /* 3px 8px */
+      border-radius: 3px;
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .role-badge-lg.business-core     { background: var(--sf-blue-bg);    color: var(--sf-blue); }
+    .role-badge-lg.service-orch      { background: var(--lo-purple-bg);  color: var(--lo-purple); }
+    .role-badge-lg.data-accessor     { background: #efebe9; color: #4e342e; }
+    .role-badge-lg.utility           { background: #eceff1; color: #546e7a; }
+    .role-badge-lg.framework-glue    { background: #e0f7fa; color: #00838f; }
+    .role-badge-lg.validation        { background: #fff3e0; color: #e65100; }
+
+    .lo-group .ai-summary-row {
+      font-size: 13px; /* 13px */
+      color: var(--ink-secondary);
+      padding: 4px 10px 4px 24px;
+      line-height: 1.4;
+    }
+
+    /* LO AI result block */
+    .lo-group .ai-result-block {
+      margin: 6px 8px 8px;
+      background: rgba(123, 31, 162, 0.05);
+      border-left: 3px solid var(--lo-purple);
+      border-radius: var(--r6);
+      padding: 8px 10px;
+    }
+
+    .lo-group .ai-result-block .ai-header {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--lo-purple);
+      margin-bottom: 4px;
+    }
+
+    .lo-group .ai-result-block p {
+      font-size: 12px;
+      color: var(--ink-secondary);
+      line-height: 1.4;
+    }
+
+    .lo-group .analyzed-footer {
+      padding: 4px 8px 6px;
+      font-size: 11px;
+      color: var(--ink-muted);
+      text-align: center;
+      border-top: 1px solid var(--border-light);
+    }
+
+    /* Tooltip for LO group */
+    .lo-tooltip-wrapper {
+      position: relative;
+    }
+
+    /* ─────────────────────────────────────────
+       SCENE 1C: DJ ENDPOINT CARD
+       Width: 260px
+       ───────────────────────────────────────── */
+    .dj-card {
+      width: 260px; /* 固定寬 260px */
+      background: var(--bg-surface);
+      border: 1.5px dashed #81c784; /* 綠虛線邊框 */
+      border-radius: var(--r6);
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      flex-shrink: 0;
+    }
+
+    .dj-card .accent-left {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px; /* 4px left accent */
+      background: var(--dj-green);
+    }
+
+    .dj-card .dj-card-inner {
+      padding: 8px 10px 8px 14px; /* account for accent */
+    }
+
+    .dj-card .method-path-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+
+    /* HTTP method badges */
+    .http-badge {
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-family: 'JetBrains Mono', monospace;
+      flex-shrink: 0;
+    }
+
+    .http-badge.get    { background: #e3f2fd; color: #1565c0; }
+    .http-badge.post   { background: #fff3e0; color: #e65100; }
+    .http-badge.put    { background: #f3e5f5; color: #7b1fa2; }
+    .http-badge.delete { background: #ffebee; color: #c62828; }
+
+    .dj-card .endpoint-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dj-card .endpoint-desc {
+      font-size: 10px;
+      color: #8888aa;
+      font-family: 'Inter', sans-serif;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .dj-card .ai-btn-area {
+      margin-bottom: 6px;
+    }
+
+    .dj-card .btn-analyze-dj {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 4px 8px;
+      font-size: 10px;
+      border-radius: var(--r4);
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+    }
+
+    .dj-card .btn-analyze-dj.idle {
+      border: 1px solid var(--dj-green);
+      background: transparent;
+      color: var(--dj-green);
+    }
+
+    .dj-card .btn-analyze-dj.loading {
+      border: 1px solid var(--border-default);
+      background: transparent;
+      color: var(--ink-muted);
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .dj-card .btn-analyze-dj.failed {
+      border: 1px solid #ef9a9a;
+      background: #fff5f5;
+      color: var(--error);
+    }
+
+    .dj-card .btn-analyze-dj.ai-disabled {
+      border: 1px solid var(--border-default);
+      background: transparent;
+      color: var(--ink-muted);
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .dj-card .step-badge {
+      font-size: 10px;
+      color: var(--ink-muted);
+      background: var(--dj-green-bg);
+      padding: 1px 6px;
+      border-radius: 10px;
+      display: inline-block;
+    }
+
+    .dj-card .dj-analyzed-footer {
+      padding: 4px 10px 6px 14px;
+      font-size: 11px;
+      color: var(--ink-muted);
+      border-top: 1px solid var(--border-light);
+    }
+
+    /* ─────────────────────────────────────────
+       SCENE 2: AI RESULT BLOCKS
+       ───────────────────────────────────────── */
+
+    /* 2A — Universal AIResultBlock */
+    .ai-result-block-universal {
+      background: var(--ai-bg); /* rgba(21,101,192,0.06) */
+      border-radius: var(--r6);
+      padding: 10px 12px; /* 10px 12px */
+      border-left: 3px solid var(--ai-border); /* 3px solid #1976d2 */
+    }
+
+    .ai-result-block-universal .block-title {
+      font-size: 13px; /* ≥13px */
+      font-weight: 700;
+      color: var(--sf-blue-accent);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+
+    .ai-result-block-universal .block-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+
+    .ai-result-block-universal .row-label {
+      font-weight: 600;
+      color: var(--ink-secondary);
+      min-width: 48px;
+      flex-shrink: 0;
+    }
+
+    .ai-result-block-universal .row-value {
+      color: var(--ink-primary);
+      line-height: 1.4;
+    }
+
+    /* confidence progress bar */
+    .confidence-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .confidence-bar {
+      width: 60px;
+      height: 5px;
+      background: var(--border-light);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .confidence-bar .fill {
+      height: 100%;
+      background: var(--sf-blue-accent);
+      border-radius: 3px;
+    }
+
+    .confidence-pct {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--sf-blue-accent);
+    }
+
+    /* Role badge variations */
+    .role-badge-sm {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    .role-badge-sm.service { background: var(--lo-purple-bg); color: var(--lo-purple); }
+    .role-badge-sm.sf-blue { background: var(--sf-blue-bg); color: var(--sf-blue); }
+    .role-badge-sm.dj-green { background: var(--dj-green-bg); color: var(--dj-green); }
+
+    /* bullet list */
+    .ai-bullets {
+      list-style: none;
+      font-size: 13px;
+      color: var(--ink-secondary);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .ai-bullets li::before {
+      content: '• ';
+      color: var(--sf-blue-accent);
+    }
+
+    /* 2B — SF panel expanded */
+    .sf-panel-expanded {
+      width: 320px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--r8);
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    .sf-panel-expanded .panel-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink-primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 2D — DJ four-block colors */
+    .dj-ai-blocks {
+      display: flex;
+      flex-direction: column;
+      gap: 8px; /* 區塊間距 8px */
+      width: 320px;
+    }
+
+    .dj-ai-block {
+      border-radius: var(--r6);
+      padding: 10px 12px;
+      border-left-width: 3px;
+      border-left-style: solid;
+    }
+
+    .dj-ai-block .block-header {
+      font-size: 13px; /* 13px */
+      font-weight: 600; /* 600 */
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .dj-ai-block .block-desc {
+      font-size: 13px; /* 13px */
+      font-weight: 400;
+      color: var(--ink-secondary);
+      line-height: 1.4;
+    }
+
+    /* 輸入驗證 — 藍 */
+    .dj-ai-block.input-validation {
+      background: rgba(21, 101, 192, 0.06);
+      border-left-color: #1565c0;
+    }
+    .dj-ai-block.input-validation .block-header { color: #1565c0; }
+
+    /* 處理邏輯 — 紫 */
+    .dj-ai-block.processing-logic {
+      background: rgba(123, 31, 162, 0.06);
+      border-left-color: #7b1fa2;
+    }
+    .dj-ai-block.processing-logic .block-header { color: #7b1fa2; }
+
+    /* 資料操作 — 棕 */
+    .dj-ai-block.data-operations {
+      background: rgba(78, 52, 46, 0.06);
+      border-left-color: #4e342e;
+    }
+    .dj-ai-block.data-operations .block-header { color: #4e342e; }
+
+    /* 回應格式化 — 綠 */
+    .dj-ai-block.response-formatting {
+      background: rgba(46, 125, 50, 0.06);
+      border-left-color: #2e7d32;
+    }
+    .dj-ai-block.response-formatting .block-header { color: #2e7d32; }
+
+    /* ─────────────────────────────────────────
+       SCENE 3: CONTROL PANEL — SettingsPopover
+       ───────────────────────────────────────── */
+    .settings-popover {
+      width: 280px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--r8);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .settings-popover .popover-header {
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border-light);
+      background: #f9f9fc;
+    }
+
+    .settings-popover .section-label {
+      padding: 10px 14px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .settings-popover .divider {
+      height: 1px;
+      background: var(--border-light);
+      margin: 6px 14px;
+    }
+
+    .analysis-btn {
+      width: calc(100% - 28px);
+      margin: 0 14px 6px;
+      border: 1px solid var(--border-default); /* 1px solid #d0d0d8 */
+      border-radius: var(--r6); /* 6px */
+      padding: 8px 12px; /* 8px 12px */
+      font-size: 12px; /* 12px */
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-surface);
+      color: var(--ink-primary);
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .analysis-btn .btn-title {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 600;
+    }
+
+    .analysis-btn .btn-desc {
+      font-size: 11px;
+      color: var(--ink-muted);
+      padding-left: 0;
+    }
+
+    .analysis-btn:hover {
+      border-color: var(--sf-blue-accent);
+    }
+
+    .analysis-btn.disabled-btn {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .analysis-btn.loading-btn {
+      border-color: var(--sf-blue);
+      background: var(--ai-bg);
+      cursor: not-allowed;
+    }
+
+    /* Progress bar */
+    .progress-area {
+      margin: 4px 14px 10px;
+      padding: 8px 10px;
+      background: #f3f4f8;
+      border-radius: var(--r6);
+    }
+
+    .progress-text {
+      font-size: 11px;
+      color: var(--ink-secondary);
+      margin-bottom: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .progress-bar-wrap {
+      height: 6px;
+      background: var(--border-light);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--sf-blue-accent);
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    /* Existing trace btn */
+    .trace-btn {
+      width: calc(100% - 28px);
+      margin: 0 14px 6px;
+      border: 1px solid var(--border-default);
+      border-radius: var(--r6);
+      padding: 8px 12px;
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-surface);
+      color: var(--ink-primary);
+      cursor: pointer;
+      text-align: left;
+      font-weight: 500;
+    }
+
+    /* ─────────────────────────────────────────
+       SCENE 4: SETTINGS + TOAST
+       ───────────────────────────────────────── */
+
+    /* Provider select */
+    .ai-settings-section {
+      padding: 8px 14px 12px;
+    }
+
+    .ai-settings-section .field-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-secondary);
+      margin-bottom: 5px;
+    }
+
+    .provider-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .provider-select {
+      flex: 1;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+      border: 1px solid var(--border-default);
+      border-radius: var(--r6);
+      background: var(--bg-surface);
+      color: var(--ink-primary);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%238888aa' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      padding-right: 28px;
+    }
+
+    .recommend-badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--warning);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    /* Toast notifications */
+    .toast-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 320px;
+    }
+
+    .toast {
+      background: var(--bg-surface);
+      border-radius: var(--r8); /* 8px */
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12); /* 0 4px 16px rgba(0,0,0,0.12) */
+      padding: 10px 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      position: relative;
+      border-left-width: 3px;
+      border-left-style: solid;
+      font-size: 13px;
+    }
+
+    .toast.success { border-left-color: var(--success); }
+    .toast.warning { border-left-color: var(--warning); }
+    .toast.error   { border-left-color: var(--error); }
+
+    .toast .toast-icon { font-size: 16px; flex-shrink: 0; line-height: 1; }
+    .toast .toast-body { flex: 1; }
+    .toast .toast-title { font-weight: 700; color: var(--ink-primary); font-size: 13px; }
+    .toast .toast-desc  { font-size: 11px; color: var(--ink-secondary); margin-top: 1px; line-height: 1.4; }
+
+    .toast .toast-dismiss {
+      font-size: 14px;
+      color: var(--ink-muted);
+      cursor: pointer;
+      flex-shrink: 0;
+      line-height: 1;
+      margin-top: 1px;
+    }
+
+    .toast .toast-timer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 2px;
+      border-radius: 0 0 0 var(--r8);
+    }
+
+    .toast.success .toast-timer { background: var(--success); width: 100%; }
+    .toast.warning .toast-timer { background: var(--warning); width: 55%; }
+    .toast.error   .toast-timer { background: var(--error);   width: 20%; }
+
+    /* Flow diagram */
+    .flow-diagram {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 16px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--r8);
+    }
+
+    .flow-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flow-box {
+      padding: 6px 10px;
+      border-radius: var(--r6);
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid var(--border-default);
+      background: var(--bg-surface);
+      color: var(--ink-secondary);
+      white-space: nowrap;
+    }
+
+    .flow-box.action { border-color: var(--sf-blue); color: var(--sf-blue); background: var(--sf-blue-bg); }
+    .flow-box.loading { border-color: var(--border-default); color: var(--ink-muted); background: #f5f5f8; }
+    .flow-box.success-box { border-color: var(--success); color: var(--success); background: #e8f5e9; }
+    .flow-box.updated { border-color: var(--lo-purple); color: var(--lo-purple); background: var(--lo-purple-bg); }
+
+    .flow-arrow {
+      font-size: 14px;
+      color: var(--ink-muted);
+    }
+
+    /* ─────────────────────────────────────────
+       UTILITY
+       ───────────────────────────────────────── */
+    .section-divider {
+      border: none;
+      border-top: 2px dashed var(--border-light);
+      margin: 40px 0;
+    }
+
+    .annotation {
+      font-size: 11px;
+      color: var(--ink-muted);
+      font-style: italic;
+      margin-top: 8px;
+      padding: 4px 8px;
+      background: #f0f0f6;
+      border-radius: var(--r4);
+      display: inline-block;
+    }
+
+    /* Layout helpers */
+    .row-wrap { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; }
+
+    .col { display: flex; flex-direction: column; gap: 12px; }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+
+    @media (max-width: 900px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════════════════════════
+       PAGE HEADER
+       ══════════════════════════════════ -->
+  <div class="page-header">
+    <h1>Sprint 16 G1 — AI 體驗完整化 UI 圖稿</h1>
+    <div class="meta">
+      <span class="badge-sprint">Sprint 16</span>
+      <span>Design Director 審核用</span>
+      <span>2026-04-07</span>
+      <span>White Paper Theme · Inter + JetBrains Mono</span>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════
+       SCENE 1: 三視角按需分析按鈕
+       T7 / S16-5
+       ══════════════════════════════════ -->
+  <section id="scene-1" class="scene">
+    <div class="scene-header">
+      畫面 1：三視角按需分析按鈕
+      <span class="task-ref">T7 / S16-5</span>
+    </div>
+    <div class="scene-body">
+
+      <!-- 1A: SF 目錄卡片 -->
+      <div class="sub-section">
+        <div class="sub-section-title">1A — SF 目錄卡片（DirectoryCard）· 寬 160px · 藍邊框</div>
+        <div class="states-row">
+
+          <!-- 狀態 1: 未分析 -->
+          <div class="state-item">
+            <div class="state-label">狀態 1 / 未分析</div>
+            <div class="dir-card">
+              <div class="accent-top"></div>
+              <div class="card-body">
+                <div class="accent-left"></div>
+                <div class="card-body-inner">
+                  <div class="dir-name-row">
+                    <div class="dot"></div>
+                    <div class="dir-name mono">services</div>
+                  </div>
+                  <div class="dir-path">src/services</div>
+                </div>
+              </div>
+              <div class="card-footer">
+                <span class="badge-files">8 個檔案</span>
+                <span class="icon-folder">📁</span>
+              </div>
+              <div class="ai-btn-area">
+                <!-- 按鈕寬度撐滿卡片內容區 -->
+                <button class="btn-analyze idle">
+                  ✨ 分析此目錄
+                </button>
+              </div>
+            </div>
+            <div class="annotation">border: 1px solid #1565c0 · bg: transparent · 10px · padding 4px 8px · borderRadius 4px</div>
+          </div>
+
+          <!-- 狀態 2: 分析中 -->
+          <div class="state-item">
+            <div class="state-label active">狀態 2 / 分析中</div>
+            <div class="dir-card">
+              <div class="accent-top"></div>
+              <div class="card-body">
+                <div class="accent-left"></div>
+                <div class="card-body-inner">
+                  <div class="dir-name-row">
+                    <div class="dot"></div>
+                    <div class="dir-name mono">services</div>
+                  </div>
+                  <div class="dir-path">src/services</div>
+                </div>
+              </div>
+              <div class="card-footer">
+                <span class="badge-files">8 個檔案</span>
+                <span class="icon-folder">📁</span>
+              </div>
+              <div class="ai-btn-area">
+                <button class="btn-analyze loading" disabled>
+                  <span class="spinner"></span>分析中...
+                </button>
+              </div>
+            </div>
+            <div class="annotation">spinner CSS 旋轉動畫 · disabled · opacity: 0.6</div>
+          </div>
+
+          <!-- 狀態 3: 已分析 -->
+          <div class="state-item">
+            <div class="state-label success">狀態 3 / 已分析</div>
+            <div class="dir-card">
+              <div class="accent-top"></div>
+              <div class="card-body">
+                <div class="accent-left"></div>
+                <div class="card-body-inner">
+                  <div class="dir-name-row">
+                    <div class="dot"></div>
+                    <div class="dir-name mono">services</div>
+                  </div>
+                  <div class="dir-path">src/services</div>
+                </div>
+              </div>
+              <div class="card-footer">
+                <span class="badge-files">8 個檔案</span>
+                <span class="icon-folder">📁</span>
+              </div>
+              <!-- AI 結果精簡版（無按鈕）-->
+              <div class="ai-result-compact">
+                <div class="ai-header">✨ AI 分析</div>
+                <div class="role-badge">服務層</div>
+                <div class="ai-summary">核心業務邏輯的服務編排與整合</div>
+              </div>
+              <!-- 底部小字：✨ gemini · 2 分鐘前 · 🔄 重新分析 -->
+              <div class="analyzed-footer">
+                ✨ gemini · 2 分鐘前 · 🔄 重新分析
+              </div>
+            </div>
+            <div class="annotation">無按鈕 · 精簡 AI 卡 · 底部 11px #8888aa · 格式：✨ provider · 時間 · 🔄 重新分析</div>
+          </div>
+
+          <!-- 狀態 4: 失敗 -->
+          <div class="state-item">
+            <div class="state-label error">狀態 4 / 失敗</div>
+            <div class="dir-card">
+              <div class="accent-top"></div>
+              <div class="card-body">
+                <div class="accent-left"></div>
+                <div class="card-body-inner">
+                  <div class="dir-name-row">
+                    <div class="dot"></div>
+                    <div class="dir-name mono">services</div>
+                  </div>
+                  <div class="dir-path">src/services</div>
+                </div>
+              </div>
+              <div class="card-footer">
+                <span class="badge-files">8 個檔案</span>
+                <span class="icon-folder">📁</span>
+              </div>
+              <div class="ai-btn-area">
+                <button class="btn-analyze failed">
+                  ⚠️ 分析失敗，點擊重試
+                </button>
+              </div>
+            </div>
+            <div class="annotation">color: #c62828 · border: 1px solid #ef9a9a · bg: #fff5f5</div>
+          </div>
+
+          <!-- 狀態 5: AI disabled (額外) -->
+          <div class="state-item">
+            <div class="state-label warning">狀態 5 / AI 未啟用</div>
+            <div class="dir-card">
+              <div class="accent-top"></div>
+              <div class="card-body">
+                <div class="accent-left"></div>
+                <div class="card-body-inner">
+                  <div class="dir-name-row">
+                    <div class="dot"></div>
+                    <div class="dir-name mono">services</div>
+                  </div>
+                  <div class="dir-path">src/services</div>
+                </div>
+              </div>
+              <div class="card-footer">
+                <span class="badge-files">8 個檔案</span>
+                <span class="icon-folder">📁</span>
+              </div>
+              <div class="ai-btn-area">
+                <div class="tooltip-wrapper">
+                  <!-- Tooltip 氣泡 — 靜態展示 -->
+                  <div class="tooltip-bubble">請先在設定中啟用 AI Provider</div>
+                  <button class="btn-analyze ai-disabled" disabled>
+                    ✨ 分析此目錄
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="annotation">disabled + cursor: not-allowed + opacity: 0.55 · tooltip 顯示在按鈕上方</div>
+          </div>
+
+        </div><!-- end states-row -->
+      </div><!-- end 1A -->
+
+
+      <!-- 1B: LO 方法群組 -->
+      <div class="sub-section">
+        <div class="sub-section-title">1B — LO 方法群組（Logic Operations）· 寬 240px · 灰邊框</div>
+        <div class="states-row">
+
+          <!-- LO 未分析 -->
+          <div class="state-item">
+            <div class="state-label">狀態 1 / 未分析</div>
+            <div class="lo-group">
+              <div class="group-header">
+                <span class="group-icon">🟣</span>
+                <span class="group-name">服務</span>
+                <span class="group-count">5</span>
+                <button class="group-ai-btn idle">✨ 解釋邏輯</button>
+              </div>
+              <div class="method-list">
+                <div class="method-row">
+                  <div class="method-dot"></div>
+                  <span class="method-name">createUser</span>
+                </div>
+                <div class="method-row">
+                  <div class="method-dot"></div>
+                  <span class="method-name">processPayment</span>
+                </div>
+                <div class="method-row">
+                  <div class="method-dot"></div>
+                  <span class="method-name">sendNotification</span>
+                </div>
+              </div>
+            </div>
+            <div class="annotation">按鈕在 header 右側 · border: 1px solid #7b1fa2 · bg: transparent · 10px</div>
+          </div>
+
+          <!-- LO 分析中 -->
+          <div class="state-item">
+            <div class="state-label active">狀態 2 / 分析中</div>
+            <div class="lo-group">
+              <div class="group-header">
+                <span class="group-icon">🟣</span>
+                <span class="group-name">服務</span>
+                <span class="group-count">5</span>
+                <button class="group-ai-btn loading" disabled>
+                  <span class="spinner"></span>分析中...
+                </button>
+              </div>
+              <div class="method-list">
+                <div class="method-row">
+                  <div class="method-dot"></div>
+                  <span class="method-name">createUser</span>
+                </div>
+                <div class="method-row">
+                  <div class="method-dot"></div>
+                  <span class="method-name">processPayment</span>
+                </div>
+                <div class="method-row">
+                  <div class="method-dot"></div>
+                  <span class="method-name">sendNotification</span>
+                </div>
+              </div>
+            </div>
+            <div class="annotation">spinner · disabled · opacity: 0.6</div>
+          </div>
+
+          <!-- LO 已分析 -->
+          <div class="state-item">
+            <div class="state-label success">狀態 3 / 已分析</div>
+            <div class="lo-group">
+              <div class="group-header">
+                <span class="group-icon">🟣</span>
+                <span class="group-name">服務</span>
+                <span class="group-count">5</span>
+              </div>
+              <div class="method-list">
+                <div class="method-row">
+                  <div class="method-dot"></div>
+                  <span class="method-name">createUser</span>
+                  <span class="role-badge-lg business-core">業務核心</span>
+                </div>
+                <div class="method-row">
+                  <div class="method-dot"></div>
+                  <span class="method-name">processPayment</span>
+                  <span class="role-badge-lg service-orch">服務編排</span>
+                </div>
+                <div class="method-row">
+                  <div class="method-dot"></div>
+                  <span class="method-name">sendNotification</span>
+                  <span class="role-badge-lg utility">工具函式</span>
+                </div>
+              </div>
+              <div class="ai-result-block">
+                <div class="ai-header">✨ AI 邏輯解釋</div>
+                <p>此群組負責核心用戶生命週期：從建立帳號到觸發計費及通知的完整服務編排流程。</p>
+              </div>
+              <div class="analyzed-footer">
+                ✨ gemini · 5 分鐘前 · 🔄 重新分析
+              </div>
+            </div>
+            <div class="annotation">MethodRole badge: 11px · padding 3px 8px · AI 結果區塊在列表下方</div>
+          </div>
+
+          <!-- LO 失敗 -->
+          <div class="state-item">
+            <div class="state-label error">狀態 4 / 失敗</div>
+            <div class="lo-group">
+              <div class="group-header">
+                <span class="group-icon">🟣</span>
+                <span class="group-name">服務</span>
+                <span class="group-count">5</span>
+                <button class="group-ai-btn failed">⚠️ 解釋失敗，重試</button>
+              </div>
+              <div class="method-list">
+                <div class="method-row">
+                  <div class="method-dot"></div>
+                  <span class="method-name">createUser</span>
+                </div>
+                <div class="method-row">
+                  <div class="method-dot"></div>
+                  <span class="method-name">processPayment</span>
+                </div>
+              </div>
+            </div>
+            <div class="annotation">color: #c62828 · border: 1px solid #ef9a9a · bg: #fff5f5</div>
+          </div>
+
+          <!-- LO AI disabled -->
+          <div class="state-item">
+            <div class="state-label warning">狀態 5 / AI 未啟用</div>
+            <div class="lo-group">
+              <div class="group-header">
+                <span class="group-icon">🟣</span>
+                <span class="group-name">服務</span>
+                <span class="group-count">5</span>
+                <div class="lo-tooltip-wrapper" style="position:relative;">
+                  <div class="tooltip-bubble" style="bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;font-size:9.5px;padding:4px 7px;">請先在設定中啟用 AI Provider</div>
+                  <button class="group-ai-btn ai-disabled" disabled>✨ 解釋邏輯</button>
+                </div>
+              </div>
+              <div class="method-list">
+                <div class="method-row">
+                  <div class="method-dot"></div>
+                  <span class="method-name">createUser</span>
+                </div>
+                <div class="method-row">
+                  <div class="method-dot"></div>
+                  <span class="method-name">processPayment</span>
+                </div>
+              </div>
+            </div>
+            <div class="annotation">disabled + opacity: 0.55 + cursor: not-allowed · tooltip 顯示</div>
+          </div>
+
+        </div><!-- end states-row -->
+      </div><!-- end 1B -->
+
+
+      <!-- 1C: DJ 端點卡片 -->
+      <div class="sub-section">
+        <div class="sub-section-title">1C — DJ 端點卡片（DJSelectorCardNode）· 寬 260px · 綠虛線邊框</div>
+        <div class="states-row">
+
+          <!-- DJ 未分析 -->
+          <div class="state-item">
+            <div class="state-label">狀態 1 / 未分析</div>
+            <div class="dj-card">
+              <div class="accent-left"></div>
+              <div class="dj-card-inner">
+                <div class="method-path-row">
+                  <span class="http-badge post">POST</span>
+                  <span class="endpoint-path">/api/users/register</span>
+                </div>
+                <div class="endpoint-desc">建立新用戶帳號並發送驗證郵件</div>
+                <div class="ai-btn-area">
+                  <button class="btn-analyze-dj idle">✨ 解釋資料流</button>
+                </div>
+                <div><span class="step-badge">6 個步驟</span></div>
+              </div>
+            </div>
+            <div class="annotation">border: 1px solid #2e7d32 · bg: transparent · 在 desc 下方、step badge 上方</div>
+          </div>
+
+          <!-- DJ 分析中 -->
+          <div class="state-item">
+            <div class="state-label active">狀態 2 / 分析中</div>
+            <div class="dj-card">
+              <div class="accent-left"></div>
+              <div class="dj-card-inner">
+                <div class="method-path-row">
+                  <span class="http-badge post">POST</span>
+                  <span class="endpoint-path">/api/users/register</span>
+                </div>
+                <div class="endpoint-desc">建立新用戶帳號並發送驗證郵件</div>
+                <div class="ai-btn-area">
+                  <button class="btn-analyze-dj loading" disabled>
+                    <span class="spinner"></span>分析中...
+                  </button>
+                </div>
+                <div><span class="step-badge">6 個步驟</span></div>
+              </div>
+            </div>
+            <div class="annotation">spinner · disabled · opacity: 0.6</div>
+          </div>
+
+          <!-- DJ 已分析 -->
+          <div class="state-item">
+            <div class="state-label success">狀態 3 / 已分析</div>
+            <div class="dj-card">
+              <div class="accent-left"></div>
+              <div class="dj-card-inner">
+                <div class="method-path-row">
+                  <span class="http-badge post">POST</span>
+                  <span class="endpoint-path">/api/users/register</span>
+                </div>
+                <div class="endpoint-desc">建立新用戶帳號並發送驗證郵件</div>
+                <!-- 無按鈕，已有 AI 結果 -->
+                <div><span class="step-badge">6 個步驟</span></div>
+              </div>
+              <div class="dj-analyzed-footer">
+                ✨ gemini · 3 分鐘前 · 🔄 重新分析
+              </div>
+            </div>
+            <div class="annotation">無按鈕 · 底部 11px #8888aa · 完整 AI 結果見畫面 2D</div>
+          </div>
+
+          <!-- DJ 失敗 -->
+          <div class="state-item">
+            <div class="state-label error">狀態 4 / 失敗</div>
+            <div class="dj-card">
+              <div class="accent-left"></div>
+              <div class="dj-card-inner">
+                <div class="method-path-row">
+                  <span class="http-badge post">POST</span>
+                  <span class="endpoint-path">/api/users/register</span>
+                </div>
+                <div class="endpoint-desc">建立新用戶帳號並發送驗證郵件</div>
+                <div class="ai-btn-area">
+                  <button class="btn-analyze-dj failed">⚠️ 分析失敗，點擊重試</button>
+                </div>
+                <div><span class="step-badge">6 個步驟</span></div>
+              </div>
+            </div>
+            <div class="annotation">color: #c62828 · border: 1px solid #ef9a9a · bg: #fff5f5</div>
+          </div>
+
+          <!-- DJ AI disabled -->
+          <div class="state-item">
+            <div class="state-label warning">狀態 5 / AI 未啟用</div>
+            <div class="dj-card">
+              <div class="accent-left"></div>
+              <div class="dj-card-inner">
+                <div class="method-path-row">
+                  <span class="http-badge post">POST</span>
+                  <span class="endpoint-path">/api/users/register</span>
+                </div>
+                <div class="endpoint-desc">建立新用戶帳號並發送驗證郵件</div>
+                <div class="ai-btn-area">
+                  <div class="tooltip-wrapper">
+                    <div class="tooltip-bubble">請先在設定中啟用 AI Provider</div>
+                    <button class="btn-analyze-dj ai-disabled" disabled>✨ 解釋資料流</button>
+                  </div>
+                </div>
+                <div><span class="step-badge">6 個步驟</span></div>
+              </div>
+            </div>
+            <div class="annotation">disabled + opacity: 0.55 + cursor: not-allowed · tooltip 顯示</div>
+          </div>
+
+        </div><!-- end states-row -->
+      </div><!-- end 1C -->
+
+    </div><!-- end scene-body -->
+  </section>
+
+
+  <!-- ══════════════════════════════════
+       SCENE 2: AI 內容視覺強化
+       T8 / S16-6
+       ══════════════════════════════════ -->
+  <section id="scene-2" class="scene">
+    <div class="scene-header">
+      畫面 2：AI 內容視覺強化（AIResultBlock）
+      <span class="task-ref">T8 / S16-6</span>
+    </div>
+    <div class="scene-body">
+
+      <!-- 2A: 共用 AIResultBlock 規格 -->
+      <div class="sub-section">
+        <div class="sub-section-title">2A — AIResultBlock 共用元件規格</div>
+        <div style="max-width:400px;">
+          <div class="ai-result-block-universal">
+            <div class="block-title">
+              ✨ AI 分析結果
+            </div>
+            <div class="block-row">
+              <span class="row-label">角色</span>
+              <span class="row-value"><span class="role-badge-sm service">服務層</span></span>
+            </div>
+            <div class="block-row">
+              <span class="row-label">摘要</span>
+              <span class="row-value">核心業務邏輯的服務編排與整合層</span>
+            </div>
+            <div class="block-row">
+              <span class="row-label">職責</span>
+              <span class="row-value">
+                <ul class="ai-bullets">
+                  <li>使用者管理</li>
+                  <li>計費處理</li>
+                  <li>通知發送</li>
+                </ul>
+              </span>
+            </div>
+            <div class="block-row">
+              <span class="row-label">信心度</span>
+              <span class="row-value">
+                <div class="confidence-bar-wrap">
+                  <div class="confidence-bar"><div class="fill" style="width:90%"></div></div>
+                  <span class="confidence-pct">90%</span>
+                </div>
+              </span>
+            </div>
+          </div>
+          <div class="annotation" style="margin-top:10px;">
+            bg: rgba(21,101,192,0.06) · border-radius: 6px · padding: 10px 12px · border-left: 3px solid #1976d2 · font ≥ 13px (Inter)
+          </div>
+        </div>
+      </div>
+
+      <!-- 2B: SF 兩版本 -->
+      <div class="sub-section">
+        <div class="sub-section-title">2B — SF 目錄卡片 AI 結果 · 兩個版本</div>
+        <div class="row-wrap">
+
+          <!-- 版本 1: 卡片內精簡版 -->
+          <div class="col">
+            <div style="font-size:12px;font-weight:700;color:var(--ink-secondary);margin-bottom:4px;">版本 1：卡片內精簡版（160px 窄卡）</div>
+            <div class="dir-card" style="width:160px;">
+              <div class="accent-top"></div>
+              <div class="card-body">
+                <div class="accent-left"></div>
+                <div class="card-body-inner">
+                  <div class="dir-name-row">
+                    <div class="dot"></div>
+                    <div class="dir-name mono">services</div>
+                  </div>
+                  <div class="dir-path">src/services</div>
+                </div>
+              </div>
+              <div class="card-footer">
+                <span class="badge-files">8 個檔案</span>
+                <span class="icon-folder">📁</span>
+              </div>
+              <!-- AI 精簡版 -->
+              <div class="ai-result-compact">
+                <div class="ai-header">✨ AI 分析</div>
+                <div class="role-badge">服務層</div>
+                <div class="ai-summary">核心業務邏輯的服務編排與整合</div>
+              </div>
+              <div class="analyzed-footer">
+                ✨ gemini · 2 分鐘前 · 🔄 重新分析
+              </div>
+            </div>
+            <div class="annotation">精簡版：角色 badge + 一行摘要 · padding 6px 8px · border-left: 3px solid #1976d2</div>
+          </div>
+
+          <!-- 版本 2: 右側面板展開版 -->
+          <div class="col">
+            <div style="font-size:12px;font-weight:700;color:var(--ink-secondary);margin-bottom:4px;">版本 2：右側面板展開版（完整 AI 結果）</div>
+            <div class="sf-panel-expanded">
+              <div class="panel-title">
+                <span>📁</span> services
+                <span style="font-size:11px;color:var(--ink-muted);font-weight:400;margin-left:auto;">src/services</span>
+              </div>
+              <div class="ai-result-block-universal">
+                <div class="block-title">✨ AI 分析</div>
+                <div class="block-row">
+                  <span class="row-label">角色</span>
+                  <span class="row-value"><span class="role-badge-sm service">服務層</span></span>
+                </div>
+                <div class="block-row">
+                  <span class="row-label">摘要</span>
+                  <span class="row-value">核心業務邏輯的服務編排與整合，協調各子系統協作</span>
+                </div>
+                <div class="block-row">
+                  <span class="row-label">職責</span>
+                  <span class="row-value">
+                    <ul class="ai-bullets">
+                      <li>使用者管理</li>
+                      <li>計費處理</li>
+                      <li>通知發送</li>
+                    </ul>
+                  </span>
+                </div>
+                <div class="block-row">
+                  <span class="row-label">信心度</span>
+                  <span class="row-value">
+                    <div class="confidence-bar-wrap">
+                      <div class="confidence-bar"><div class="fill" style="width:90%"></div></div>
+                      <span class="confidence-pct">90%</span>
+                    </div>
+                  </span>
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--ink-muted);margin-top:8px;text-align:right;">
+                ✨ gemini · 2 分鐘前 · 🔄 重新分析
+              </div>
+            </div>
+            <div class="annotation">右側面板：320px · 完整四欄 · 信心度進度條</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 2C: LO MethodRole badge -->
+      <div class="sub-section">
+        <div class="sub-section-title">2C — LO 方法群組 AI 結果 · MethodRole Badge 色彩系統</div>
+
+        <!-- Badge 色彩參考 -->
+        <div style="margin-bottom:16px;">
+          <div style="font-size:12px;font-weight:700;color:var(--ink-secondary);margin-bottom:8px;">MethodRole Badge 規格（11px · padding 3px 8px）</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+            <span class="role-badge-lg business-core">業務核心 business_core</span>
+            <span class="role-badge-lg service-orch">服務編排 service_orchestrator</span>
+            <span class="role-badge-lg data-accessor">資料存取 data_accessor</span>
+            <span class="role-badge-lg utility">工具函式 utility</span>
+            <span class="role-badge-lg framework-glue">框架膠水 framework_glue</span>
+            <span class="role-badge-lg validation">資料驗證 validation</span>
+          </div>
+          <div class="annotation" style="margin-top:8px;">舊：10px · padding 2px 6px → 新：11px · padding 3px 8px</div>
+        </div>
+
+        <!-- LO Group 已分析完整版 -->
+        <div class="lo-group" style="width:320px;">
+          <div class="group-header">
+            <span class="group-icon">🟣</span>
+            <span class="group-name">服務層方法</span>
+            <span class="group-count">5</span>
+          </div>
+          <div class="method-list" style="padding:4px 0;">
+            <div class="method-row" style="height:auto;padding:5px 10px;flex-direction:column;align-items:flex-start;gap:2px;">
+              <div style="display:flex;align-items:center;gap:6px;width:100%;">
+                <div class="method-dot"></div>
+                <span class="method-name">createUser</span>
+                <span class="role-badge-lg business-core" style="margin-left:auto;">業務核心</span>
+              </div>
+              <div class="ai-summary-row" style="padding:0 0 0 11px;font-size:13px;color:var(--ink-secondary);">負責用戶帳號生命週期的核心業務流程</div>
+            </div>
+            <div class="method-row" style="height:auto;padding:5px 10px;flex-direction:column;align-items:flex-start;gap:2px;">
+              <div style="display:flex;align-items:center;gap:6px;width:100%;">
+                <div class="method-dot"></div>
+                <span class="method-name">processPayment</span>
+                <span class="role-badge-lg service-orch" style="margin-left:auto;">服務編排</span>
+              </div>
+              <div class="ai-summary-row" style="padding:0 0 0 11px;font-size:13px;color:var(--ink-secondary);">協調計費系統與通知服務的跨域編排</div>
+            </div>
+            <div class="method-row" style="height:auto;padding:5px 10px;flex-direction:column;align-items:flex-start;gap:2px;">
+              <div style="display:flex;align-items:center;gap:6px;width:100%;">
+                <div class="method-dot"></div>
+                <span class="method-name">validateToken</span>
+                <span class="role-badge-lg validation" style="margin-left:auto;">資料驗證</span>
+              </div>
+              <div class="ai-summary-row" style="padding:0 0 0 11px;font-size:13px;color:var(--ink-secondary);">驗證 JWT token 合法性及有效期</div>
+            </div>
+            <div class="method-row" style="height:auto;padding:5px 10px;flex-direction:column;align-items:flex-start;gap:2px;">
+              <div style="display:flex;align-items:center;gap:6px;width:100%;">
+                <div class="method-dot"></div>
+                <span class="method-name">getUserById</span>
+                <span class="role-badge-lg data-accessor" style="margin-left:auto;">資料存取</span>
+              </div>
+              <div class="ai-summary-row" style="padding:0 0 0 11px;font-size:13px;color:var(--ink-secondary);">從資料庫取得用戶資料並做快取</div>
+            </div>
+          </div>
+          <div class="analyzed-footer" style="text-align:left;padding:6px 10px;">
+            ✨ gemini · 5 分鐘前 · 🔄 重新分析
+          </div>
+        </div>
+        <div class="annotation" style="margin-top:8px;">每個方法：role badge 靠右 · AI 摘要一行 13px inkSecondary · 加大後的 badge 更易讀</div>
+      </div>
+
+      <!-- 2D: DJ 四區塊 -->
+      <div class="sub-section">
+        <div class="sub-section-title">2D — DJ 端點 AI 結果 · 四區塊色彩區分（右側面板展開）</div>
+        <div class="row-wrap">
+          <div class="dj-ai-blocks">
+            <!-- 輸入驗證 — 藍 #1565c0 -->
+            <div class="dj-ai-block input-validation">
+              <div class="block-header">📥 輸入驗證 Input Validation</div>
+              <div class="block-desc">驗證 email 格式、密碼強度（≥8 碼、含大小寫）及用戶名稱唯一性。拒絕無效請求直接返回 400。</div>
+            </div>
+            <!-- 處理邏輯 — 紫 #7b1fa2 -->
+            <div class="dj-ai-block processing-logic">
+              <div class="block-header">⚙️ 處理邏輯 Processing Logic</div>
+              <div class="block-desc">對密碼執行 bcrypt hash（cost=12），建立用戶 entity，呼叫 UserService.createUser 寫入資料庫，並產生 JWT token。</div>
+            </div>
+            <!-- 資料操作 — 棕 #4e342e -->
+            <div class="dj-ai-block data-operations">
+              <div class="block-header">💾 資料操作 Data Operations</div>
+              <div class="block-desc">INSERT users 表，初始化 user_preferences，寫入稽核日誌。操作包於 transaction 中，失敗自動 rollback。</div>
+            </div>
+            <!-- 回應格式化 — 綠 #2e7d32 -->
+            <div class="dj-ai-block response-formatting">
+              <div class="block-header">📤 回應格式化 Response Formatting</div>
+              <div class="block-desc">返回 201 + { userId, email, token }，敏感欄位（passwordHash）移除，符合 API v3 規格。</div>
+            </div>
+          </div>
+          <div class="col" style="max-width:260px;">
+            <div style="font-size:12px;font-weight:700;color:var(--ink-secondary);">色彩規格</div>
+            <table style="border-collapse:collapse;font-size:12px;width:100%;">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border-default);">
+                  <th style="text-align:left;padding:4px 8px;color:var(--ink-muted);font-weight:600;">區塊</th>
+                  <th style="text-align:left;padding:4px 8px;color:var(--ink-muted);font-weight:600;">左邊框</th>
+                  <th style="text-align:left;padding:4px 8px;color:var(--ink-muted);font-weight:600;">背景</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom:1px solid var(--border-light);">
+                  <td style="padding:4px 8px;">📥 輸入驗證</td>
+                  <td style="padding:4px 8px;color:#1565c0;font-weight:600;">#1565c0</td>
+                  <td style="padding:4px 8px;font-size:10px;color:var(--ink-muted);">rgba(21,101,192,0.06)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border-light);">
+                  <td style="padding:4px 8px;">⚙️ 處理邏輯</td>
+                  <td style="padding:4px 8px;color:#7b1fa2;font-weight:600;">#7b1fa2</td>
+                  <td style="padding:4px 8px;font-size:10px;color:var(--ink-muted);">rgba(123,31,162,0.06)</td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border-light);">
+                  <td style="padding:4px 8px;">💾 資料操作</td>
+                  <td style="padding:4px 8px;color:#4e342e;font-weight:600;">#4e342e</td>
+                  <td style="padding:4px 8px;font-size:10px;color:var(--ink-muted);">rgba(78,52,46,0.06)</td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 8px;">📤 回應格式化</td>
+                  <td style="padding:4px 8px;color:#2e7d32;font-weight:600;">#2e7d32</td>
+                  <td style="padding:4px 8px;font-size:10px;color:var(--ink-muted);">rgba(46,125,50,0.06)</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="annotation">border-left: 3px · border-radius: 6px · padding: 10px 12px · 區塊間距: 8px · 標題: 13px 600 · 描述: 13px 400</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end scene-body -->
+  </section>
+
+
+  <!-- ══════════════════════════════════
+       SCENE 3: 控制面板分析操作
+       T9 / S16-8
+       ══════════════════════════════════ -->
+  <section id="scene-3" class="scene">
+    <div class="scene-header">
+      畫面 3：控制面板分析操作（SettingsPopover 分析工具 section）
+      <span class="task-ref">T9 / S16-8</span>
+    </div>
+    <div class="scene-body">
+      <div class="states-row">
+
+        <!-- 狀態 1: 預設（未分析）-->
+        <div class="state-item">
+          <div class="state-label">狀態 1 / 預設（未分析）</div>
+          <div class="settings-popover">
+            <div class="popover-header">控制面板</div>
+            <div class="section-label">分析工具</div>
+
+            <button class="trace-btn">→ 端到端追蹤</button>
+
+            <button class="analysis-btn disabled-btn" disabled>
+              <div class="btn-title" style="color:var(--ink-muted);">✨ AI 專案概述</div>
+              <div class="btn-desc">即將推出</div>
+            </button>
+
+            <div class="divider"></div>
+
+            <!-- 新增 1: 分析全部 -->
+            <button class="analysis-btn">
+              <div class="btn-title">✨ 分析全部</div>
+              <div class="btn-desc">觸發全專案 AI 分析</div>
+            </button>
+
+            <!-- 新增 2: 分析核心目錄 -->
+            <button class="analysis-btn" style="margin-bottom:12px;">
+              <div class="btn-title">✨ 分析核心目錄</div>
+              <div class="btn-desc">只分析 business-logic 角色</div>
+            </button>
+
+          </div>
+          <div class="annotation">兩個新按鈕在分析工具區 · 分隔線後 · 無進度（初始）</div>
+        </div>
+
+        <!-- 狀態 2: 分析中 + 進度 -->
+        <div class="state-item">
+          <div class="state-label active">狀態 2 / 分析中（3/12）</div>
+          <div class="settings-popover">
+            <div class="popover-header">控制面板</div>
+            <div class="section-label">分析工具</div>
+
+            <button class="trace-btn">→ 端到端追蹤</button>
+
+            <button class="analysis-btn disabled-btn" disabled>
+              <div class="btn-title" style="color:var(--ink-muted);">✨ AI 專案概述</div>
+              <div class="btn-desc">即將推出</div>
+            </button>
+
+            <div class="divider"></div>
+
+            <!-- 分析中狀態：disabled + spinner + 進度文字 -->
+            <button class="analysis-btn loading-btn" disabled>
+              <div class="btn-title" style="color:var(--sf-blue);">
+                <span class="spinner" style="border-color:var(--sf-blue);border-top-color:transparent;opacity:1;width:11px;height:11px;"></span>
+                分析中... (3/12)
+              </div>
+              <div class="btn-desc" style="color:var(--sf-blue-accent);">正在分析 services/UserService.ts</div>
+            </button>
+
+            <button class="analysis-btn disabled-btn" disabled style="margin-bottom:6px;">
+              <div class="btn-title" style="color:var(--ink-muted);">✨ 分析核心目錄</div>
+              <div class="btn-desc">只分析 business-logic 角色</div>
+            </button>
+
+            <!-- 進度顯示 -->
+            <div class="progress-area">
+              <div class="progress-text">
+                <span>已分析 3 / 12 目錄</span>
+                <span style="font-weight:700;color:var(--sf-blue);">25%</span>
+              </div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar-fill" style="width:25%;"></div>
+              </div>
+            </div>
+
+          </div>
+          <div class="annotation">按鈕 disabled + spinner · 進度條 25% · 描述文字顯示當前分析目標</div>
+        </div>
+
+        <!-- 狀態 3: 完成 -->
+        <div class="state-item">
+          <div class="state-label success">狀態 3 / 分析完成</div>
+          <div class="settings-popover">
+            <div class="popover-header">控制面板</div>
+            <div class="section-label">分析工具</div>
+
+            <button class="trace-btn">→ 端到端追蹤</button>
+
+            <button class="analysis-btn disabled-btn" disabled>
+              <div class="btn-title" style="color:var(--ink-muted);">✨ AI 專案概述</div>
+              <div class="btn-desc">即將推出</div>
+            </button>
+
+            <div class="divider"></div>
+
+            <button class="analysis-btn">
+              <div class="btn-title">✨ 分析全部</div>
+              <div class="btn-desc">觸發全專案 AI 分析</div>
+            </button>
+
+            <button class="analysis-btn" style="margin-bottom:6px;">
+              <div class="btn-title">✨ 分析核心目錄</div>
+              <div class="btn-desc">只分析 business-logic 角色</div>
+            </button>
+
+            <!-- 進度（完成）-->
+            <div class="progress-area">
+              <div class="progress-text">
+                <span>已分析 12 / 12 目錄</span>
+                <span style="font-weight:700;color:var(--success);">100% ✓</span>
+              </div>
+              <div class="progress-bar-wrap">
+                <div class="progress-bar-fill" style="width:100%;background:var(--success);"></div>
+              </div>
+            </div>
+
+          </div>
+          <div class="annotation">完成後按鈕恢復可用 · 進度條 100% 綠色 · 分析後持續顯示進度</div>
+        </div>
+
+      </div><!-- end states-row -->
+
+      <!-- 按鈕 hover 說明 -->
+      <div style="margin-top:20px;">
+        <div class="sub-section-title">按鈕樣式規格</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-top:8px;">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <button class="analysis-btn" style="width:200px;">
+              <div class="btn-title">✨ 分析全部</div>
+              <div class="btn-desc">預設狀態</div>
+            </button>
+            <button class="analysis-btn" style="width:200px;border-color:var(--sf-blue-accent);">
+              <div class="btn-title" style="color:var(--sf-blue);">✨ 分析全部</div>
+              <div class="btn-desc">Hover 狀態（borderColor 變藍）</div>
+            </button>
+          </div>
+          <div class="annotation" style="align-self:center;">border: 1px solid #d0d0d8 · border-radius: 6px · padding: 8px 12px · fontSize: 12px · hover → borderColor: var(--sf-blue-accent)</div>
+        </div>
+      </div>
+
+    </div><!-- end scene-body -->
+  </section>
+
+
+  <!-- ══════════════════════════════════
+       SCENE 4: Settings Provider 連動
+       T10 / S16-10
+       ══════════════════════════════════ -->
+  <section id="scene-4" class="scene">
+    <div class="scene-header">
+      畫面 4：Settings Provider 連動
+      <span class="task-ref">T10 / S16-10</span>
+    </div>
+    <div class="scene-body">
+
+      <!-- 4A: Provider 選擇器 -->
+      <div class="sub-section">
+        <div class="sub-section-title">4A — Provider 選擇器 + 推薦標記</div>
+        <div class="states-row">
+
+          <!-- Claude CLI 可用 -->
+          <div class="state-item">
+            <div class="state-label success">Claude CLI 可用（推薦 Claude）</div>
+            <div class="settings-popover" style="width:300px;">
+              <div class="popover-header">AI 設定</div>
+              <div class="ai-settings-section">
+                <div class="field-label">AI 提供者</div>
+                <div class="provider-row">
+                  <select class="provider-select">
+                    <option selected>Claude Code CLI (本地)</option>
+                    <option>Gemini (Google)</option>
+                    <option>OpenAI (GPT)</option>
+                    <option>Ollama (本地)</option>
+                    <option>停用</option>
+                  </select>
+                  <div class="recommend-badge">⭐ 推薦</div>
+                </div>
+                <div style="font-size:11px;color:var(--success);margin-top:6px;display:flex;align-items:center;gap:4px;">
+                  <span>●</span> 已連線 · 延遲 &lt;100ms
+                </div>
+              </div>
+            </div>
+            <div class="annotation">Claude CLI 可用 → ⭐ 推薦（#f59e0b）顯示在 select 右側</div>
+          </div>
+
+          <!-- Claude CLI 不可用 -->
+          <div class="state-item">
+            <div class="state-label warning">Claude CLI 不可用（推薦 Gemini）</div>
+            <div class="settings-popover" style="width:300px;">
+              <div class="popover-header">AI 設定</div>
+              <div class="ai-settings-section">
+                <div class="field-label">AI 提供者</div>
+                <div class="provider-row">
+                  <select class="provider-select">
+                    <option>Claude Code CLI (本地)</option>
+                    <option selected>Gemini (Google)</option>
+                    <option>OpenAI (GPT)</option>
+                    <option>Ollama (本地)</option>
+                    <option>停用</option>
+                  </select>
+                  <div class="recommend-badge">⭐ 推薦</div>
+                </div>
+                <div style="font-size:11px;color:var(--error);margin-top:6px;display:flex;align-items:center;gap:4px;">
+                  <span>●</span> Claude CLI 不可用，已切換至 Gemini
+                </div>
+              </div>
+            </div>
+            <div class="annotation">Claude CLI 不可用 → Gemini 旁顯示 ⭐ 推薦</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 4B: Toast 通知 -->
+      <div class="sub-section">
+        <div class="sub-section-title">4B — onChange Toast 回饋 · 三種狀態（fixed top:60px right:16px）</div>
+        <div class="toast-stack">
+
+          <!-- 成功 + persisted=true -->
+          <div class="toast success">
+            <span class="toast-icon">✅</span>
+            <div class="toast-body">
+              <div class="toast-title">設定已儲存</div>
+              <div class="toast-desc">AI Provider 已切換至 Gemini · 已寫入 .codeatlas.json</div>
+            </div>
+            <span class="toast-dismiss">×</span>
+            <div class="toast-timer"></div>
+          </div>
+
+          <!-- 成功 + persisted=false -->
+          <div class="toast warning">
+            <span class="toast-icon">⚠️</span>
+            <div class="toast-body">
+              <div class="toast-title">設定已套用（本次有效）</div>
+              <div class="toast-desc">無法寫入設定檔，本次執行期間有效。請檢查 .codeatlas.json 權限。</div>
+            </div>
+            <span class="toast-dismiss">×</span>
+            <div class="toast-timer"></div>
+          </div>
+
+          <!-- 失敗 -->
+          <div class="toast error">
+            <span class="toast-icon">❌</span>
+            <div class="toast-body">
+              <div class="toast-title">設定更新失敗</div>
+              <div class="toast-desc">無法連線至 API。請重新整理後再試。</div>
+            </div>
+            <span class="toast-dismiss">×</span>
+            <div class="toast-timer"></div>
+          </div>
+
+        </div>
+        <div class="annotation" style="margin-top:12px;">
+          position: fixed · top: 60px · right: 16px · bg: white · border-left: 3px solid (綠/黃/紅) · border-radius: 8px · box-shadow: 0 4px 16px rgba(0,0,0,0.12) · 自動消失 3 秒 · 進度條動畫顯示剩餘時間
+        </div>
+      </div>
+
+      <!-- 4C: 即時切換流程示意 -->
+      <div class="sub-section">
+        <div class="sub-section-title">4C — 即時切換流程示意（無確認對話框）</div>
+        <div class="flow-diagram">
+          <div class="flow-step">
+            <div class="flow-box action">選擇 Gemini</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-box loading" style="display:flex;align-items:center;gap:5px;">
+              <span class="spinner"></span>
+              POST /api/ai/configure
+              <span style="font-size:10px;color:var(--ink-muted);">~0.5s</span>
+            </div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-box success-box">
+              ✅ Toast「設定已儲存」
+            </div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-step">
+            <div class="flow-box updated">Provider badge 更新</div>
+          </div>
+        </div>
+        <div class="annotation" style="margin-top:10px;">onChange 直接 POST · 無確認對話框 · 成功後 toast 自動出現並 3 秒消失 · badge 同步更新</div>
+
+        <!-- Provider badge 更新前後 -->
+        <div style="margin-top:20px;">
+          <div style="font-size:12px;font-weight:700;color:var(--ink-secondary);margin-bottom:8px;">Provider Badge 更新前後對照</div>
+          <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="font-size:10px;color:var(--ink-muted);">切換前</div>
+              <div style="padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600;background:#e3f2fd;color:#1565c0;border:1px solid #1565c0;">Claude CLI</div>
+            </div>
+            <span style="font-size:18px;color:var(--ink-muted);">→</span>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="font-size:10px;color:var(--ink-muted);">切換後</div>
+              <div style="padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600;background:var(--lo-purple-bg);color:var(--lo-purple);border:1px solid var(--lo-purple);">Gemini</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end scene-body -->
+  </section>
+
+
+  <!-- ══════════════════════════════════
+       FOOTER
+       ══════════════════════════════════ -->
+  <div style="border-top:1px solid var(--border-default);padding-top:24px;margin-top:20px;color:var(--ink-muted);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <span>CodeAtlas · Sprint 16 G1 UI 圖稿 · White Paper Theme</span>
+    <span>2026-04-07 · Design Director 審核用 · G1 阻斷：通過前不得開始 T7-T10 實作</span>
+  </div>
+
+</body>
+</html>

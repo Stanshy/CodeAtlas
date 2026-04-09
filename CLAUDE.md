@@ -80,6 +80,12 @@ web（純前端）     → 讀 JSON 渲染，不直接依賴 core
 > 以下指令已部署到 `.claude/commands/`。
 > **使用方式**：讀取對應的 `.claude/commands/{指令名}.md` 檔案，依照其中的步驟執行。
 >
+> ⚠️ **SOP 強制規則（違反視同未完成任務）**：
+> - L2 開始執行任務 → 必須使用 `/sop-execute`，不得直接呼叫 `/task-start`
+> - L1 開始規劃任務 → 必須使用 `/sop-plan`，不得直接呼叫 `/task-delegation`
+> - L1 進行 Code Review → 必須使用 `/sop-review`，不得直接呼叫 `/review`
+> - 任何部署動作 → 必須使用 `/sop-deploy`，不得直接呼叫 `/pre-deploy`
+>
 > **強制規則：遇到下列「使用時機」描述的場景時，必須執行對應指令，不得跳過或手動替代。**
 > 違反此規則等同未完成任務。
 
@@ -102,82 +108,54 @@ web（純前端）     → 讀 JSON 渲染，不直接依賴 core
 | `/pitfall-record` | 記錄踩坑經驗 | 發現問題時立即記錄 |
 | `/pitfall-resolve` | 標記踩坑已解決 | 問題修復後 |
 | `/sprint-retro` | Sprint 回顧報告 | Sprint 結束時 |
+| `/sprint-close` | 結案 Sprint，merge 回主幹 | 老闆 + PM 確認所有 Gate 通過後 |
 | `/harness-audit` | Harness 健康度稽核 | 定期檢查 |
+| `/sop-plan` | L1 計畫模式 SOP（上下文載入 + Plan Mode 評估） | L1 收到任務分派後，開始規劃前 |
+| `/sop-execute` | L2 任務執行 SOP（規範強制載入 + 驗收確認） | L2 開始執行任務時 |
+| `/sop-review` | L1 Code Review SOP（規範對照 + 審核決策） | L1 進行 Code Review 時 |
+| `/sop-deploy` | 部署 SOP（品質 checklist + Gate G5） | 部署前 |
+| `/spec-update` | 規範文件更新（版本遞增 + 變更記錄） | 修改任何 .knowledge/specs/ 文件時 |
+
+## Git 版控流程（強制）
+
+> 詳細規範見 AgentHub `.knowledge/company/sop/git-flow.md`
+
+| 角色 | 操作 | 說明 |
+|------|------|------|
+| dev-plan 產出後 | `git checkout -b sprint-{N}` | 從主幹建立 Sprint branch |
+| task-start（循序） | 直接在 sprint-{N} commit | `並行組 = —` 的任務 |
+| task-start（並行） | `git checkout -b task/s{N}-T{id}-{slug}` | `並行組 = A/B/C...` 的任務 |
+| task-approve（並行） | merge task → sprint-{N}，刪 branch | code 進 sprint 後依賴才解鎖 |
+| sprint-close | merge sprint-{N} → 主幹，tag，清理 | 老闆 + PM 確認後執行 |
+
+**task-dispatch 必須標記 `| 並行組 |` 欄位**：`—` = 循序，`A/B/C` = 同組可並行。
 
 ## 專案文件索引
 
+> 完整分類索引見 `.knowledge/file-index.md`。以下為快速入口。
+
 | 文件 | 說明 |
 |------|------|
-| `.knowledge/company-rules.md` | 共用開發規則 |
-| `.knowledge/team-workflow.md` | 共用工作流程 |
-| `.knowledge/project-overview.md` | 專案概述 |
-| `.knowledge/architecture.md` | 架構參考 |
-| `.knowledge/postmortem-log.md` | 踩坑紀錄 |
-| `.knowledge/specs/data-model.md` | 資料模型規格 v5.0（🔴 規範） |
-| `.knowledge/specs/api-design.md` | API 設計規格 v5.0（🔴 規範） |
-| `.knowledge/specs/feature-spec.md` | 功能規格 v12.0（🟡 規格） |
-| `proposal/roadmap.md` | 產品路線圖 v4.0（已核准） |
-| `proposal/sprint1-diagnosis.md` | Sprint 1 六問診斷 |
-| `proposal/sprint1-proposal.md` | Sprint 1 提案書（G0 通過） |
-| `proposal/sprint1-dev-plan.md` | Sprint 1 開發計畫書（已完成） |
-| `proposal/sprint2-diagnosis.md` | Sprint 2 六問診斷 |
-| `proposal/sprint2-proposal.md` | Sprint 2 提案書（G0 通過） |
-| `proposal/sprint2-dev-plan.md` | Sprint 2 開發計畫書（已完成） |
-| `proposal/sprint3-diagnosis.md` | Sprint 3 六問診斷 |
-| `proposal/sprint3-proposal.md` | Sprint 3 提案書（G0 通過） |
-| `proposal/sprint3-dev-plan.md` | Sprint 3 開發計畫書（已完成） |
-| `proposal/sprint4-diagnosis.md` | Sprint 4 六問診斷 |
-| `proposal/sprint4-proposal.md` | Sprint 4 提案書（G0 通過） |
-| `proposal/sprint4-dev-plan.md` | Sprint 4 開發計畫書（已完成） |
-| `proposal/sprint5-diagnosis.md` | Sprint 5 六問診斷 |
-| `proposal/sprint5-proposal.md` | Sprint 5 提案書（G0 通過） |
-| `proposal/sprint5-dev-plan.md` | Sprint 5 開發計畫書（已完成） |
-| `.knowledge/sprint5-dataflow-architecture.md` | Sprint 5 資料流動架構設計 |
-| `proposal/sprint6-diagnosis.md` | Sprint 6 六問診斷 |
-| `proposal/sprint6-proposal.md` | Sprint 6 提案書（G0 通過） |
-| `proposal/sprint6-dev-plan.md` | Sprint 6 開發計畫書（已完成） |
-| `.knowledge/sprint6-ollama-architecture.md` | Sprint 6 Ollama + 隱私架構設計 |
-| `proposal/sprint7-diagnosis.md` | Sprint 7 六問診斷 |
-| `proposal/sprint7-proposal.md` | Sprint 7 提案書（G0 通過） |
-| `proposal/sprint7-dev-plan.md` | Sprint 7 開發計畫書（已完成） |
-| `.knowledge/sprint7-function-architecture.md` | Sprint 7 函式級解析架構設計 |
-| `proposal/sprint8-diagnosis.md` | Sprint 8 六問診斷 |
-| `proposal/sprint8-proposal.md` | Sprint 8 提案書（G0 通過） |
-| `proposal/sprint8-dev-plan.md` | Sprint 8 開發計畫書（已完成） |
-| `.knowledge/sprint8-impact-architecture.md` | Sprint 8 影響分析架構設計 |
-| `proposal/sprint9-diagnosis.md` | Sprint 9 六問診斷 |
-| `proposal/sprint9-proposal.md` | Sprint 9 提案書（G0 通過） |
-| `proposal/sprint9-dev-plan.md` | Sprint 9 開發計畫書（已完成） |
-| `.knowledge/sprint9-controlpanel-architecture.md` | Sprint 9 控制面板架構設計 |
-| `proposal/sprint10-diagnosis.md` | Sprint 10 六問診斷 |
-| `proposal/sprint10-proposal.md` | Sprint 10 提案書（G0 通過） |
-| `proposal/sprint10-dev-plan.md` | Sprint 10 開發計畫書（已完成） |
-| `.knowledge/sprint10-curation-architecture.md` | Sprint 10 智慧策展架構設計 |
-| `proposal/sprint11-diagnosis.md` | Sprint 11 六問診斷 |
-| `proposal/sprint11-proposal.md` | Sprint 11 提案書（G0 通過） |
-| `proposal/sprint11-dev-plan.md` | Sprint 11 開發計畫書（已完成） |
-| `.knowledge/sprint11-perspectives-architecture.md` | Sprint 11 三種故事視角架構設計 |
-| `proposal/sprint12-diagnosis.md` | Sprint 12 六問診斷 |
-| `proposal/sprint12-proposal.md` | Sprint 12 提案書（G0 通過） |
-| `proposal/sprint12-dev-plan.md` | Sprint 12 開發計畫書（已完成） |
-| `proposal/references/sprint12/three-perspectives-mockup.html` | Sprint 12 核准圖稿（白紙黑格 + 三視角呈現邏輯） |
-| `proposal/sprint13-diagnosis.md` | Sprint 13 六問診斷 |
-| `proposal/sprint13-proposal.md` | Sprint 13 提案書（G0 通過） |
-| `proposal/sprint13-dev-plan.md` | Sprint 13 開發計畫書（已完成） |
-| `.knowledge/sprint13-method-level-architecture.md` | Sprint 13 方法/端點級架構設計 |
-| `proposal/references/sprint13/method-level-mockup.html` | Sprint 13 核准圖稿（方法/端點級三視角） |
-| `proposal/references/sprint13/method-level-mockup-spec.md` | Sprint 13 技術規格書（11 章） |
-| `.knowledge/research-industry-visualization.md` | 業界視覺化調研報告 |
-
-## 公司知識庫
-
-> **使用規則（company-rules.md 第 7 條）**：需要引用公司規範時，先檢查本地 `.knowledge/` 是否已有副本。若無，從下方來源路徑複製一份到 `.knowledge/` 再使用。不需要的規範不必複製。
-
-| 規範 | 來源路徑 | 本地副本 |
-|------|---------|---------|
-| 程式碼規範 | `C:/projects/AgentHub/.knowledge/company/standards/coding-standards.md` | `.knowledge/coding-standards.md` |
-| API 規範 | `C:/projects/AgentHub/.knowledge/company/standards/api-standards.md` | `.knowledge/api-standards.md` |
-| 測試規範 | `C:/projects/AgentHub/.knowledge/company/standards/testing-standards.md` | `.knowledge/testing-standards.md` |
-| 品質 Checklist | `C:/projects/AgentHub/.knowledge/company/standards/quality-checklist.md` | `.knowledge/quality-checklist.md` |
-| Code Review SOP | `C:/projects/AgentHub/.knowledge/company/sop/code-review.md` | `.knowledge/code-review.md` |
-| Sprint 規劃 SOP | `C:/projects/AgentHub/.knowledge/company/sop/sprint-planning.md` | `.knowledge/sprint-planning.md` |
+| `.knowledge/file-index.md` | **完整文件索引**（共用規則、規範、Sprint 1-15 紀錄、架構設計、公司知識庫） |
+| `.knowledge/company-rules.md` | 共用開發規則（所有 Agent 必讀） |
+| `.knowledge/team-workflow.md` | 共用工作流程（所有 Agent 必讀） |
+| `.knowledge/specs/data-model.md` | 資料模型規格 v8.0（🔴 規範） |
+| `.knowledge/specs/api-design.md` | API 設計規格 v9.0（🔴 規範） |
+| `.knowledge/specs/feature-spec.md` | 功能規格 v19.0（🟡 規格） |
+| `.knowledge/sprint14-ai-architecture.md` | Sprint 14 AI 架構設計文件 |
+| `proposal/roadmap.md` | 產品路線圖 v9.0（已核准） |
+| `proposal/sprint15-dev-plan.md` | Sprint 15 開發計畫書（✅ 已完成） |
+| `proposal/sprint15.1-dev-plan.md` | Sprint 15.1 AI 資料管線串接 Hotfix（✅ 附條件通過） |
+| `proposal/sprint16-proposal.md` | Sprint 16 提案書（✅ G0 通過） |
+| `proposal/sprint16-dev-plan.md` | Sprint 16 開發計畫書 — AI 體驗完整化（✅ 完成，G3 附條件通過） |
+| `proposal/sprint17-proposal.md` | Sprint 17 提案書（✅ G0 通過） |
+| `proposal/sprint17-dev-plan.md` | Sprint 17 開發計畫書 — 程式碼優化（✅ 完成） |
+| `proposal/sprint17-loc-report.md` | Sprint 17 LOC 盤點報告 |
+| `proposal/sprint17-refactor-report.md` | Sprint 17 重構報告（前後 LOC 對比） |
+| `proposal/sprint18-diagnosis.md` | Sprint 18 產品診斷報告 |
+| `proposal/sprint18-proposal.md` | Sprint 18 提案書（✅ G0 通過） |
+| `proposal/sprint18-dev-plan.md` | Sprint 18 開發計畫書 — Python + Java 多語言支援（✅ 完成） |
+| `proposal/sprint19-proposal.md` | Sprint 19 提案書（✅ G0 通過，含附錄 A-F 規格） |
+| `proposal/sprint19-dev-plan.md` | Sprint 19 開發計畫書 — Wiki 知識輸出 + Obsidian 知識圖（✅ 完成，G3 附條件通過） |
+| `proposal/sprint20-proposal.md` | Sprint 20 提案書（✅ G0 通過，含附錄 A-C） |
+| `proposal/sprint20-dev-plan.md` | Sprint 20 開發計畫書 — 啟動體驗改造（✅ 完成） |

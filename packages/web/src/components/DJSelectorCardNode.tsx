@@ -9,7 +9,7 @@
  *   'category-header' — category group header (icon + label + count)
  *   'endpoint-card'   — clickable endpoint card (method badge + path + steps)
  *
- * Sprint 13 — T6 canvas refactor
+ * Sprint 13-15 — T6 canvas refactor + T7 AI Chinese description
  */
 
 import { memo, useState, type CSSProperties } from 'react';
@@ -33,6 +33,8 @@ export interface DJSelectorNodeData {
   desc?: string;
   stepCount?: number;
   endpointId?: string;
+  /** Sprint 15: AI-generated Chinese description */
+  aiDescription?: string;
   [key: string]: unknown;
 }
 
@@ -184,6 +186,21 @@ function EndpointCard({ d }: { d: DJSelectorNodeData }) {
       </div>
       {d.desc && d.desc !== `${method} ${path}` && (
         <div style={{ fontSize: 10, color: THEME.inkMuted, marginTop: 3, fontFamily: THEME.fontUi }}>{d.desc}</div>
+      )}
+      {/* Sprint 15: AI Chinese description */}
+      {d.aiDescription && (
+        <div
+          style={{
+            fontSize: 10,
+            color: THEME.inkMuted,
+            marginTop: 3,
+            fontFamily: THEME.fontUi,
+            fontStyle: 'italic',
+          }}
+          title={d.aiDescription}
+        >
+          {d.aiDescription}
+        </div>
       )}
       <div style={stepBadge}>{d.stepCount ?? 0} 個步驟</div>
       {/* Invisible handles */}

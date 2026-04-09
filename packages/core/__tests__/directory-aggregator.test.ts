@@ -348,19 +348,37 @@ describe('aggregateByDirectory', () => {
     expect(servicesNode!.files).toContain('src/services/b.ts');
   });
 
-  // 18. Call edges are excluded from directory edge calculation
-  it('ignores call-type edges when computing directory edges', () => {
+  // 18. Call edges vs import edges: only import/export edges produce directory edges
+  it('import edges produce directory edges but call edges do not add to them', () => {
     const nodes = [
-      makeFileNode('src/services/a.ts'),
-      makeFileNode('src/models/b.ts'),
-      makeFileNode('src/utils/c.ts'),
+      makeFileNode('src/routes/r1.ts'),
+      makeFileNode('src/routes/r2.ts'),
+      makeFileNode('src/routes/r3.ts'),
+      makeFileNode('src/services/s1.ts'),
+      makeFileNode('src/services/s2.ts'),
+      makeFileNode('src/services/s3.ts'),
+      makeFileNode('src/models/m1.ts'),
+      makeFileNode('src/models/m2.ts'),
+      makeFileNode('src/models/m3.ts'),
+      makeFileNode('src/utils/u1.ts'),
+      makeFileNode('src/utils/u2.ts'),
+      makeFileNode('src/utils/u3.ts'),
     ];
+    // One import edge + one call edge between same pair of directories
     const edges: GraphEdge[] = [
-      makeEdge('src/services/a.ts', 'src/models/b.ts', 'call'),
+      makeEdge('src/routes/r1.ts', 'src/services/s1.ts', 'import'),
+      makeEdge('src/routes/r1.ts', 'src/services/s1.ts', 'call'),
     ];
     const result = aggregateByDirectory(nodes, edges);
     expect(result).not.toBeNull();
-    expect(result!.edges).toHaveLength(0);
+    // The import edge should produce exactly 1 directory edge (routes → services)
+    // The call edge should not add a second one
+    const routesToServices = result!.edges.filter(
+      (e) => e.source === 'routes' && e.target === 'services',
+    );
+    expect(routesToServices).toHaveLength(1);
+    // Weight should be 1 (only the import edge counted)
+    expect(routesToServices[0]!.weight).toBe(1);
   });
 
   // 19. label is the directory bucket id (single segment after prefix stripping)

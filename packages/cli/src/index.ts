@@ -7,6 +7,7 @@
 import { Command } from 'commander';
 import { analyzeCommand } from './commands/analyze.js';
 import { webCommand } from './commands/web.js';
+import { wikiCommand } from './commands/wiki.js';
 
 const program = new Command();
 
@@ -46,6 +47,35 @@ program
       aiProvider: options.aiProvider,
       ollamaModel: options.ollamaModel,
     });
+  });
+
+program
+  .command('wiki [path]')
+  .description('Export a wiki knowledge base from the codebase to Markdown files')
+  .option('--output <dir>', 'output directory for wiki files (default: .codeatlas/wiki)')
+  .option('--ai', 'enable AI deep analysis (T10 integration)', false)
+  .action(async (
+    targetPath: string | undefined,
+    options: { output?: string; ai?: boolean },
+  ) => {
+    await wikiCommand(targetPath, {
+      ...(options.output !== undefined && { output: options.output }),
+      ...(options.ai !== undefined && { ai: options.ai }),
+    });
+  });
+
+// ---------------------------------------------------------------------------
+// Sprint 20 T6: Zero-arg launch
+//
+// When `codeatlas` is invoked with no subcommand, behave like `codeatlas web`
+// with no path — server starts in idle mode, browser auto-opens to welcome page.
+// ---------------------------------------------------------------------------
+
+program
+  .action(async () => {
+    // This action fires only when no sub-command is recognised.
+    // Default port mirrors the `web` command default.
+    await webCommand(undefined, { port: 3004 });
   });
 
 program.parse(process.argv);

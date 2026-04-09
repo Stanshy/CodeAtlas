@@ -53,14 +53,17 @@ function transformEndpointGraph(raw: ApiEndpointGraphRaw): EndpointGraph {
 
   // 1. Create endpoint nodes
   for (const ep of raw.endpoints) {
-    nodes.push({
+    const node: EndpointNode = {
       id: ep.id,
       label: `${ep.method} ${ep.path}`,
       method: ep.method,
       path: ep.path,
       filePath: ep.handlerFileId,
       kind: 'endpoint',
-    });
+    };
+    // Sprint 15.1: Wire AI description from merged endpoint
+    if (ep.description) node.description = ep.description;
+    nodes.push(node);
     nodeIdSet.add(ep.id);
   }
 
@@ -75,13 +78,16 @@ function transformEndpointGraph(raw: ApiEndpointGraphRaw): EndpointGraph {
       const stepId = `${chain.endpointId}::step-${i}::${step.method}`;
 
       if (!nodeIdSet.has(stepId)) {
-        nodes.push({
+        const stepNode: EndpointNode = {
           id: stepId,
           label: step.name,
           method: step.method,
           filePath: step.fileId,
           kind: 'method',
-        });
+        };
+        // Sprint 15.1: Wire AI step description
+        if (step.description) stepNode.description = step.description;
+        nodes.push(stepNode);
         nodeIdSet.add(stepId);
       }
 
@@ -99,13 +105,13 @@ function transformEndpointGraph(raw: ApiEndpointGraphRaw): EndpointGraph {
 }
 
 export interface UseGraphDataResult {
-  /** React Flow nodes (for 2D GraphCanvas) */
+  /** React Flow nodes (for GraphCanvas) */
   nodes: Node<NeonNodeData>[];
-  /** React Flow edges (for 2D GraphCanvas) */
+  /** React Flow edges (for GraphCanvas) */
   edges: Edge<NeonEdgeData>[];
-  /** Raw graph nodes from API (for 3D Graph3DCanvas) */
+  /** Raw graph nodes from API (for SF panel, E2E tracing, future Wiki graph) */
   rawNodes: GraphNode[];
-  /** Raw graph edges from API (for 3D Graph3DCanvas) */
+  /** Raw graph edges from API (for SF panel, E2E tracing, future Wiki graph) */
   rawEdges: GraphEdge[];
   /** Sprint 12: optional directory-level graph (system-framework perspective) */
   directoryGraph: DirectoryGraph | null;

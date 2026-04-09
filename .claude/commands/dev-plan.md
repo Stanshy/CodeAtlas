@@ -1,8 +1,7 @@
 ---
 name: dev-plan
 description: Generate a development plan with task breakdown and section 10 tracking tables
-disable-model-invocation: true
-allowed-tools: Read, Write, Glob, Grep
+allowed-tools: Read, Write, Glob, Grep, Bash
 ---
 
 # 開發計畫書產生器
@@ -24,7 +23,7 @@ G0 通過後，由 L1 產出標準化開發計畫書。
 !`cat proposal/sprint$0-proposal.md 2>/dev/null || echo "找不到 Sprint $0 提案書"`
 
 2. 讀取開發計畫書範本：
-!`cat .knowledge/company/templates/dev-plan.md.template 2>/dev/null || echo "範本未找到"`
+!`cat .knowledge/templates/dev-plan.md.template 2>/dev/null || echo "範本未找到"`
 
 3. **建立規範文件**（若不存在則建立，已存在則跳過）：
 
@@ -56,7 +55,17 @@ G0 通過後，由 L1 產出標準化開發計畫書。
    {具體內容}
    ```
 
-4. 產出 `proposal/sprint$0-dev-plan.md`，包含：
+4. **建立 Sprint Branch**：
+
+   ```bash
+   BASE=$(git rev-parse --abbrev-ref HEAD)   # 記錄當前 base branch（main / master / 其他）
+   git checkout -b sprint-$0
+   ```
+
+   > 若 `sprint-$0` branch 已存在，輸出警告並跳過（冪等）。
+   > `$BASE` 將寫入 dev-plan metadata，供 `/sprint-close` 使用。
+
+5. 產出 `proposal/sprint$0-dev-plan.md`，包含：
    - 需求摘要（來自提案書）
    - 技術方案
    - 檔案變更清單
@@ -125,3 +134,12 @@ G0 通過後，由 L1 產出標準化開發計畫書。
 **Review 結果欄位**：`通過` / `不通過`（目前僅存字串，不做狀態轉換）
 
 **日期格式**：`YYYY-MM-DD`
+
+## Dev-plan Metadata（標題區）
+
+dev-plan 標題區必須包含以下欄位（供其他 Skill 讀取）：
+
+```markdown
+> **Base Branch**: {master / main / 其他}
+> **Sprint Branch**: sprint-{N}
+```

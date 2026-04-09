@@ -21,6 +21,7 @@ import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import type { AstNode, AstProvider, ParseResult } from '../ast-provider.js';
+import type { SupportedLanguage } from '../../types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -28,6 +29,8 @@ const __dirname = dirname(__filename);
 const WASM_DIR = join(__dirname, '..', 'wasm');
 const JS_WASM = join(WASM_DIR, 'tree-sitter-javascript.wasm');
 const TS_WASM = join(WASM_DIR, 'tree-sitter-typescript.wasm');
+const PY_WASM = join(WASM_DIR, 'tree-sitter-python.wasm');
+const JAVA_WASM = join(WASM_DIR, 'tree-sitter-java.wasm');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type WebTreeSitter = any;
@@ -35,12 +38,14 @@ type WebTreeSitter = any;
 let _Parser: WebTreeSitter | null = null;
 let _jsLang: WebTreeSitter | null = null;
 let _tsLang: WebTreeSitter | null = null;
+let _pyLang: WebTreeSitter | null = null;
+let _javaLang: WebTreeSitter | null = null;
 let _available: boolean | null = null;
 
 async function tryLoad(): Promise<boolean> {
   if (_available !== null) return _available;
   try {
-    // Check WASM blobs exist before trying to initialise
+    // JS/TS WASM blobs are required for the provider to be considered available
     if (!existsSync(JS_WASM) || !existsSync(TS_WASM)) {
       _available = false;
       return false;
@@ -52,6 +57,20 @@ async function tryLoad(): Promise<boolean> {
     await WebTreeSitter.init();
     _jsLang = await WebTreeSitter.Language.load(JS_WASM);
     _tsLang = await WebTreeSitter.Language.load(TS_WASM);
+
+    // Load Python WASM grammar (optional — failure does not break JS/TS availability)
+    if (existsSync(PY_WASM)) {
+      try {
+        _pyLang = await WebTreeSitter.Language.load(PY_WASM);
+      } catch { /* Python WASM grammar unavailable */ }
+    }
+
+    // Load Java WASM grammar (optional — failure does not break JS/TS availability)
+    if (existsSync(JAVA_WASM)) {
+      try {
+        _javaLang = await WebTreeSitter.Language.load(JAVA_WASM);
+      } catch { /* Java WASM grammar unavailable */ }
+    }
 
     // Smoke-test
     const parser = new WebTreeSitter();
@@ -82,6 +101,15 @@ function mapNode(node: any): AstNode {
   };
 }
 
+function getLang(language: SupportedLanguage): WebTreeSitter | null {
+  switch (language) {
+    case 'javascript': return _jsLang;
+    case 'typescript': return _tsLang;
+    case 'python':     return _pyLang;
+    case 'java':       return _javaLang;
+  }
+}
+
 export class WasmTreeSitterProvider implements AstProvider {
   readonly name = 'wasm-tree-sitter';
 
@@ -91,15 +119,25 @@ export class WasmTreeSitterProvider implements AstProvider {
 
   async parse(
     source: string,
-    language: 'javascript' | 'typescript',
+    language: SupportedLanguage,
   ): Promise<ParseResult> {
     if (!(await tryLoad()) || _Parser === null) {
       throw new Error('WasmTreeSitterProvider is not available');
     }
 
+    const lang = getLang(language);
+    if (lang === null) {
+      throw new Error(
+        `WasmTreeSitterProvider: WASM grammar for "${language}" is not loaded. ` +
+        `Place tree-sitter-${language}.wasm in the wasm/ directory.`,
+      );
+    }
+
     const parser = new _Parser();
-    parser.setLanguage(language === 'javascript' ? _jsLang : _tsLang);
-    const tree = parser.parse(source);
+    parser.setLanguage(lang);
+    // Sprint 18: Normalize \r\n → \n before parsing (same as native provider)
+    const normalised = source.indexOf('\r') >= 0 ? source.replace(/\r\n?/g, '\n') : source;
+    const tree = parser.parse(normalised);
 
     return {
       language,
