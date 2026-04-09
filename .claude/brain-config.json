@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "project": {
+    "id": "codeatlas",
+    "code": "CA",
+    "name": "CodeAtlas",
+    "root": ".",
+    "type": "fullstack-app",
+    "tech_stack": "Node.js + TypeScript + React + Fastify + tree-sitter"
+  },
+  "paths": {
+    "templates": "~/.agenthub/templates",
+    "knowledge": ".knowledge",
+    "tasks": ".tasks",
+    "proposal": "proposal",
+    "critical_dirs": ["packages/core/src", "packages/cli/src", "packages/web/src"],
+    "component_extensions": [".tsx"],
+    "design_dirs": ["proposal/references"]
+  },
+  "scripts": {
+    "test": "pnpm -r run test",
+    "lint": "pnpm -r run lint",
+    "build": "pnpm -r run build",
+    "typecheck": "pnpm -r run type-check"
+  },
+  "hooks": {
+    "enabled": ["forbidden-commands", "git-commit-check", "stop-validator"]
+  },
+  "agents": {
+    "default_model": "sonnet",
+    "definitions_path": "~/.agenthub/agents/",
+    "enabled": ["backend-architect", "test-writer-fixer", "frontend-developer"]
+  },
+  "brain": {
+    "db_path": "~/.agenthub/brain.db",
+    "knowledge_index": ".knowledge/file-index.md"
+  },
+  "gate_rules": {
+    "required": ["G0", "G2", "G3"],
+    "optional": ["G1", "G4", "G5", "G6"]
+  }
+}
