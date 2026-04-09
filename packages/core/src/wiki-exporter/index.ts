@@ -60,6 +60,8 @@ export interface WikiExportOptions {
   coreMethodsOnly?: boolean;
   /** ISO timestamp override for testing. Default: new Date().toISOString() */
   generatedAt?: string;
+  /** Output locale for wiki content. Default: 'en' */
+  locale?: import('../types.js').Locale;
 }
 
 export interface WikiExporterInput {

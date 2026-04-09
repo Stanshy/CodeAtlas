@@ -1,25 +1,36 @@
 /**
- * AI Prompt Templates — Sprint 14-16
+ * AI Prompt Templates — Sprint 14-16, i18n Sprint 21
  * Structured prompts for AI providers, output format matches contracts.ts schemas.
  * Sprint 16: All prompts fully in Traditional Chinese for better local model compliance.
- * Future: language switching via user settings.
+ * Sprint 21: i18n support — locale parameter selects Chinese or English output.
  * @module ai/prompt-templates
  */
 
-export const PROMPT_VERSION = 'v16.1';
+import type { Locale } from '../types.js';
+import {
+  REPLY_RULES_LOCALE,
+  METHOD_SUMMARY_INTRO,
+  METHOD_SUMMARY_INSTRUCTIONS,
+  ROLE_DEFINITIONS,
+  ROLE_CLASSIFICATION_INTRO,
+  ROLE_CLASSIFICATION_INSTRUCTIONS,
+  CHAIN_EXPLANATION_INTRO,
+  CHAIN_EXPLANATION_INSTRUCTIONS,
+  DIRECTORY_SUMMARY_INTRO,
+  DIRECTORY_SUMMARY_INSTRUCTIONS,
+  ENDPOINT_DESCRIPTION_INTRO,
+  STEP_DETAIL_INTRO,
+  STEP_DETAIL_INSTRUCTIONS,
+  JSON_ONLY_INSTRUCTION,
+  JSON_ARRAY_ONLY_INSTRUCTION,
+  METHODS_TO_ANALYZE_LABEL,
+  METHODS_TO_CLASSIFY_LABEL,
+  CHAIN_TO_ANALYZE_LABEL,
+  DIRECTORY_TO_ANALYZE_LABEL,
+  ENDPOINT_TO_ANALYZE_LABEL,
+} from './prompt-locale.js';
 
-/**
- * Standard reply rules appended to every prompt.
- * Improves JSON output success rate for local models (e.g. Gemma4).
- */
-const REPLY_RULES = `
-回覆規則：
-1. 使用繁體中文
-2. 只輸出 JSON，不加 markdown 包裹
-3. 嚴格遵循以下 JSON 結構
-4. 字數上限見各欄位 maxLength
-5. 不得虛構未觀察到的內容
-6. 若無法判斷，confidence 設為 0.5 以下`;
+export const PROMPT_VERSION = 'v16.1';
 
 // ---------------------------------------------------------------------------
 // Method Summary Prompt
@@ -30,9 +41,13 @@ const REPLY_RULES = `
  * matching BatchMethodSummarySchema.
  *
  * @param methodsContext - Formatted string produced by buildMethodBatchContext()
+ * @param locale         - Output language locale (default: 'zh-TW')
  */
-export function buildMethodSummaryPrompt(methodsContext: string): string {
-  return `你是一位程式碼分析專家。請分析以下方法並對每個方法進行分類。
+export function buildMethodSummaryPrompt(methodsContext: string, locale: Locale = 'zh-TW'): string {
+  if (locale === 'zh-TW') {
+    // Original Chinese prompt — kept exactly as-is
+    const REPLY_RULES = REPLY_RULES_LOCALE['zh-TW'];
+    return `你是一位程式碼分析專家。請分析以下方法並對每個方法進行分類。
 
 針對每個方法，請提供：
 - id：方法的識別符
@@ -59,6 +74,22 @@ ${REPLY_RULES}
 
 待分析的方法：
 ${methodsContext}`;
+  }
+
+  // English prompt
+  const REPLY_RULES = REPLY_RULES_LOCALE['en'];
+  return `${METHOD_SUMMARY_INTRO['en']}
+
+${METHOD_SUMMARY_INSTRUCTIONS['en']}
+
+${ROLE_DEFINITIONS['en']}
+
+${JSON_ONLY_INSTRUCTION['en']}
+{"methods": [{"id": "...", "role": "...", "confidence": 0.8, "oneLineSummary": "...", "businessRelevance": "...", "evidence": ["signal1"]}]}
+${REPLY_RULES}
+
+${METHODS_TO_ANALYZE_LABEL['en']}
+${methodsContext}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,9 +101,13 @@ ${methodsContext}`;
  * Output matches MethodRoleClassificationSchema.
  *
  * @param methodsContext - Formatted string produced by buildMethodBatchContext()
+ * @param locale         - Output language locale (default: 'zh-TW')
  */
-export function buildRoleClassificationPrompt(methodsContext: string): string {
-  return `你是一位程式碼分析專家。請對以下每個方法進行角色分類。
+export function buildRoleClassificationPrompt(methodsContext: string, locale: Locale = 'zh-TW'): string {
+  if (locale === 'zh-TW') {
+    // Original Chinese prompt — kept exactly as-is
+    const REPLY_RULES = REPLY_RULES_LOCALE['zh-TW'];
+    return `你是一位程式碼分析專家。請對以下每個方法進行角色分類。
 
 針對每個方法，請提供：
 - id：方法的識別符
@@ -97,6 +132,22 @@ ${REPLY_RULES}
 
 待分類的方法：
 ${methodsContext}`;
+  }
+
+  // English prompt
+  const REPLY_RULES = REPLY_RULES_LOCALE['en'];
+  return `${ROLE_CLASSIFICATION_INTRO['en']}
+
+${ROLE_CLASSIFICATION_INSTRUCTIONS['en']}
+
+${ROLE_DEFINITIONS['en']}
+
+${JSON_ONLY_INSTRUCTION['en']}
+{"methods": [{"id": "...", "role": "...", "confidence": 0.9, "sourceSignals": ["signal1", "signal2"]}]}
+${REPLY_RULES}
+
+${METHODS_TO_CLASSIFY_LABEL['en']}
+${methodsContext}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -109,9 +160,13 @@ ${methodsContext}`;
  *
  * @param chainContext - Formatted string produced by buildChainContext()
  * @param chainId     - The chain/endpoint identifier to embed in the response
+ * @param locale      - Output language locale (default: 'zh-TW')
  */
-export function buildChainExplanationPrompt(chainContext: string, chainId: string): string {
-  return `你是一位程式碼分析專家。請解釋這條 API 呼叫鏈的用途。
+export function buildChainExplanationPrompt(chainContext: string, chainId: string, locale: Locale = 'zh-TW'): string {
+  if (locale === 'zh-TW') {
+    // Original Chinese prompt — kept exactly as-is
+    const REPLY_RULES = REPLY_RULES_LOCALE['zh-TW'];
+    return `你是一位程式碼分析專家。請解釋這條 API 呼叫鏈的用途。
 
 請提供：
 - chainId："${chainId}"
@@ -123,6 +178,20 @@ export function buildChainExplanationPrompt(chainContext: string, chainId: strin
 ${REPLY_RULES}
 
 待分析的呼叫鏈：
+${chainContext}`;
+  }
+
+  // English prompt
+  const REPLY_RULES = REPLY_RULES_LOCALE['en'];
+  return `${CHAIN_EXPLANATION_INTRO['en']}
+
+${CHAIN_EXPLANATION_INSTRUCTIONS['en'].replace('the provided chainId value', `"${chainId}"`)}
+
+${JSON_ONLY_INSTRUCTION['en']}
+{"chainId": "...", "overallPurpose": "...", "steps": [{"stepIndex": 0, "methodId": "...", "description": "..."}]}
+${REPLY_RULES}
+
+${CHAIN_TO_ANALYZE_LABEL['en']}
 ${chainContext}`;
 }
 
@@ -136,9 +205,17 @@ ${chainContext}`;
  *
  * @param directoryContext - Formatted string produced by buildLargeContext()
  * @param directoryPath   - The directory path to embed in the response
+ * @param locale          - Output language locale (default: 'zh-TW')
  */
-export function buildDirectorySummaryPrompt(directoryContext: string, directoryPath: string): string {
-  return `你是一位程式碼分析專家。請分析此目錄並判斷它在專案中的角色。
+export function buildDirectorySummaryPrompt(
+  directoryContext: string,
+  directoryPath: string,
+  locale: Locale = 'zh-TW',
+): string {
+  if (locale === 'zh-TW') {
+    // Original Chinese prompt — kept exactly as-is
+    const REPLY_RULES = REPLY_RULES_LOCALE['zh-TW'];
+    return `你是一位程式碼分析專家。請分析此目錄並判斷它在專案中的角色。
 
 請提供：
 - directoryPath："${directoryPath}"
@@ -153,6 +230,20 @@ ${REPLY_RULES}
 
 待分析的目錄：
 ${directoryContext}`;
+  }
+
+  // English prompt
+  const REPLY_RULES = REPLY_RULES_LOCALE['en'];
+  return `${DIRECTORY_SUMMARY_INTRO['en']}
+
+${DIRECTORY_SUMMARY_INSTRUCTIONS['en'].replace('the provided directory path', `"${directoryPath}"`)}
+
+${JSON_ONLY_INSTRUCTION['en']}
+{"directoryPath": "${directoryPath}", "role": "service", "oneLineSummary": "Handles core business logic", "keyResponsibilities": ["user authentication", "order processing"], "confidence": 0.85}
+${REPLY_RULES}
+
+${DIRECTORY_TO_ANALYZE_LABEL['en']}
+${directoryContext}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -160,21 +251,26 @@ ${directoryContext}`;
 // ---------------------------------------------------------------------------
 
 /**
- * Build a prompt asking the AI to describe an API endpoint in Chinese.
+ * Build a prompt asking the AI to describe an API endpoint.
  * Output matches EndpointDescriptionSchema.
  *
  * @param endpointContext - Method + path + handler signature
  * @param endpointId     - The endpoint ID to embed in the response
  * @param method         - HTTP method (GET/POST/etc.)
  * @param path           - API path
+ * @param locale         - Output language locale (default: 'zh-TW')
  */
 export function buildEndpointDescriptionPrompt(
   endpointContext: string,
   endpointId: string,
   method: string,
   path: string,
+  locale: Locale = 'zh-TW',
 ): string {
-  return `你是一位程式碼分析專家。請用簡潔的繁體中文描述這個 API 端點的用途。
+  if (locale === 'zh-TW') {
+    // Original Chinese prompt — kept exactly as-is
+    const REPLY_RULES = REPLY_RULES_LOCALE['zh-TW'];
+    return `你是一位程式碼分析專家。請用簡潔的繁體中文描述這個 API 端點的用途。
 
 請提供：
 - endpointId："${endpointId}"
@@ -190,6 +286,26 @@ ${REPLY_RULES}
 
 待分析的端點：
 ${endpointContext}`;
+  }
+
+  // English prompt
+  const REPLY_RULES = REPLY_RULES_LOCALE['en'];
+  return `${ENDPOINT_DESCRIPTION_INTRO['en']}
+
+Provide:
+- endpointId: "${endpointId}"
+- method: "${method}"
+- path: "${path}"
+- chineseDescription: English description explaining this endpoint's function, purpose and business context (100-200 characters)
+- purpose: one sentence describing the core function of this endpoint
+- confidence: a score from 0 to 1
+
+${JSON_ONLY_INSTRUCTION['en']}
+{"endpointId": "${endpointId}", "method": "${method}", "path": "${path}", "chineseDescription": "Handles video upload flow — receives the uploaded file, validates format and size, stores it in cloud storage, creates a database record, and triggers a transcoding job", "purpose": "Upload a video file and create a video record", "confidence": 0.9}
+${REPLY_RULES}
+
+${ENDPOINT_TO_ANALYZE_LABEL['en']}
+${endpointContext}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -202,16 +318,21 @@ ${endpointContext}`;
  *
  * @param chainContext - Formatted string produced by buildChainContext()
  * @param steps       - Array of { stepIndex, methodId } for the response structure
+ * @param locale      - Output language locale (default: 'zh-TW')
  */
 export function buildStepDetailPrompt(
   chainContext: string,
   steps: Array<{ stepIndex: number; methodId: string }>,
+  locale: Locale = 'zh-TW',
 ): string {
   const stepsHint = steps.map(s =>
     `{"stepIndex": ${s.stepIndex}, "methodId": "${s.methodId}", "description": "...", "input": "...", "output": "...", "transform": "..."}`
   ).join(',\n  ');
 
-  return `你是一位程式碼分析專家。請分析這條 API 呼叫鏈中的每個步驟，並描述資料流向。
+  if (locale === 'zh-TW') {
+    // Original Chinese prompt — kept exactly as-is
+    const REPLY_RULES = REPLY_RULES_LOCALE['zh-TW'];
+    return `你是一位程式碼分析專家。請分析這條 API 呼叫鏈中的每個步驟，並描述資料流向。
 
 針對每個步驟，請提供：
 - stepIndex：步驟順序編號
@@ -228,5 +349,21 @@ export function buildStepDetailPrompt(
 ${REPLY_RULES}
 
 待分析的呼叫鏈：
+${chainContext}`;
+  }
+
+  // English prompt
+  const REPLY_RULES = REPLY_RULES_LOCALE['en'];
+  return `${STEP_DETAIL_INTRO['en']}
+
+${STEP_DETAIL_INSTRUCTIONS['en']}
+
+${JSON_ARRAY_ONLY_INSTRUCTION['en']}
+[
+  ${stepsHint}
+]
+${REPLY_RULES}
+
+${CHAIN_TO_ANALYZE_LABEL['en']}
 ${chainContext}`;
 }
