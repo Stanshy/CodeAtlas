@@ -22,6 +22,7 @@
  */
 
 import { memo, useRef, useEffect, useState, useCallback, type CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 import { THEME } from '../styles/theme';
 import type { EndpointChain, DJChainStep } from '../types/graph';
 import { deriveStepDetail } from '../utils/dj-descriptions';
@@ -54,6 +55,7 @@ interface StepDetailProps {
 }
 
 const StepDetail = memo(function StepDetail({ step }: StepDetailProps) {
+  const { t } = useTranslation();
   const containerStyle: CSSProperties = {
     padding: '8px 10px 4px 10px',
     borderTop: `1px solid ${THEME.borderDefault}`,
@@ -72,7 +74,7 @@ const StepDetail = memo(function StepDetail({ step }: StepDetailProps) {
   if (!hasAny) {
     return (
       <div style={{ ...containerStyle, color: THEME.inkFaint, fontSize: 11, fontFamily: THEME.fontUi }}>
-        詳細資訊未提供
+        {t('panel.dj.stepDetailNotProvided')}
       </div>
     );
   }
@@ -93,7 +95,7 @@ const StepDetail = memo(function StepDetail({ step }: StepDetailProps) {
             letterSpacing: '0.06em',
             textTransform: 'uppercase',
           }}>
-            輸入
+            {t('panel.dj.inputLabel')}
           </div>
           <div style={{
             fontFamily: THEME.fontMono,
@@ -125,7 +127,7 @@ const StepDetail = memo(function StepDetail({ step }: StepDetailProps) {
             letterSpacing: '0.06em',
             textTransform: 'uppercase',
           }}>
-            輸出
+            {t('panel.dj.outputLabel')}
           </div>
           <div style={{
             fontFamily: THEME.fontMono,
@@ -157,7 +159,7 @@ const StepDetail = memo(function StepDetail({ step }: StepDetailProps) {
             letterSpacing: '0.06em',
             textTransform: 'uppercase',
           }}>
-            轉換
+            {t('panel.dj.transformLabel')}
           </div>
           <div style={{
             fontFamily: THEME.fontMono,
@@ -189,7 +191,7 @@ const StepDetail = memo(function StepDetail({ step }: StepDetailProps) {
             letterSpacing: '0.06em',
             textTransform: 'uppercase',
           }}>
-            方法
+            {t('panel.dj.methodLabel')}
           </div>
           <div style={{
             fontFamily: THEME.fontMono,
@@ -342,6 +344,7 @@ const StepItem = memo(function StepItem({
 // ---------------------------------------------------------------------------
 
 function DJAIResultSection({ endpointId }: { endpointId: string | null }) {
+  const { t } = useTranslation();
   const { status, job, error, analyze } = useAIAnalysis('endpoint', endpointId ?? '');
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -399,7 +402,7 @@ function DJAIResultSection({ endpointId }: { endpointId: string | null }) {
       <div style={sectionStyle}>
         <div style={{ ...btnBase, border: '1px solid #d0d0d8', color: '#8888aa', opacity: 0.6, cursor: 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }} aria-busy="true">
           <span style={{ width: 10, height: 10, borderRadius: '50%', border: '1.5px solid currentColor', borderTopColor: 'transparent', animation: 'ca-spin 0.8s linear infinite', display: 'inline-block' }} aria-hidden="true" />
-          分析中...
+          {t('panel.dj.analyzing')}
         </div>
       </div>
     );
@@ -411,7 +414,7 @@ function DJAIResultSection({ endpointId }: { endpointId: string | null }) {
       <div style={{ ...sectionStyle, position: 'relative' }}>
         {showTooltip && (
           <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 5, background: '#333', color: '#fff', fontSize: 10, padding: '4px 8px', borderRadius: 4, whiteSpace: 'nowrap', zIndex: 10, pointerEvents: 'none' }} role="tooltip">
-            請先在設定中啟用 AI Provider
+            {t('panel.dj.enableAiTooltip')}
           </div>
         )}
         <button
@@ -421,7 +424,7 @@ function DJAIResultSection({ endpointId }: { endpointId: string | null }) {
           onMouseLeave={() => setShowTooltip(false)}
           type="button"
         >
-          ✨ 解釋資料流
+          {t('panel.dj.explainFlow')}
         </button>
       </div>
     );
@@ -436,7 +439,7 @@ function DJAIResultSection({ endpointId }: { endpointId: string | null }) {
           onClick={() => analyze(true)}
           type="button"
         >
-          ⚠️ 分析失敗，點擊重試
+          {t('panel.dj.analysisFailed')}
         </button>
       </div>
     );
@@ -446,7 +449,7 @@ function DJAIResultSection({ endpointId }: { endpointId: string | null }) {
   return (
     <div style={sectionStyle}>
       <button style={btnBase} onClick={() => analyze()} type="button">
-        ✨ 解釋資料流
+        {t('panel.dj.explainFlow')}
       </button>
     </div>
   );
@@ -466,19 +469,7 @@ export const DJPanel = memo(function DJPanel({
   onClear,
   onStepClick,
 }: DJPanelProps) {
-  // Empty state — no journey selected yet
-  if (!chain) {
-    return (
-      <div style={{ width: 300, height: '100%', background: '#ffffff', borderLeft: `1px solid ${THEME.borderDefault}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: THEME.fontUi }}>
-        <span style={{ fontSize: 24 }}>🗺️</span>
-        <span style={{ fontSize: 13, fontWeight: 500, color: THEME.inkSecondary }}>選擇端點查看資料旅程</span>
-        <span style={{ fontSize: 11, color: THEME.inkMuted }}>點擊左側端點卡片開始</span>
-      </div>
-    );
-  }
-
-  const totalSteps = chain.steps.length;
-  const isComplete = !isPlaying && currentStep >= totalSteps - 1 && totalSteps > 0;
+  const { t } = useTranslation();
 
   // Track which step item is manually expanded (one at a time)
   const [expandedStep, setExpandedStep] = useState<number | null>(null);
@@ -516,6 +507,20 @@ export const DJPanel = memo(function DJPanel({
     setExpandedStep((prev) => (prev === index ? null : index));
     onStepClick(index);
   }, [onStepClick]);
+
+  // Empty state — no journey selected yet (after all hooks)
+  if (!chain) {
+    return (
+      <div style={{ width: 300, height: '100%', background: '#ffffff', borderLeft: `1px solid ${THEME.borderDefault}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: THEME.fontUi }}>
+        <span style={{ fontSize: 24 }}>🗺️</span>
+        <span style={{ fontSize: 13, fontWeight: 500, color: THEME.inkSecondary }}>{t('panel.dj.emptyTitle')}</span>
+        <span style={{ fontSize: 11, color: THEME.inkMuted }}>{t('panel.dj.emptyHint')}</span>
+      </div>
+    );
+  }
+
+  const totalSteps = chain.steps.length;
+  const isComplete = !isPlaying && currentStep >= totalSteps - 1 && totalSteps > 0;
 
   // ---------------------------------------------------------------------------
   // Styles
@@ -640,11 +645,11 @@ export const DJPanel = memo(function DJPanel({
           {chain.path}
         </div>
         {chain.desc && (
-          <div style={subtitleStyle}>{chain.desc} · {totalSteps} 個步驟</div>
+          <div style={subtitleStyle}>{chain.desc} · {t('panel.dj.stepCount', { count: totalSteps })}</div>
         )}
         {currentStep >= 0 && (
           <div style={progressStyle}>
-            {revealedCount} / {totalSteps} 步驟完成
+            {t('panel.dj.stepsComplete', { current: revealedCount, total: totalSteps })}
             {isComplete && ' ✓'}
           </div>
         )}
@@ -665,7 +670,7 @@ export const DJPanel = memo(function DJPanel({
               fontFamily: THEME.fontUi,
             }}
           >
-            此端點無步驟資料
+            {t('panel.dj.noSteps')}
           </div>
         ) : (
           chain.steps.map((step, index) => {
@@ -696,7 +701,7 @@ export const DJPanel = memo(function DJPanel({
           type="button"
           style={replayBtnStyle}
           onClick={isComplete ? onReplay : undefined}
-          aria-label="重播此旅程"
+          aria-label={t('panel.dj.replayJourney')}
           onMouseEnter={(e) => {
             if (isComplete) {
               (e.currentTarget as HTMLButtonElement).style.background = '#1b5e20';
@@ -708,13 +713,13 @@ export const DJPanel = memo(function DJPanel({
             }
           }}
         >
-          重播此旅程
+          {t('panel.dj.replayJourney')}
         </button>
         <button
           type="button"
           style={clearBtnStyle}
           onClick={onClear}
-          aria-label="清除選取"
+          aria-label={t('panel.dj.clearSelection')}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLButtonElement).style.borderColor = THEME.djBorder;
             (e.currentTarget as HTMLButtonElement).style.color = THEME.djBorder;
@@ -724,7 +729,7 @@ export const DJPanel = memo(function DJPanel({
             (e.currentTarget as HTMLButtonElement).style.color = THEME.inkSecondary;
           }}
         >
-          清除選取
+          {t('panel.dj.clearSelection')}
         </button>
       </div>
     </div>

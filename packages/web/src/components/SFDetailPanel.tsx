@@ -17,6 +17,7 @@
  */
 
 import { useState, useMemo, useCallback, type CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { DirectoryGraph, GraphNode, GraphEdge } from '../types/graph';
 import { fetchFunctionNodes } from '../api/graph';
 import { useAIAnalysis } from '../hooks/useAIAnalysis';
@@ -50,19 +51,19 @@ function estimateLines(fileCount: number): string {
 // Sprint 15: MethodRole display helpers (matching LODetailPanel pattern)
 // ---------------------------------------------------------------------------
 
-function getRoleLabel(role: string): string {
-  const labels: Record<string, string> = {
-    entrypoint: '入口',
-    business_core: '業務',
-    domain_rule: '規則',
-    orchestration: '編排',
-    io_adapter: 'I/O',
-    validation: '驗證',
-    infra: '基礎',
-    utility: '工具',
-    framework_glue: '框架',
+function getRoleLabelKey(role: string): string {
+  const keys: Record<string, string> = {
+    entrypoint:     'panel.lo.roleEntrypoint',
+    business_core:  'panel.lo.roleBusinessCore',
+    domain_rule:    'panel.lo.roleDomainRule',
+    orchestration:  'panel.lo.roleOrchestration',
+    io_adapter:     'panel.lo.roleIoAdapter',
+    validation:     'panel.lo.roleValidation',
+    infra:          'panel.lo.roleInfra',
+    utility:        'panel.lo.roleUtility',
+    framework_glue: 'panel.lo.roleFrameworkGlue',
   };
-  return labels[role] ?? role;
+  return keys[role] ?? role;
 }
 
 function getRoleBadgeBg(role: string): string {
@@ -106,6 +107,7 @@ interface FileRowProps {
 }
 
 function FileRow({ filePath, fileId, functions }: FileRowProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [fetchedFns, setFetchedFns] = useState<GraphNode[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -202,12 +204,12 @@ function FileRow({ filePath, fileId, functions }: FileRowProps) {
         <div style={{ paddingLeft: 20, borderLeft: '1px solid #e0e0e0', marginLeft: 7 }}>
           {loading && (
             <div style={{ padding: '4px 8px', fontSize: 10, color: '#9e9e9e', fontStyle: 'italic' }}>
-              載入中...
+              {t('panel.sf.loading')}
             </div>
           )}
           {!loading && displayFunctions.length === 0 && (
             <div style={{ padding: '4px 8px', fontSize: 10, color: '#bdbdbd', fontStyle: 'italic' }}>
-              無函式資料
+              {t('panel.sf.noFunctions')}
             </div>
           )}
           {!loading && displayFunctions.map((fn) => {
@@ -251,7 +253,7 @@ function FileRow({ filePath, fileId, functions }: FileRowProps) {
                         fontFamily: "'Inter', sans-serif",
                       }}
                     >
-                      {getRoleLabel(methodRole)}
+                      {t(getRoleLabelKey(methodRole))}
                     </span>
                   )}
                 </div>
@@ -283,6 +285,7 @@ function FileRow({ filePath, fileId, functions }: FileRowProps) {
 // ---------------------------------------------------------------------------
 
 export function SFDetailPanel({ selectedNodeId, directoryGraph, graphNodes, graphEdges }: SFDetailPanelProps) {
+  const { t } = useTranslation();
   // Which file paths expanded for function list
   const [_expandedFiles] = useState<Set<string>>(new Set());
 
@@ -459,7 +462,7 @@ export function SFDetailPanel({ selectedNodeId, directoryGraph, graphNodes, grap
       <div style={panelStyle}>
         <div style={emptyStyle}>
           <span style={{ fontSize: 24 }}>📂</span>
-          <span>點擊目錄卡片查看詳情</span>
+          <span>{t('panel.sf.clickToView')}</span>
         </div>
       </div>
     );
@@ -487,18 +490,18 @@ export function SFDetailPanel({ selectedNodeId, directoryGraph, graphNodes, grap
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>
           <span>📊</span>
-          <span>統計</span>
+          <span>{t('panel.sf.statsTitle')}</span>
         </div>
         <div style={statRowStyle}>
-          <span style={statLabelStyle}>檔案</span>
+          <span style={statLabelStyle}>{t('panel.sf.filesLabel')}</span>
           <span style={statValueStyle}>{fileCount}</span>
         </div>
         <div style={statRowStyle}>
-          <span style={statLabelStyle}>函式</span>
+          <span style={statLabelStyle}>{t('panel.sf.functionsLabel')}</span>
           <span style={statValueStyle}>{functionCount > 0 ? functionCount : '—'}</span>
         </div>
         <div style={statRowStyle}>
-          <span style={statLabelStyle}>行數</span>
+          <span style={statLabelStyle}>{t('panel.sf.linesLabel')}</span>
           <span style={statValueStyle}>{linesEstimate}</span>
         </div>
       </div>
@@ -508,7 +511,7 @@ export function SFDetailPanel({ selectedNodeId, directoryGraph, graphNodes, grap
         <div style={sectionStyle}>
           <div style={sectionTitleStyle}>
             <span>📄</span>
-            <span>檔案列表</span>
+            <span>{t('panel.sf.fileListTitle')}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {dirFiles.map((file) => (
@@ -527,10 +530,10 @@ export function SFDetailPanel({ selectedNodeId, directoryGraph, graphNodes, grap
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>
           <span>⬆</span>
-          <span>上游依賴 ({upstreamDirs.length})</span>
+          <span>{t('panel.sf.upstreamTitle', { count: upstreamDirs.length })}</span>
         </div>
         {upstreamDirs.length === 0 ? (
-          <span style={emptyDepStyle}>無上游依賴</span>
+          <span style={emptyDepStyle}>{t('panel.sf.noUpstream')}</span>
         ) : (
           <div style={depListStyle}>
             {upstreamDirs.map((dir) => (
@@ -546,10 +549,10 @@ export function SFDetailPanel({ selectedNodeId, directoryGraph, graphNodes, grap
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>
           <span>⬇</span>
-          <span>下游依賴 ({downstreamDirs.length})</span>
+          <span>{t('panel.sf.downstreamTitle', { count: downstreamDirs.length })}</span>
         </div>
         {downstreamDirs.length === 0 ? (
-          <span style={emptyDepStyle}>無下游依賴</span>
+          <span style={emptyDepStyle}>{t('panel.sf.noDownstream')}</span>
         ) : (
           <div style={depListStyle}>
             {downstreamDirs.map((dir) => (
@@ -572,6 +575,7 @@ export function SFDetailPanel({ selectedNodeId, directoryGraph, graphNodes, grap
 // ---------------------------------------------------------------------------
 
 function SFAISection({ directoryPath }: { directoryPath: string }) {
+  const { t } = useTranslation();
   const { status, error, job, analyze } = useAIAnalysis('directory', directoryPath);
   const isDisabled = error === 'AI_DISABLED';
 
@@ -629,7 +633,7 @@ function SFAISection({ directoryPath }: { directoryPath: string }) {
       <div style={sectionStyle}>
         <div style={{ ...btnStyle, border: '1px solid #d0d0d8', color: '#8888aa', opacity: 0.6, cursor: 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           <span style={{ width: 10, height: 10, borderRadius: '50%', border: '1.5px solid currentColor', borderTopColor: 'transparent', animation: 'ca-spin 0.8s linear infinite', display: 'inline-block' }} />
-          分析中...
+          {t('ai.analyzing')}
         </div>
       </div>
     );
@@ -644,7 +648,7 @@ function SFAISection({ directoryPath }: { directoryPath: string }) {
           onClick={() => analyze(true)}
           type="button"
         >
-          ⚠️ 分析失敗，點擊重試
+          {t('ai.analysisFailedRetry')}
         </button>
       </div>
     );
@@ -654,8 +658,8 @@ function SFAISection({ directoryPath }: { directoryPath: string }) {
   if (isDisabled) {
     return (
       <div style={sectionStyle}>
-        <button style={{ ...btnStyle, border: '1px solid #d0d0d8', color: '#8888aa', opacity: 0.55, cursor: 'not-allowed' }} disabled type="button" title="請先在設定中啟用 AI Provider">
-          ✨ AI 分析此目錄
+        <button style={{ ...btnStyle, border: '1px solid #d0d0d8', color: '#8888aa', opacity: 0.55, cursor: 'not-allowed' }} disabled type="button" title={t('ai.enableAiProvider')}>
+          {t('panel.sf.aiAnalyzeDirectory')}
         </button>
       </div>
     );
@@ -665,7 +669,7 @@ function SFAISection({ directoryPath }: { directoryPath: string }) {
   return (
     <div style={sectionStyle}>
       <button style={btnStyle} onClick={() => analyze()} type="button">
-        ✨ AI 分析此目錄
+        {t('panel.sf.aiAnalyzeDirectory')}
       </button>
     </div>
   );

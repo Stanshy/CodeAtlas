@@ -21,6 +21,7 @@ import {
   useRef,
   type MouseEvent,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import { fetchWikiPage } from '../api/wiki';
 import { getAIJob } from '../api/graph';
 import { useViewStateDispatch } from '../contexts/ViewStateContext';
@@ -125,18 +126,20 @@ type AiStatus = 'idle' | 'analyzing' | 'succeeded' | 'failed';
 // ---------------------------------------------------------------------------
 
 function EmptyState() {
+  const { t } = useTranslation();
   return (
     <div style={styles.emptyWrap}>
       <div style={styles.emptyIcon} aria-hidden="true">&#x1F4DA;</div>
-      <p style={styles.emptyTitle}>選取節點以預覽</p>
-      <p style={styles.emptyBody}>在左側圖譜點選任一節點，即可在此查看詳細說明。</p>
+      <p style={styles.emptyTitle}>{t('wiki.selectNodeToPreview')}</p>
+      <p style={styles.emptyBody}>{t('wiki.selectNodeHint')}</p>
     </div>
   );
 }
 
 function Skeleton() {
+  const { t } = useTranslation();
   return (
-    <div style={styles.skeletonWrap} aria-label="載入中">
+    <div style={styles.skeletonWrap} aria-label={t('wiki.loading')}>
       {[80, 100, 65, 100, 55, 90].map((pct, i) => (
         <div
           key={i}
@@ -156,6 +159,7 @@ export function WikiPreviewPanel({
   allNodes,
   onSelectNode,
 }: WikiPreviewPanelProps) {
+  const { t } = useTranslation();
   const dispatch = useViewStateDispatch();
 
   // Page detail fetch state
@@ -189,7 +193,7 @@ export function WikiPreviewPanel({
       .then((detail) => {
         if (cancelled) return;
         if (detail === null) {
-          setFetchError('無法載入頁面內容');
+          setFetchError(t('wiki.loadError'));
         } else {
           setPage(detail);
         }
@@ -197,7 +201,7 @@ export function WikiPreviewPanel({
       })
       .catch(() => {
         if (!cancelled) {
-          setFetchError('網路錯誤');
+          setFetchError(t('wiki.networkError'));
           setIsFetching(false);
         }
       });
@@ -233,7 +237,7 @@ export function WikiPreviewPanel({
             }
           } else if (status === 'failed' || status === 'canceled') {
             setAiStatus('failed');
-            setAiError('AI 分析失敗，請稍後再試。');
+            setAiError(t('wiki.aiAnalysisFailed'));
           } else {
             // Still running — poll again
             setAiStatus('analyzing');
@@ -241,7 +245,7 @@ export function WikiPreviewPanel({
           }
         } catch {
           setAiStatus('failed');
-          setAiError('AI 分析發生錯誤。');
+          setAiError(t('wiki.aiAnalysisError'));
         }
       }, AI_POLL_INTERVAL_MS);
     },
@@ -271,7 +275,7 @@ export function WikiPreviewPanel({
 
       if (!res.ok) {
         setAiStatus('failed');
-        setAiError(`伺服器錯誤 (${res.status})`);
+        setAiError(t('wiki.serverError', { status: res.status }));
         return;
       }
 
@@ -280,20 +284,20 @@ export function WikiPreviewPanel({
         data = await res.json() as { jobId?: string };
       } catch {
         setAiStatus('failed');
-        setAiError('無法解析伺服器回應');
+        setAiError(t('wiki.parseError'));
         return;
       }
 
       if (!data.jobId) {
         setAiStatus('failed');
-        setAiError('伺服器未回傳 jobId');
+        setAiError(t('wiki.noJobId'));
         return;
       }
 
       pollJob(data.jobId);
     } catch {
       setAiStatus('failed');
-      setAiError('網路請求失敗');
+      setAiError(t('wiki.requestFailed'));
     }
   }, [selectedNode, aiStatus, pollJob]);
 
@@ -369,8 +373,8 @@ export function WikiPreviewPanel({
           type="button"
           style={styles.closeBtn}
           onClick={handleClose}
-          aria-label="關閉預覽"
-          title="關閉"
+          aria-label={t('wiki.closePreview')}
+          title={t('wiki.closePreview')}
         >
           &#x2715;
         </button>
@@ -423,7 +427,7 @@ export function WikiPreviewPanel({
       {/* ── Source files ── */}
       {selectedNode.sourceFiles && selectedNode.sourceFiles.length > 0 && (
         <div style={styles.sourceFilesSection}>
-          <p style={styles.sectionTitle}>相關程式碼</p>
+          <p style={styles.sectionTitle}>{t('wiki.relatedCode')}</p>
           {selectedNode.sourceFiles.map((f) => (
             <p key={f} style={styles.sourceFileItem}>{f}</p>
           ))}
@@ -440,7 +444,7 @@ export function WikiPreviewPanel({
               onClick={() => { void handleAiAnalyze(); }}
               disabled={isFetching}
             >
-              &#x2728; AI 深度分析
+              &#x2728; {t('wiki.aiDeepAnalysis')}
             </button>
             {aiStatus === 'failed' && aiError && (
               <p style={styles.aiErrorText}>{aiError}</p>
@@ -449,21 +453,21 @@ export function WikiPreviewPanel({
         ) : aiStatus === 'analyzing' ? (
           <div style={styles.aiLoadingRow}>
             <div style={styles.aiSpinner} aria-hidden="true" />
-            <span style={styles.aiLoadingText}>AI 分析中，請稍候…</span>
+            <span style={styles.aiLoadingText}>{t('wiki.aiAnalyzing')}</span>
           </div>
         ) : (
           /* succeeded */
           <div style={styles.aiSuccessRow}>
             <span style={styles.aiSuccessText}>&#x2728; claude</span>
             <span style={styles.aiSuccessDot}>&middot;</span>
-            <span style={styles.aiSuccessTime}>剛才</span>
+            <span style={styles.aiSuccessTime}>{t('wiki.justNow')}</span>
             <span style={styles.aiSuccessDot}>&middot;</span>
             <button
               type="button"
               style={styles.aiReanalyzeBtn}
               onClick={() => { setAiStatus('idle'); }}
             >
-              &#x1F5A5;&#xFE0F; 重新分析
+              &#x1F5A5;&#xFE0F; {t('wiki.reanalyze')}
             </button>
           </div>
         )}

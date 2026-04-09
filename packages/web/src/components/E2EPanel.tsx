@@ -6,6 +6,7 @@
 
 import { memo, useCallback, useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useViewState } from '../contexts/ViewStateContext';
 import { colors, tracing as tracingTheme } from '../styles/theme';
 import { useStaggerAnimation } from '../hooks/useStaggerAnimation';
@@ -267,6 +268,7 @@ interface StepRowProps {
 }
 
 const StepRow = memo(function StepRow({ step, stepNumber, isLast, onFocusNode }: StepRowProps) {
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
 
   const handleClick = useCallback(() => {
@@ -372,7 +374,7 @@ const StepRow = memo(function StepRow({ step, stepNumber, isLast, onFocusNode }:
                 flexShrink: 0,
               }}
             >
-              起點
+              {t('e2e.startBadge')}
             </span>
           )}
         </div>
@@ -428,6 +430,7 @@ export const E2EPanel = memo(function E2EPanel({
   onUpdateDepth,
   onClose,
 }: E2EPanelProps) {
+  const { t } = useTranslation();
   const { state } = useViewState();
   const { e2eTracing, activePerspective } = state;
 
@@ -482,12 +485,12 @@ export const E2EPanel = memo(function E2EPanel({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Framer Motion MotionStyle incompatible with exactOptionalPropertyTypes
           style={(isDataJourney ? dataJourneyPanelStyles : sidebarPanelStyles) as any}
           role="complementary"
-          aria-label="端到端追蹤面板"
+          aria-label={t('e2e.panelAriaLabel')}
         >
           {/* Header */}
           <div style={isDataJourney ? { marginBottom: 8 } : headerStyles}>
             <span style={isDataJourney ? dataJourneyTitleStyles : titleStyles}>
-              {isDataJourney ? '資料旅程' : '端到端追蹤'}
+              {isDataJourney ? t('e2e.dataJourneyTitle') : t('e2e.tracingTitle')}
             </span>
             {!isDataJourney && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -496,10 +499,10 @@ export const E2EPanel = memo(function E2EPanel({
                   type="button"
                   style={closeButtonStyles}
                   onClick={onClose}
-                  aria-label="結束追蹤"
-                  title="結束追蹤"
+                  aria-label={t('e2e.endTracing')}
+                  title={t('e2e.endTracing')}
                 >
-                  <span style={{ fontSize: 11, fontWeight: 500 }}>結束</span>
+                  <span style={{ fontSize: 11, fontWeight: 500 }}>{t('e2e.endTracingShort')}</span>
                   <span>&times;</span>
                 </button>
               </div>
@@ -512,8 +515,8 @@ export const E2EPanel = memo(function E2EPanel({
                     type="button"
                     onClick={staggerPlaying ? staggerPause : staggerPlay}
                     disabled={path.length === 0}
-                    aria-label={staggerPlaying ? '暫停' : '播放'}
-                    title={staggerPlaying ? '暫停' : '播放'}
+                    aria-label={staggerPlaying ? t('e2e.pause') : t('e2e.play')}
+                    title={staggerPlaying ? t('e2e.pause') : t('e2e.play')}
                     style={{
                       width: 28,
                       height: 28,
@@ -545,8 +548,8 @@ export const E2EPanel = memo(function E2EPanel({
                   type="button"
                   style={closeButtonStyles}
                   onClick={onClose}
-                  aria-label="結束追蹤"
-                  title="結束追蹤"
+                  aria-label={t('e2e.endTracing')}
+                  title={t('e2e.endTracing')}
                 >
                   <span>&times;</span>
                 </button>
@@ -557,19 +560,19 @@ export const E2EPanel = memo(function E2EPanel({
           {/* Summary */}
           <div style={summaryStyles}>
             <div style={summaryRowStyles}>
-              <span style={summaryLabelStyles}>起點:</span>
+              <span style={summaryLabelStyles}>{t('e2e.startLabel')}</span>
               <span style={summaryValueStyles} title={e2eTracing?.startNodeId ?? ''}>
                 {startNodeLabel}
               </span>
             </div>
             <div style={summaryRowStyles}>
-              <span style={summaryLabelStyles}>步數:</span>
+              <span style={summaryLabelStyles}>{t('e2e.stepCountLabel')}</span>
               <span style={summaryValueStyles}>{stepCount}</span>
             </div>
             {truncated && (
               <div style={warningStyles}>
                 <span>&#9888;</span>
-                <span>路徑截斷（超過 30 個節點）</span>
+                <span>{t('e2e.pathTruncated')}</span>
               </div>
             )}
           </div>
@@ -577,7 +580,7 @@ export const E2EPanel = memo(function E2EPanel({
           {/* Depth slider */}
           <div style={depthSectionStyles}>
             <div style={depthLabelRowStyles}>
-              <span style={{ color: colors.text.secondary }}>追蹤深度</span>
+              <span style={{ color: colors.text.secondary }}>{t('e2e.tracingDepth')}</span>
               <span style={{ color: colors.neon.cyan.DEFAULT, fontWeight: 600 }}>
                 {maxDepth}
               </span>
@@ -589,7 +592,7 @@ export const E2EPanel = memo(function E2EPanel({
               value={maxDepth}
               onChange={handleDepthChange}
               style={sliderStyles}
-              aria-label="追蹤深度"
+              aria-label={t('e2e.tracingDepth')}
               aria-valuemin={1}
               aria-valuemax={20}
               aria-valuenow={maxDepth}
@@ -614,12 +617,12 @@ export const E2EPanel = memo(function E2EPanel({
               <div style={emptyStyles}>
                 <div style={{ marginBottom: 8, fontSize: 24 }}>—</div>
                 {isDataJourney
-                  ? <div>請先選取起點與終點節點</div>
-                  : <div>尚無追蹤結果</div>
+                  ? <div>{t('e2e.emptyDataJourney')}</div>
+                  : <div>{t('e2e.emptyTracing')}</div>
                 }
                 {!isDataJourney && (
                   <div style={{ marginTop: 6, fontSize: 11 }}>
-                    請從圖譜節點右鍵選擇「端到端追蹤」
+                    {t('e2e.emptyTracingHint')}
                   </div>
                 )}
               </div>
@@ -683,8 +686,8 @@ export const E2EPanel = memo(function E2EPanel({
       <button
         type="button"
         onClick={staggerReplay}
-        aria-label="重播動畫"
-        title="重播動畫"
+        aria-label={t('e2e.replayAnimation')}
+        title={t('e2e.replayAnimation')}
         style={{
           position: 'absolute',
           bottom: 20,
@@ -711,7 +714,7 @@ export const E2EPanel = memo(function E2EPanel({
           (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,255,136,0.35)';
         }}
       >
-        ↺ 重播動畫
+        ↺ {t('e2e.replayAnimation')}
       </button>
     )}
     </>

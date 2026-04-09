@@ -8,6 +8,7 @@
  */
 
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppState } from '../contexts/AppStateContext';
 
 // ---------------------------------------------------------------------------
@@ -24,13 +25,13 @@ interface ValidateResponse {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function reasonToMessage(reason: string | undefined): string {
+function reasonToMessage(reason: string | undefined, t: (key: string) => string): string {
   switch (reason) {
-    case 'not_found':        return '路徑不存在 — 請確認路徑是否正確';
-    case 'not_directory':    return '不是目錄 — 請指定一個資料夾，而非檔案';
-    case 'no_source_files':  return '找不到可分析的原始碼 — 此目錄沒有 .ts/.js/.py/.java 檔案';
-    case 'path_too_long':    return '路徑過長 — 路徑長度超過限制';
-    default:                 return reason ?? '驗證失敗，請再試一次';
+    case 'not_found':        return t('projectInput.errorNotFound');
+    case 'not_directory':    return t('projectInput.errorNotDirectory');
+    case 'no_source_files':  return t('projectInput.errorNoSourceFiles');
+    case 'path_too_long':    return t('projectInput.errorPathTooLong');
+    default:                 return reason ?? t('projectInput.errorValidationFailed');
   }
 }
 
@@ -59,6 +60,7 @@ interface ProjectInputProps {
 // ---------------------------------------------------------------------------
 
 export function ProjectInput({ isDark = true }: ProjectInputProps) {
+  const { t } = useTranslation();
   const { startAnalysis, setPage } = useAppState();
   const [path, setPath] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -151,7 +153,7 @@ export function ProjectInput({ isDark = true }: ProjectInputProps) {
   const handleSubmit = async () => {
     const trimmed = path.trim();
     if (!trimmed) {
-      setError('請輸入專案路徑');
+      setError(t('projectInput.errorEmptyPath'));
       return;
     }
 
@@ -169,13 +171,13 @@ export function ProjectInput({ isDark = true }: ProjectInputProps) {
       try {
         data = await res.json();
       } catch {
-        setError('伺服器回應無效，請再試一次');
+        setError(t('projectInput.errorInvalidResponse'));
         setIsValidating(false);
         return;
       }
 
       if (!data.valid) {
-        setError(reasonToMessage(data.reason));
+        setError(reasonToMessage(data.reason, t));
         setIsValidating(false);
         return;
       }
@@ -191,7 +193,7 @@ export function ProjectInput({ isDark = true }: ProjectInputProps) {
       try {
         analyzeData = await analyzeRes.json();
       } catch {
-        setError('無法啟動分析，請再試一次');
+        setError(t('projectInput.errorCannotStartAnalysis'));
         setIsValidating(false);
         return;
       }
@@ -203,14 +205,14 @@ export function ProjectInput({ isDark = true }: ProjectInputProps) {
       }
 
       if (!analyzeData.jobId) {
-        setError('無法取得分析工作 ID，請再試一次');
+        setError(t('projectInput.errorNoJobId'));
         setIsValidating(false);
         return;
       }
 
       startAnalysis(trimmed, analyzeData.jobId);
     } catch {
-      setError('無法連線至伺服器，請確認服務已啟動');
+      setError(t('projectInput.errorCannotConnect'));
       setIsValidating(false);
     }
   };
@@ -242,9 +244,9 @@ export function ProjectInput({ isDark = true }: ProjectInputProps) {
             onKeyDown={handleKeyDown}
             onFocus={() => setInputFocused(true)}
             onBlur={() => setInputFocused(false)}
-            placeholder="輸入或貼上專案路徑..."
+            placeholder={t('projectInput.placeholder')}
             style={inputStyle}
-            aria-label="專案路徑"
+            aria-label={t('projectInput.ariaLabel')}
             aria-invalid={hasError}
             aria-describedby={hasError ? 'path-error' : undefined}
             disabled={isValidating}
@@ -259,7 +261,7 @@ export function ProjectInput({ isDark = true }: ProjectInputProps) {
           style={btnStyle}
           onClick={handleSubmit}
           disabled={isValidating}
-          aria-label="開始分析專案"
+          aria-label={t('projectInput.analyzeAriaLabel')}
           onMouseEnter={(e) => {
             if (!isValidating) {
               (e.currentTarget as HTMLButtonElement).style.background = '#1565c0';
@@ -271,7 +273,7 @@ export function ProjectInput({ isDark = true }: ProjectInputProps) {
             }
           }}
         >
-          {isValidating ? '驗證中...' : '開始分析'}
+          {isValidating ? t('projectInput.validating') : t('projectInput.startAnalysis')}
         </button>
       </div>
 

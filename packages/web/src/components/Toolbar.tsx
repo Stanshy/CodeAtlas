@@ -5,6 +5,7 @@
  */
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useViewState } from '../contexts/ViewStateContext';
 import { useAppState } from '../contexts/AppStateContext';
 import { PERSPECTIVE_PRESETS } from '../adapters/perspective-presets';
@@ -72,6 +73,7 @@ function BarChartIcon() {
 // ---------------------------------------------------------------------------
 
 export function Toolbar({ onSearchClick }: ToolbarProps) {
+  const { t } = useTranslation();
   const { state, dispatch } = useViewState();
   const { isSettingsPanelOpen, activePerspective } = state;
   const { returnToWelcome } = useAppState();
@@ -235,7 +237,7 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
   };
 
   return (
-    <div style={toolbarStyle} role="banner" aria-label="CodeAtlas 主工具列">
+    <div style={toolbarStyle} role="banner" aria-label={t('toolbar.mainToolbarAriaLabel')}>
       {/* Left section — hamburger toggle */}
       <div style={leftSectionStyle}>
         <button
@@ -243,8 +245,8 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
           style={hamburgerButtonStyle}
           data-settings-trigger
           onClick={() => dispatch({ type: 'TOGGLE_SETTINGS_PANEL' })}
-          title={isSettingsPanelOpen ? '關閉設定' : '開啟設定'}
-          aria-label={isSettingsPanelOpen ? '關閉設定' : '開啟設定'}
+          title={isSettingsPanelOpen ? t('toolbar.settingsClose') : t('toolbar.settingsOpen')}
+          aria-label={isSettingsPanelOpen ? t('toolbar.settingsClose') : t('toolbar.settingsOpen')}
           aria-expanded={isSettingsPanelOpen}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLButtonElement).style.background =
@@ -279,12 +281,12 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
           }}
           onMouseEnter={() => setSearchHovered(true)}
           onMouseLeave={() => setSearchHovered(false)}
-          aria-label="搜尋節點 (Ctrl+K)"
+          aria-label={t('toolbar.searchAriaLabel')}
         >
           <span style={{ color: colors.text.muted, display: 'flex', alignItems: 'center' }}>
             <SearchIcon />
           </span>
-          <span style={searchPlaceholderStyle}>搜尋...</span>
+          <span style={searchPlaceholderStyle}>{t('toolbar.searchPlaceholder')}</span>
           <kbd style={searchShortcutStyle}>Ctrl+K</kbd>
         </div>
       </div>
@@ -292,7 +294,7 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
       {/* Right section — perspective pill + overview + switch project */}
       <div style={rightSectionStyle}>
         {/* Perspective pill */}
-        <span style={perspectivePillStyle} title={`目前視角: ${perspectiveLabel}`}>
+        <span style={perspectivePillStyle} title={t('toolbar.perspectiveLabel', { label: perspectiveLabel })}>
           {/* Inner dot */}
           <span
             style={{
@@ -311,8 +313,8 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
         <button
           type="button"
           style={overviewButtonStyle}
-          title="AI 專案概述"
-          aria-label="AI 專案概述"
+          title={t('toolbar.aiOverview')}
+          aria-label={t('toolbar.aiOverview')}
           onMouseEnter={() => setOverviewHovered(true)}
           onMouseLeave={() => setOverviewHovered(false)}
         >
@@ -323,14 +325,14 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
         <button
           type="button"
           style={switchProjectButtonStyle}
-          title="切換專案"
-          aria-label="切換專案"
+          title={t('toolbar.switchProject')}
+          aria-label={t('toolbar.switchProject')}
           onClick={returnToWelcome}
           onMouseEnter={() => setSwitchHovered(true)}
           onMouseLeave={() => setSwitchHovered(false)}
         >
           <span style={{ fontSize: 14, lineHeight: 1 }}>📁</span>
-          切換專案
+          {t('toolbar.switchProject')}
         </button>
       </div>
     </div>

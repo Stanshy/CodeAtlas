@@ -9,6 +9,7 @@
  */
 
 import { memo, useEffect, useRef, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { colors } from '../styles/theme';
 
 // ---------------------------------------------------------------------------
@@ -255,6 +256,7 @@ export const ContextMenu = memo(function ContextMenu({
   onOpenInPanel,
   onStartE2ETracing,
 }: ContextMenuProps) {
+  const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close on click outside
@@ -338,27 +340,27 @@ export const ContextMenu = memo(function ContextMenu({
     >
       <MenuItem
         icon={<IconArrowRight />}
-        label="影響分析（下游）"
+        label={t('contextMenu.impactForward')}
         onClick={handleImpactForward}
       />
       <MenuItem
         icon={<IconArrowLeft />}
-        label="依賴分析（上游）"
+        label={t('contextMenu.impactReverse')}
         onClick={handleImpactReverse}
       />
       <MenuItem
         icon={<IconClipboard />}
-        label="複製路徑"
+        label={t('contextMenu.copyPath')}
         onClick={handleCopyPath}
       />
       <MenuItem
         icon={<IconSidebar />}
-        label="在面板中開啟"
+        label={t('contextMenu.openInPanel')}
         onClick={handleOpenInPanel}
       />
       <MenuItem
         icon={<IconE2E />}
-        label="端到端追蹤"
+        label={t('contextMenu.e2eTracing')}
         onClick={handleStartE2ETracing}
       />
     </div>

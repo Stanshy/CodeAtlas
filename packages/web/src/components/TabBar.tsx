@@ -10,6 +10,7 @@
 
 import { memo } from 'react';
 import type React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PerspectiveName } from '../types/graph';
 import { THEME } from '../styles/theme';
 
@@ -27,11 +28,11 @@ interface TabBarProps {
 // Tab definitions
 // ---------------------------------------------------------------------------
 
-const TABS: { key: PerspectiveName; label: string; dotClass: 'blue' | 'multi' | 'green' | 'amber'; countKey: keyof TabBarProps['counts'] }[] = [
-  { key: 'system-framework', label: '系統框架', dotClass: 'blue',  countKey: 'sf'   },
-  { key: 'logic-operation',  label: '邏輯運作', dotClass: 'multi', countKey: 'lo'   },
-  { key: 'data-journey',     label: '資料旅程', dotClass: 'green', countKey: 'dj'   },
-  { key: 'wiki',             label: '知識圖',   dotClass: 'amber', countKey: 'wiki' },
+const TABS: { key: PerspectiveName; labelKey: string; dotClass: 'blue' | 'multi' | 'green' | 'amber'; countKey: keyof TabBarProps['counts'] }[] = [
+  { key: 'system-framework', labelKey: 'tabBar.systemFramework', dotClass: 'blue',  countKey: 'sf'   },
+  { key: 'logic-operation',  labelKey: 'tabBar.logicOperation',  dotClass: 'multi', countKey: 'lo'   },
+  { key: 'data-journey',     labelKey: 'tabBar.dataJourney',     dotClass: 'green', countKey: 'dj'   },
+  { key: 'wiki',             labelKey: 'tabBar.wiki',            dotClass: 'amber', countKey: 'wiki' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -134,11 +135,13 @@ export const TabBar = memo(function TabBar({
   onPerspectiveChange,
   counts,
 }: TabBarProps) {
+  const { t } = useTranslation();
   return (
-    <div style={styles.tabBar} role="tablist" aria-label="Perspective tabs">
-      {TABS.map(({ key, label, dotClass, countKey }) => {
+    <div style={styles.tabBar} role="tablist" aria-label={t('tabBar.ariaLabel')}>
+      {TABS.map(({ key, labelKey, dotClass, countKey }) => {
         const isActive = activePerspective === key;
         const count = counts[countKey];
+        const label = t(labelKey);
 
         return (
           <button

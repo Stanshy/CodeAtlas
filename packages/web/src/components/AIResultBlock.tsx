@@ -22,6 +22,7 @@
  */
 
 import { memo, type CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RoleBadge } from './RoleBadge';
 
 // ---------------------------------------------------------------------------
@@ -50,16 +51,16 @@ export interface AIResultBlockProps {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getRelativeTime(isoString: string): string {
+function getRelativeTime(isoString: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
   try {
     const diff = Date.now() - new Date(isoString).getTime();
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return '剛剛';
-    if (minutes < 60) return `${minutes} 分鐘前`;
+    if (minutes < 1) return t('ai.justNow');
+    if (minutes < 60) return t('ai.minutesAgo', { count: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} 小時前`;
+    if (hours < 24) return t('ai.hoursAgo', { count: hours });
     const days = Math.floor(hours / 24);
-    return `${days} 天前`;
+    return t('ai.daysAgo', { count: days });
   } catch {
     return '';
   }
@@ -123,7 +124,8 @@ interface FooterProps {
 }
 
 const Footer = memo(function Footer({ provider, analyzedAt, onReanalyze }: FooterProps) {
-  const relativeTime = analyzedAt ? getRelativeTime(analyzedAt) : '';
+  const { t } = useTranslation();
+  const relativeTime = analyzedAt ? getRelativeTime(analyzedAt, t) : '';
 
   const footerStyle: CSSProperties = {
     marginTop: 8,
@@ -159,10 +161,10 @@ const Footer = memo(function Footer({ provider, analyzedAt, onReanalyze }: Foote
       {parts.length > 0 && ' · '}
       {onReanalyze ? (
         <button style={reanalyzeStyle} onClick={onReanalyze} type="button">
-          🔄 重新分析
+          🔄 {t('ai.reanalyze')}
         </button>
       ) : (
-        <span>🔄 重新分析</span>
+        <span>🔄 {t('ai.reanalyze')}</span>
       )}
     </div>
   );
@@ -179,6 +181,7 @@ export const AIResultBlock = memo(function AIResultBlock({
   onReanalyze,
   variant = 'full',
 }: AIResultBlockProps) {
+  const { t } = useTranslation();
   const isCompact = variant === 'compact';
 
   // Container style — differs per variant
@@ -266,13 +269,13 @@ export const AIResultBlock = memo(function AIResultBlock({
       {/* Title */}
       <div style={titleStyle}>
         <span aria-hidden="true">✨</span>
-        AI 分析結果
+        {t('ai.analysisResult')}
       </div>
 
       {/* Role row */}
       {result.role && (
         <div style={rowStyle}>
-          <span style={labelStyle}>角色</span>
+          <span style={labelStyle}>{t('ai.role')}</span>
           <div style={valueStyle}>
             <RoleBadge role={result.role} size="lg" />
           </div>
@@ -282,7 +285,7 @@ export const AIResultBlock = memo(function AIResultBlock({
       {/* Summary row */}
       {result.summary && (
         <div style={rowStyle}>
-          <span style={labelStyle}>摘要</span>
+          <span style={labelStyle}>{t('ai.summary')}</span>
           <span style={valueStyle}>{result.summary}</span>
         </div>
       )}
@@ -290,7 +293,7 @@ export const AIResultBlock = memo(function AIResultBlock({
       {/* Responsibilities row */}
       {result.responsibilities && result.responsibilities.length > 0 && (
         <div style={rowStyle}>
-          <span style={labelStyle}>職責</span>
+          <span style={labelStyle}>{t('ai.responsibilities')}</span>
           <ul style={bulletsStyle}>
             {result.responsibilities.map((item, i) => (
               <li key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
@@ -305,7 +308,7 @@ export const AIResultBlock = memo(function AIResultBlock({
       {/* Confidence row */}
       {result.confidence !== undefined && (
         <div style={rowStyle}>
-          <span style={labelStyle}>信心度</span>
+          <span style={labelStyle}>{t('ai.confidence')}</span>
           <ConfidenceBar confidence={result.confidence} />
         </div>
       )}

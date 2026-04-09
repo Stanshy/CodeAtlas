@@ -19,6 +19,7 @@
  */
 
 import { useMemo, useState, type CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { GraphNode, GraphEdge, ChainStep, LoCategory } from '../types/graph';
 import { useAIAnalysis } from '../hooks/useAIAnalysis';
 import { AIResultBlock } from './AIResultBlock';
@@ -27,12 +28,12 @@ import { AIResultBlock } from './AIResultBlock';
 // Category color map
 // ---------------------------------------------------------------------------
 
-const CATEGORY_COLORS: Record<LoCategory, { bar: string; bg: string; text: string; label: string }> = {
-  routes:     { bar: '#1565c0', bg: '#e3f2fd', text: '#0d47a1', label: '路線' },
-  middleware: { bar: '#00838f', bg: '#e0f7fa', text: '#006064', label: '中間層' },
-  services:   { bar: '#7b1fa2', bg: '#f3e5f5', text: '#4a148c', label: '服務' },
-  models:     { bar: '#4e342e', bg: '#efebe9', text: '#3e2723', label: '模型' },
-  utils:      { bar: '#546e7a', bg: '#eceff1', text: '#37474f', label: '工具' },
+const CATEGORY_COLORS: Record<LoCategory, { bar: string; bg: string; text: string; labelKey: string }> = {
+  routes:     { bar: '#1565c0', bg: '#e3f2fd', text: '#0d47a1', labelKey: 'panel.lo.categoryRoutes' },
+  middleware: { bar: '#00838f', bg: '#e0f7fa', text: '#006064', labelKey: 'panel.lo.categoryMiddleware' },
+  services:   { bar: '#7b1fa2', bg: '#f3e5f5', text: '#4a148c', labelKey: 'panel.lo.categoryServices' },
+  models:     { bar: '#4e342e', bg: '#efebe9', text: '#3e2723', labelKey: 'panel.lo.categoryModels' },
+  utils:      { bar: '#546e7a', bg: '#eceff1', text: '#37474f', labelKey: 'panel.lo.categoryUtils' },
 };
 
 // ---------------------------------------------------------------------------
@@ -105,20 +106,20 @@ function ListItem({ label }: ListItemProps) {
 // Sprint 14 T9: AI analysis helpers
 // ---------------------------------------------------------------------------
 
-/** Role display label mapping */
-function getRoleLabel(role: string): string {
-  const labels: Record<string, string> = {
-    entrypoint: '入口',
-    business_core: '業務核心',
-    domain_rule: '領域規則',
-    orchestration: '流程編排',
-    io_adapter: 'I/O 轉接',
-    validation: '輸入驗證',
-    infra: '基礎設施',
-    utility: '工具函式',
-    framework_glue: '框架膠水',
+/** Role display label key mapping */
+function getRoleLabelKey(role: string): string {
+  const keys: Record<string, string> = {
+    entrypoint:     'panel.lo.roleEntrypoint',
+    business_core:  'panel.lo.roleBusinessCore',
+    domain_rule:    'panel.lo.roleDomainRule',
+    orchestration:  'panel.lo.roleOrchestration',
+    io_adapter:     'panel.lo.roleIoAdapter',
+    validation:     'panel.lo.roleValidation',
+    infra:          'panel.lo.roleInfra',
+    utility:        'panel.lo.roleUtility',
+    framework_glue: 'panel.lo.roleFrameworkGlue',
   };
-  return labels[role] ?? role;
+  return keys[role] ?? role;
 }
 
 /** Role badge colors */
@@ -142,6 +143,7 @@ function getRoleBadgeColor(role: string): { bg: string; text: string } {
 // ---------------------------------------------------------------------------
 
 function LOAISection({ selectedStep }: { selectedStep: ChainStep }) {
+  const { t } = useTranslation();
   // Use specific method identifier: filePath#methodName — so each method gets its own analysis
   // Strip trailing () — backend/cache keys don't include parentheses
   const cleanName = selectedStep.methodName.replace(/\(\)$/, '');
@@ -204,10 +206,10 @@ function LOAISection({ selectedStep }: { selectedStep: ChainStep }) {
         <div style={sectionStyle}>
           <div style={sectionTitleStyle}>
             <span>✨</span>
-            <span>AI 分析</span>
+            <span>{t('panel.lo.aiAnalysisTitle')}</span>
           </div>
           <div style={{ fontSize: 12, color: '#9e9e9e', fontStyle: 'italic' }}>
-            此方法暫無分析資料
+            {t('panel.lo.noAnalysisData')}
           </div>
         </div>
       );
@@ -219,7 +221,7 @@ function LOAISection({ selectedStep }: { selectedStep: ChainStep }) {
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>
           <span>✨</span>
-          <span>AI 分析</span>
+          <span>{t('panel.lo.aiAnalysisTitle')}</span>
         </div>
         <AIResultBlock
           variant="full"
@@ -242,11 +244,11 @@ function LOAISection({ selectedStep }: { selectedStep: ChainStep }) {
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>
           <span>✨</span>
-          <span>AI 分析</span>
+          <span>{t('panel.lo.aiAnalysisTitle')}</span>
         </div>
         <div style={{ ...btnBase, border: '1px solid #d0d0d8', color: '#8888aa', opacity: 0.6, cursor: 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }} aria-busy="true">
           <span style={{ width: 10, height: 10, borderRadius: '50%', border: '1.5px solid currentColor', borderTopColor: 'transparent', animation: 'ca-spin 0.8s linear infinite', display: 'inline-block' }} aria-hidden="true" />
-          分析中...
+          {t('ai.analyzing')}
         </div>
       </div>
     );
@@ -258,11 +260,11 @@ function LOAISection({ selectedStep }: { selectedStep: ChainStep }) {
       <div style={{ ...sectionStyle, position: 'relative' }}>
         <div style={sectionTitleStyle}>
           <span>✨</span>
-          <span>AI 分析</span>
+          <span>{t('panel.lo.aiAnalysisTitle')}</span>
         </div>
         {showTooltip && (
           <div style={{ position: 'absolute', top: -30, left: '50%', transform: 'translateX(-50%)', background: '#333', color: '#fff', fontSize: 10, padding: '4px 8px', borderRadius: 4, whiteSpace: 'nowrap', zIndex: 10, pointerEvents: 'none' }} role="tooltip">
-            請先在設定中啟用 AI Provider
+            {t('ai.enableAiProvider')}
           </div>
         )}
         <button
@@ -272,7 +274,7 @@ function LOAISection({ selectedStep }: { selectedStep: ChainStep }) {
           onMouseLeave={() => setShowTooltip(false)}
           type="button"
         >
-          ✨ 解釋邏輯
+          {t('ai.analyzeLogic')}
         </button>
       </div>
     );
@@ -284,14 +286,14 @@ function LOAISection({ selectedStep }: { selectedStep: ChainStep }) {
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>
           <span>✨</span>
-          <span>AI 分析</span>
+          <span>{t('panel.lo.aiAnalysisTitle')}</span>
         </div>
         <button
           style={{ ...btnBase, border: '1px solid #ef9a9a', background: '#fff5f5', color: '#c62828' }}
           onClick={() => analyze(true)}
           type="button"
         >
-          ⚠️ 分析失敗，點擊重試
+          {t('ai.analysisFailedRetry')}
         </button>
       </div>
     );
@@ -302,10 +304,10 @@ function LOAISection({ selectedStep }: { selectedStep: ChainStep }) {
     <div style={sectionStyle}>
       <div style={sectionTitleStyle}>
         <span>✨</span>
-        <span>AI 分析</span>
+        <span>{t('panel.lo.aiAnalysisTitle')}</span>
       </div>
       <button style={btnBase} onClick={() => analyze()} type="button">
-        ✨ 解釋邏輯
+        {t('ai.analyzeLogic')}
       </button>
     </div>
   );
@@ -316,6 +318,7 @@ function LOAISection({ selectedStep }: { selectedStep: ChainStep }) {
 // ---------------------------------------------------------------------------
 
 export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: LODetailPanelProps) {
+  const { t } = useTranslation();
   // Find the function/method graphNode that corresponds to the selected chain step
   const methodNode = useMemo<GraphNode | null>(() => {
     if (!selectedStep) return null;
@@ -475,14 +478,15 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
       <div style={panelStyle}>
         <div style={emptyStyle}>
           <span style={{ fontSize: 24 }}>🔧</span>
-          <span>點擊呼叫鏈節點</span>
-          <span style={{ fontSize: 11, color: '#bdbdbd' }}>查看方法詳細資訊</span>
+          <span>{t('panel.lo.clickToView')}</span>
+          <span style={{ fontSize: 11, color: '#bdbdbd' }}>{t('panel.lo.clickToViewSub')}</span>
         </div>
       </div>
     );
   }
 
   const catColors = CATEGORY_COLORS[selectedStep.category] ?? CATEGORY_COLORS.utils;
+  const catLabel = t(catColors.labelKey);
   const sig = methodNode ? buildSignature(methodNode) : `(${selectedStep.methodName})`;
   const lineCount = methodNode?.metadata?.lineCount;
   const isAsync = methodNode?.metadata?.isAsync;
@@ -558,7 +562,7 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
               textTransform: 'uppercase',
             }}
           >
-            {catColors.label}
+            {catLabel}
           </span>
         </div>
       </div>
@@ -567,7 +571,7 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>
           <span>( )</span>
-          <span>簽名</span>
+          <span>{t('panel.lo.signatureTitle')}</span>
         </div>
         <div
           style={{
@@ -585,12 +589,12 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
         </div>
         {isAsync && (
           <div style={{ marginTop: 4, fontSize: 10, color: '#f59e0b', fontWeight: 600 }}>
-            非同步
+            {t('panel.lo.async')}
           </div>
         )}
         {isExported && (
           <div style={{ marginTop: 2, fontSize: 10, color: '#43a047' }}>
-            已匯出
+            {t('panel.lo.exported')}
           </div>
         )}
       </div>
@@ -600,7 +604,7 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
         <div style={sectionStyle}>
           <div style={sectionTitleStyle}>
             <span>✨</span>
-            <span>AI 分析</span>
+            <span>{t('panel.lo.aiAnalysisTitle')}</span>
           </div>
           {methodNode?.metadata?.aiSummary && (
             <div style={{
@@ -614,7 +618,7 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
           )}
           {methodNode?.metadata?.methodRole && (
             <div style={statRowStyle}>
-              <span style={statLabelStyle}>角色分類</span>
+              <span style={statLabelStyle}>{t('panel.lo.roleLabel')}</span>
               <span style={{
                 fontSize: 10,
                 fontWeight: 600,
@@ -623,13 +627,13 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
                 background: getRoleBadgeColor(methodNode.metadata.methodRole).bg,
                 color: getRoleBadgeColor(methodNode.metadata.methodRole).text,
               }}>
-                {getRoleLabel(methodNode.metadata.methodRole)}
+                {t(getRoleLabelKey(methodNode.metadata.methodRole))}
               </span>
             </div>
           )}
           {methodNode?.metadata?.roleConfidence !== undefined && (
             <div style={statRowStyle}>
-              <span style={statLabelStyle}>信心度</span>
+              <span style={statLabelStyle}>{t('ai.confidenceLabel')}</span>
               <span style={statValueStyle}>
                 {Math.round((methodNode.metadata.roleConfidence ?? 0) * 100)}%
               </span>
@@ -642,31 +646,31 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>
           <span>📍</span>
-          <span>位置</span>
+          <span>{t('panel.lo.locationTitle')}</span>
         </div>
         {selectedStep.className && (
           <div style={statRowStyle}>
-            <span style={statLabelStyle}>類別</span>
+            <span style={statLabelStyle}>{t('panel.lo.classLabel')}</span>
             <span style={statValueStyle} title={selectedStep.className}>
               {selectedStep.className.split('/').pop() ?? selectedStep.className}
             </span>
           </div>
         )}
         <div style={statRowStyle}>
-          <span style={statLabelStyle}>檔案</span>
+          <span style={statLabelStyle}>{t('panel.lo.fileLabel')}</span>
           <span style={statValueStyle} title={selectedStep.filePath}>
             {shortenPath(selectedStep.filePath)}
           </span>
         </div>
         {lineCount !== undefined && (
           <div style={statRowStyle}>
-            <span style={statLabelStyle}>行數</span>
+            <span style={statLabelStyle}>{t('panel.lo.linesLabel')}</span>
             <span style={statValueStyle}>{lineCount}</span>
           </div>
         )}
         {complexityEst !== null && complexityEst !== undefined && (
           <div style={statRowStyle}>
-            <span style={statLabelStyle}>複雜度</span>
+            <span style={statLabelStyle}>{t('panel.lo.complexityLabel')}</span>
             <span
               style={{
                 ...statValueStyle,
@@ -683,11 +687,11 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>
           <span>⬆</span>
-          <span>呼叫者 ({callers.length})</span>
+          <span>{t('panel.lo.callersTitle', { count: callers.length })}</span>
         </div>
         {callers.length === 0 ? (
           <span style={emptyListStyle}>
-            {chain ? '此為入口方法' : methodNode ? '未偵測到呼叫者' : '無函式節點資料'}
+            {chain ? t('panel.lo.noCallers') : methodNode ? t('panel.lo.noCallersDetected') : t('panel.lo.noCallerNodes')}
           </span>
         ) : (
           <div style={listStyle}>
@@ -697,7 +701,7 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
             })}
             {callers.length > 8 && (
               <span style={{ fontSize: 10, color: '#bdbdbd' }}>
-                +{callers.length - 8} 更多
+                {t('panel.lo.moreItems', { count: callers.length - 8 })}
               </span>
             )}
           </div>
@@ -708,11 +712,11 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>
           <span>⬇</span>
-          <span>被呼叫者 ({callees.length})</span>
+          <span>{t('panel.lo.calleesTitle', { count: callees.length })}</span>
         </div>
         {callees.length === 0 ? (
           <span style={emptyListStyle}>
-            {chain ? '此為末端方法' : methodNode ? '未偵測到被呼叫者' : '無函式節點資料'}
+            {chain ? t('panel.lo.noCallees') : methodNode ? t('panel.lo.noCalleesDetected') : t('panel.lo.noCalleeNodes')}
           </span>
         ) : (
           <div style={listStyle}>
@@ -722,7 +726,7 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
             })}
             {callees.length > 8 && (
               <span style={{ fontSize: 10, color: '#bdbdbd' }}>
-                +{callees.length - 8} 更多
+                {t('panel.lo.moreItems', { count: callees.length - 8 })}
               </span>
             )}
           </div>
@@ -733,24 +737,24 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>
           <span>🔢</span>
-          <span>鏈路資訊</span>
+          <span>{t('panel.lo.chainInfoTitle')}</span>
         </div>
         <div style={statRowStyle}>
-          <span style={statLabelStyle}>層級</span>
+          <span style={statLabelStyle}>{t('panel.lo.depthLabel')}</span>
           <span style={statValueStyle}>{selectedStep.depth}</span>
         </div>
         {chain && (
           <>
             <div style={statRowStyle}>
-              <span style={statLabelStyle}>位置</span>
+              <span style={statLabelStyle}>{t('panel.lo.positionLabel')}</span>
               <span style={statValueStyle}>
-                第 {chain.findIndex((s) => s.id === selectedStep.id) + 1} / {chain.length} 步
+                {t('panel.lo.stepOf', { current: chain.findIndex((s) => s.id === selectedStep.id) + 1, total: chain.length })}
               </span>
             </div>
             <div style={statRowStyle}>
-              <span style={statLabelStyle}>分類</span>
+              <span style={statLabelStyle}>{t('panel.lo.categoryLabel')}</span>
               <span style={{ ...statValueStyle, color: catColors.bar }}>
-                {catColors.label}
+                {catLabel}
               </span>
             </div>
           </>
