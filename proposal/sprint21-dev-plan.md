@@ -340,18 +340,18 @@ T1（設計）→ T2（型別）→ T3（框架）→ T4（en.json）→ T5（zh
 
 | Review 步驟 | 日期 | 結果 | Review 文件連結 |
 |------------|------|------|---------------|
-| 設計 Review | | | |
-| 實作 Review（Web 線） | | | |
-| 實作 Review（AI/Wiki/CLI 線） | | | |
-| 測試 Review | | | |
-| 文件 Review | | | |
+| 設計 Review | 2026-04-10 | 通過 | T1 i18n-design.md 通過 |
+| 實作 Review（Web 線） | 2026-04-10 | 通過 | T3-T7 通過，3 Minor 記錄 |
+| 實作 Review（AI/Wiki/CLI 線） | 2026-04-10 | 通過 | T8-T10 通過 |
+| 測試 Review | 2026-04-10 | 通過 | T11 103 新測試 + 回歸修復 |
+| 文件 Review | 2026-04-10 | 通過 | T12 feature-spec/api-design/CLAUDE.md |
 
 ### Gate 紀錄
 
 | Gate | 日期 | 決策 | 審核意見 |
 |------|------|------|---------|
 | G0 | 2026-04-09 | ✅ 調整後通過 | 附錄 C locale 傳遞鏈 + 4 線 rollout |
-| G2 | | | |
+| G2 | 2026-04-10 | ✅ 通過 | 0 Blocker, 0 Major, 3 Minor（chineseDescription 語義/AiSummary 遺留/en.json 重複 key） |
 | G3 | | | |
 | G4 | | | |
 
