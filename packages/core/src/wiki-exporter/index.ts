@@ -176,7 +176,7 @@ export async function exportWiki(
     // resolveLinks guarantees every node has an entry, but guard defensively.
     if (nodeLinks === undefined) continue;
 
-    const content = renderMarkdown(node, nodeLinks, { generatedAt });
+    const content = renderMarkdown(node, nodeLinks, { generatedAt, locale: options?.locale ?? 'en' });
     mdFiles.push({ path: node.mdPath, content });
   }
 

@@ -8,13 +8,15 @@ import { Command } from 'commander';
 import { analyzeCommand } from './commands/analyze.js';
 import { webCommand } from './commands/web.js';
 import { wikiCommand } from './commands/wiki.js';
+import { setLocale, resolveLocale } from './i18n.js';
 
 const program = new Command();
 
 program
   .name('codeatlas')
   .description('CodeAtlas — codebase analysis and navigation tool')
-  .version('0.1.0');
+  .version('0.1.0')
+  .option('-l, --lang <locale>', 'Output language (en, zh-TW)', 'en');
 
 program
   .command('analyze [path]')
@@ -53,14 +55,15 @@ program
   .command('wiki [path]')
   .description('Export a wiki knowledge base from the codebase to Markdown files')
   .option('--output <dir>', 'output directory for wiki files (default: .codeatlas/wiki)')
+  .option('-l, --lang <locale>', 'Output language for wiki content (en, zh-TW)', 'en')
   .option('--ai', 'enable AI deep analysis (T10 integration)', false)
   .action(async (
     targetPath: string | undefined,
-    options: { output?: string; ai?: boolean },
+    options: { output?: string; lang?: string; ai?: boolean },
   ) => {
     await wikiCommand(targetPath, {
       ...(options.output !== undefined && { output: options.output }),
-      ...(options.ai !== undefined && { ai: options.ai }),
+      ...(options.lang !== undefined && { lang: options.lang }),
     });
   });
 
@@ -77,5 +80,16 @@ program
     // Default port mirrors the `web` command default.
     await webCommand(undefined, { port: 3004 });
   });
+
+// ---------------------------------------------------------------------------
+// Global locale resolution
+// Set locale from root --lang option before any command action runs.
+// ---------------------------------------------------------------------------
+
+program.hook('preAction', () => {
+  const opts = program.opts<{ lang?: string }>();
+  const localeOpts: { lang?: string } = opts.lang !== undefined ? { lang: opts.lang } : {};
+  setLocale(resolveLocale(localeOpts));
+});
 
 program.parse(process.argv);

@@ -19,6 +19,7 @@
 
 import type { WikiNode } from './types.js';
 import type { NodeLinks, ResolvedLink } from './link-resolver.js';
+import type { Locale } from '../types.js';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -31,7 +32,59 @@ export interface RenderOptions {
    * Defaults to `new Date().toISOString()` when omitted.
    */
   generatedAt?: string;
+  /**
+   * Output locale for section headings and labels.
+   * Defaults to 'en'.
+   */
+  locale?: Locale;
 }
+
+// ---------------------------------------------------------------------------
+// Locale strings
+// ---------------------------------------------------------------------------
+
+interface LocaleStrings {
+  overview: string;
+  overviewPlaceholder: string;
+  details: string;
+  detailsPlaceholder: string;
+  sourceCode: string;
+  relatedConcepts: string;
+  bucketLabels: Record<'relates' | 'depends' | 'implements' | 'extends' | 'uses', string>;
+}
+
+const LOCALE_STRINGS: Record<Locale, LocaleStrings> = {
+  en: {
+    overview: 'Overview',
+    overviewPlaceholder: '(Pending analysis)',
+    details: 'Details',
+    detailsPlaceholder: 'Run AI deep analysis to generate detailed content.',
+    sourceCode: 'Source Code',
+    relatedConcepts: 'Related Concepts',
+    bucketLabels: {
+      relates: 'related',
+      depends: 'depends',
+      implements: 'implements',
+      extends: 'extends',
+      uses: 'uses',
+    },
+  },
+  'zh-TW': {
+    overview: '概述',
+    overviewPlaceholder: '（待分析）',
+    details: '詳細說明',
+    detailsPlaceholder: '執行 AI 深度分析以生成詳細內容。',
+    sourceCode: '相關程式碼',
+    relatedConcepts: '相關概念',
+    bucketLabels: {
+      relates: '相關',
+      depends: '依賴',
+      implements: '實作',
+      extends: '延伸',
+      uses: '使用',
+    },
+  },
+};
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -51,6 +104,8 @@ export function renderMarkdown(
   options?: RenderOptions,
 ): string {
   const generatedAt = options?.generatedAt ?? new Date().toISOString();
+  const locale: Locale = options?.locale ?? 'en';
+  const strings = LOCALE_STRINGS[locale];
 
   const parts: string[] = [];
 
@@ -61,31 +116,31 @@ export function renderMarkdown(
   parts.push(`# ${node.displayName}`);
   parts.push('');
 
-  // 3. 概述
-  parts.push('## 概述');
+  // 3. Overview / 概述
+  parts.push(`## ${strings.overview}`);
   parts.push('');
   parts.push(
     node.summary !== undefined && node.summary.trim().length > 0
       ? node.summary.trim()
-      : '（待分析）',
+      : strings.overviewPlaceholder,
   );
   parts.push('');
 
-  // 4. 詳細說明 (Phase 2 placeholder — replaced by AI deep analysis)
-  parts.push('## 詳細說明');
+  // 4. Details / 詳細說明 (Phase 2 placeholder — replaced by AI deep analysis)
+  parts.push(`## ${strings.details}`);
   parts.push('');
-  parts.push('執行 AI 深度分析以生成詳細內容。');
+  parts.push(strings.detailsPlaceholder);
   parts.push('');
 
-  // 5. 相關程式碼
-  const sourceSection = renderSourceFiles(node.sourceFiles);
+  // 5. Source code / 相關程式碼
+  const sourceSection = renderSourceFiles(node.sourceFiles, strings.sourceCode);
   if (sourceSection.length > 0) {
     parts.push(sourceSection);
     parts.push('');
   }
 
-  // 6. 相關概念
-  const conceptSection = renderRelatedConcepts(links);
+  // 6. Related concepts / 相關概念
+  const conceptSection = renderRelatedConcepts(links, strings.relatedConcepts, strings.bucketLabels);
   if (conceptSection.length > 0) {
     parts.push(conceptSection);
     parts.push('');
@@ -145,7 +200,7 @@ function renderFrontmatter(
 // ---------------------------------------------------------------------------
 
 /**
- * Render the "相關程式碼" section.
+ * Render the source files section (heading controlled by caller).
  *
  * Each entry uses the basename as the label and the original path as the
  * inline description:
@@ -153,10 +208,10 @@ function renderFrontmatter(
  *
  * Returns an empty string when sourceFiles is empty.
  */
-function renderSourceFiles(sourceFiles: string[]): string {
+function renderSourceFiles(sourceFiles: string[], heading: string): string {
   if (sourceFiles.length === 0) return '';
 
-  const lines: string[] = ['## 相關程式碼', ''];
+  const lines: string[] = [`## ${heading}`, ''];
   for (const filePath of sourceFiles) {
     const base = basename(filePath);
     lines.push(`- \`${base}\` — ${filePath}`);
@@ -169,35 +224,33 @@ function renderSourceFiles(sourceFiles: string[]): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Render the "相關概念" section.
+ * Render the related concepts section (heading and labels controlled by caller).
  *
  * All five relationship buckets are rendered in order. Each non-empty bucket
  * contributes items of the form:
  *   - [[slug|displayName]] — {label}
  *
- * Label annotations per type:
- *   relates    → (相關)
- *   depends    → (依賴)
- *   implements → (實作)
- *   extends    → (延伸)
- *   uses       → (使用)
- *
  * Returns an empty string when all buckets are empty.
  */
-function renderRelatedConcepts(links: NodeLinks): string {
-  const BUCKET_ORDER: Array<{ key: keyof NodeLinks; label: string }> = [
-    { key: 'relates', label: '相關' },
-    { key: 'depends', label: '依賴' },
-    { key: 'implements', label: '實作' },
-    { key: 'extends', label: '延伸' },
-    { key: 'uses', label: '使用' },
+function renderRelatedConcepts(
+  links: NodeLinks,
+  heading: string,
+  bucketLabels: Record<'relates' | 'depends' | 'implements' | 'extends' | 'uses', string>,
+): string {
+  const BUCKET_ORDER: Array<{ key: keyof NodeLinks; labelKey: 'relates' | 'depends' | 'implements' | 'extends' | 'uses' }> = [
+    { key: 'relates', labelKey: 'relates' },
+    { key: 'depends', labelKey: 'depends' },
+    { key: 'implements', labelKey: 'implements' },
+    { key: 'extends', labelKey: 'extends' },
+    { key: 'uses', labelKey: 'uses' },
   ];
 
   const items: string[] = [];
 
-  for (const { key, label } of BUCKET_ORDER) {
+  for (const { key, labelKey } of BUCKET_ORDER) {
     const bucket = links[key] as ResolvedLink[] | undefined;
     if (bucket === undefined || bucket.length === 0) continue;
+    const label = bucketLabels[labelKey];
     for (const link of bucket) {
       items.push(`- ${link.wikiLink} — (${label})`);
     }
@@ -205,7 +258,7 @@ function renderRelatedConcepts(links: NodeLinks): string {
 
   if (items.length === 0) return '';
 
-  return ['## 相關概念', '', ...items].join('\n');
+  return [`## ${heading}`, '', ...items].join('\n');
 }
 
 // ---------------------------------------------------------------------------
