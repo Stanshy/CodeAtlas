@@ -1,6 +1,6 @@
 # CodeAtlas API 設計
 
-> 版本: v9.0 | Sprint 20 | 最後更新: 2026-04-09
+> 版本: v10.0 | Sprint 21 | 最後更新: 2026-04-10
 
 ## 概述
 
@@ -732,3 +732,33 @@ AI Provider 設定的優先級（高→低）：
 | `invalid_job_id` | 400 | GET /api/project/progress/:jobId id 無效 |
 | `job_not_found` | 404 | GET /api/project/progress/:jobId job 不存在 |
 | `invalid_index` | 400 | DELETE /api/project/recent/:index 非有效索引 |
+
+## Sprint 21 i18n — locale 參數
+
+> Sprint 21 新增。所有接受 AI 分析的端點新增 `locale` 參數。
+
+### POST /api/ai/analyze（更新）
+
+**Request 新增欄位:**
+
+| 欄位 | 型別 | 必填 | 說明 |
+|------|------|------|------|
+| locale | string | ❌ | `'en'` \| `'zh-TW'`，預設 `'en'`。控制 AI Prompt 語言和回應語言 |
+
+Server 層補齊邏輯：`const locale = body.locale === 'zh-TW' ? 'zh-TW' : 'en'`
+
+### CLI --lang 全域選項（新增）
+
+| Flag | 說明 | 預設值 |
+|------|------|--------|
+| `-l, --lang <locale>` | 語言（影響 CLI 訊息、AI Prompt、Wiki 輸出） | `en` |
+
+Locale 解析優先級鏈：`--lang flag > .codeatlas.json locale > CODEATLAS_LANG env > 'en'`
+
+### wiki --lang（新增）
+
+| Flag | 說明 | 預設值 |
+|------|------|--------|
+| `-l, --lang <locale>` | Wiki 輸出語言 | `en` |
+
+Wiki locale 解析：`--lang flag > .codeatlas.json locale > CODEATLAS_LANG env > 'en'`

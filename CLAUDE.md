@@ -140,8 +140,9 @@ web（純前端）     → 讀 JSON 渲染，不直接依賴 core
 | `.knowledge/company-rules.md` | 共用開發規則（所有 Agent 必讀） |
 | `.knowledge/team-workflow.md` | 共用工作流程（所有 Agent 必讀） |
 | `.knowledge/specs/data-model.md` | 資料模型規格 v8.0（🔴 規範） |
-| `.knowledge/specs/api-design.md` | API 設計規格 v9.0（🔴 規範） |
-| `.knowledge/specs/feature-spec.md` | 功能規格 v19.0（🟡 規格） |
+| `.knowledge/specs/api-design.md` | API 設計規格 v10.0（🔴 規範） |
+| `.knowledge/specs/feature-spec.md` | 功能規格 v20.0（🟡 規格） |
+| `.knowledge/specs/i18n-design.md` | i18n 架構設計 v1.0（🟡 規格） |
 | `.knowledge/sprint14-ai-architecture.md` | Sprint 14 AI 架構設計文件 |
 | `proposal/roadmap.md` | 產品路線圖 v9.0（已核准） |
 | `proposal/sprint15-dev-plan.md` | Sprint 15 開發計畫書（✅ 已完成） |
@@ -159,3 +160,5 @@ web（純前端）     → 讀 JSON 渲染，不直接依賴 core
 | `proposal/sprint19-dev-plan.md` | Sprint 19 開發計畫書 — Wiki 知識輸出 + Obsidian 知識圖（✅ 完成，G3 附條件通過） |
 | `proposal/sprint20-proposal.md` | Sprint 20 提案書（✅ G0 通過，含附錄 A-C） |
 | `proposal/sprint20-dev-plan.md` | Sprint 20 開發計畫書 — 啟動體驗改造（✅ 完成） |
+| `proposal/sprint21-proposal.md` | Sprint 21 提案書（✅ G0 通過） |
+| `proposal/sprint21-dev-plan.md` | Sprint 21 開發計畫書 — i18n 國際化（⏳ 執行中） |

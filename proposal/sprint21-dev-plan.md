@@ -308,10 +308,10 @@ T1（設計）→ T2（型別）→ T3（框架）→ T4（en.json）→ T5（zh
 
 完成後需同步更新的文件：
 
-- [ ] `.knowledge/specs/feature-spec.md` → v20.0（新增 Sprint 21 i18n 描述 + i18n 功能規格）
-- [ ] `.knowledge/specs/api-design.md` → v10.0（API 端點新增 `locale` 參數）
-- [ ] `CLAUDE.md` → 文件索引更新
-- [ ] `.knowledge/specs/i18n-design.md` → 新增（T1 產出，i18n 架構設計文件）
+- [x] `.knowledge/specs/feature-spec.md` → v20.0（新增 Sprint 21 i18n 描述 + i18n 功能規格）
+- [x] `.knowledge/specs/api-design.md` → v10.0（API 端點新增 `locale` 參數）
+- [x] `CLAUDE.md` → 文件索引更新
+- [x] `.knowledge/specs/i18n-design.md` → 新增（T1 產出，i18n 架構設計文件）
 
 ---
 
@@ -323,18 +323,18 @@ T1（設計）→ T2（型別）→ T3（框架）→ T4（en.json）→ T5（zh
 
 | 任務 | 完成日期 | 結果 | 備註 |
 |------|---------|------|------|
-| T1 | | | |
-| T2 | | | |
-| T3 | | | |
-| T4 | | | |
-| T5 | | | |
-| T6 | | | |
-| T7 | | | |
-| T8 | | | |
-| T9 | | | |
-| T10 | | | |
-| T11 | | | |
-| T12 | | | |
+| T1 | 2026-04-09 | ✅ 完成 | i18n-design.md v1.0 產出 |
+| T2 | 2026-04-09 | ✅ 完成 | Locale type + PipelineOptions + WikiExportOptions |
+| T3 | 2026-04-09 | ✅ 完成 | react-i18next 框架 + 語言偵測 |
+| T4 | 2026-04-09 | ✅ 完成 | en.json ~393 keys |
+| T5 | 2026-04-09 | ✅ 完成 | zh-TW.json ~393 keys |
+| T6 | 2026-04-09 | ✅ 完成 | ~20 元件 t() 替換 |
+| T7 | 2026-04-09 | ✅ 完成 | Settings 語言切換 + localStorage |
+| T8 | 2026-04-09 | ✅ 完成 | 6 prompt 模板雙語 + prompt-locale.ts + server locale 傳遞 |
+| T9 | 2026-04-10 | ✅ 完成 | md-renderer LOCALE_STRINGS + wiki --lang |
+| T10 | 2026-04-10 | ✅ 完成 | CLI i18n 載入器 + 25 keys + --lang 全域選項 |
+| T11 | 2026-04-10 | ✅ 完成 | 103 新測試 + 36 回歸修復，全 999+983+226 通過 |
+| T12 | 2026-04-10 | ✅ 完成 | feature-spec v20.0, api-design v10.0, CLAUDE.md 更新 |
 
 ### Review 紀錄
 
