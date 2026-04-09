@@ -21,7 +21,9 @@ import {
   buildOverviewPrompt,
   aggregateByDirectory,
   detectEndpoints,
+  scanDirectory,
 } from '@codeatlas/core';
+import type { ServerMode, ServerStatus, AnalysisProgress } from '@codeatlas/core';
 import type { DirectorySummary, StepDetail } from '@codeatlas/core';
 import type { WikiManifest, WikiNode, WikiPageMeta } from '@codeatlas/core';
 import {
@@ -33,6 +35,12 @@ import { PersistentAICache } from './ai-cache.js';
 import type { AICacheEntry } from './ai-cache.js';
 import { AIJobManager } from './ai-job-manager.js';
 import { isAnalysisProvider } from '@codeatlas/core';
+import { runAnalysis } from './analysis-runner.js';
+import {
+  getRecentProjects,
+  addRecentProject,
+  removeRecentProject,
+} from './recent-projects.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,7 +53,21 @@ export interface ServerOptions {
   aiKey?: string;        // API key for AI provider
   aiProvider?: string;   // 'ollama' | 'openai' | 'anthropic' | 'disabled'
   ollamaModel?: string;  // Ollama model name (default: 'codellama')
+  /** Sprint 20: Initial server mode. 'idle' = no project loaded yet. */
+  mode?: ServerMode;
 }
+
+// ---------------------------------------------------------------------------
+// Sprint 20: Project analysis job registry (module-level, single-server)
+// ---------------------------------------------------------------------------
+
+interface ProjectJob {
+  progress: AnalysisProgress;
+  /** Listeners subscribed via SSE — notified on each progress update. */
+  listeners: Set<(p: AnalysisProgress) => void>;
+}
+
+const projectJobs = new Map<string, ProjectJob>();
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -217,6 +239,19 @@ export async function startServer(options: ServerOptions): Promise<void> {
   let currentAiProvider: string = options.aiProvider ?? 'disabled';
   let currentAiKey: string | undefined = options.aiKey;
   let currentOllamaModel: string = ollamaModel ?? 'gemma3:4b';
+  // T7: Track whether Web UI has explicitly configured an AI provider via
+  // POST /api/ai/configure. When true, project .codeatlas.json settings do
+  // NOT override the Web-configured values.
+  let aiConfiguredByWeb = false;
+
+  // Sprint 20: Mutable server mode state
+  let serverMode: ServerMode = options.mode ?? 'ready';
+  // currentProjectPath is the project being served (may differ from options.analysisPath
+  // when the user changes project via POST /api/project/analyze in idle mode).
+  let currentProjectPath: string | undefined =
+    serverMode === 'idle' ? undefined : path.dirname(path.dirname(analysisPath));
+  // Mutable analysisPath — updated when user triggers a new analysis
+  let currentAnalysisPath: string = analysisPath;
 
   // Try to read provider/model from .codeatlas.json (overrides CLI defaults)
   try {
@@ -230,8 +265,12 @@ export async function startServer(options: ServerOptions): Promise<void> {
     // No config file or corrupted — use CLI defaults
   }
 
-  // Derive cache directory from analysisPath (sibling of analysis.json)
-  const cacheDir = path.join(path.dirname(analysisPath), 'cache');
+  // Derive cache directory from analysisPath (sibling of analysis.json).
+  // getCacheDir() reads currentAnalysisPath so it follows project switches.
+  function getCacheDir(): string {
+    return path.join(path.dirname(currentAnalysisPath), 'cache');
+  }
+  const cacheDir = getCacheDir();
 
   // Sprint 16: Initialize persistent AI cache and load from disk.
   // The pipeline is no longer started automatically at startup — the Job
@@ -252,7 +291,7 @@ export async function startServer(options: ServerOptions): Promise<void> {
       );
       return isAnalysisProvider(provider) ? (provider as unknown as import('@codeatlas/core').AIAnalysisProvider) : null;
     },
-    () => readAnalysis(analysisPath),
+    () => readAnalysis(currentAnalysisPath),
   );
 
   const fastify = Fastify({
@@ -277,7 +316,7 @@ export async function startServer(options: ServerOptions): Promise<void> {
   fastify.get<{ Querystring: { include?: string } }>('/api/graph', async (req, reply) => {
     let analysis: AnalysisResult;
     try {
-      analysis = await readAnalysis(analysisPath);
+      analysis = await readAnalysis(currentAnalysisPath);
     } catch (err) {
       if (await handleAnalysisError(err, reply)) return;
       throw err;
@@ -330,7 +369,7 @@ export async function startServer(options: ServerOptions): Promise<void> {
   fastify.get('/api/graph/stats', async (_req, reply) => {
     let analysis: AnalysisResult;
     try {
-      analysis = await readAnalysis(analysisPath);
+      analysis = await readAnalysis(currentAnalysisPath);
     } catch (err) {
       if (await handleAnalysisError(err, reply)) return;
       throw err;
@@ -353,7 +392,7 @@ export async function startServer(options: ServerOptions): Promise<void> {
 
     let analysis: AnalysisResult;
     try {
-      analysis = await readAnalysis(analysisPath);
+      analysis = await readAnalysis(currentAnalysisPath);
     } catch (err) {
       if (await handleAnalysisError(err, reply)) return;
       throw err;
@@ -400,7 +439,7 @@ export async function startServer(options: ServerOptions): Promise<void> {
 
     let analysis: AnalysisResult;
     try {
-      analysis = await readAnalysis(analysisPath);
+      analysis = await readAnalysis(currentAnalysisPath);
     } catch (err) {
       if (await handleAnalysisError(err, reply)) return;
       throw err;
@@ -446,7 +485,7 @@ export async function startServer(options: ServerOptions): Promise<void> {
     );
 
     const mode: 'local' | 'cloud' | 'disabled' =
-      currentAiProvider === 'ollama' ? 'local'
+      currentAiProvider === 'ollama' || currentAiProvider === 'claude-code' ? 'local'
       : currentAiProvider === 'disabled' || currentAiProvider === undefined ? 'disabled'
       : 'cloud';
 
@@ -487,7 +526,7 @@ export async function startServer(options: ServerOptions): Promise<void> {
 
     let analysis: AnalysisResult;
     try {
-      analysis = await readAnalysis(analysisPath);
+      analysis = await readAnalysis(currentAnalysisPath);
     } catch (err) {
       if (await handleAnalysisError(err, reply)) return;
       throw err;
@@ -592,7 +631,7 @@ export async function startServer(options: ServerOptions): Promise<void> {
 
     let analysis: AnalysisResult;
     try {
-      analysis = await readAnalysis(analysisPath);
+      analysis = await readAnalysis(currentAnalysisPath);
     } catch (err) {
       if (await handleAnalysisError(err, reply)) return;
       throw err;
@@ -748,11 +787,14 @@ Response format: ["keyword1", "keyword2", ...]`;
     if (body.apiKey !== undefined) {
       currentAiKey = body.apiKey;
     }
+    // T7: Mark that Web UI has explicitly configured AI — project .codeatlas.json
+    // will no longer override these settings on subsequent project switches.
+    aiConfiguredByWeb = true;
 
     // Persist to .codeatlas.json in the target directory (best-effort)
     let persisted = false;
     try {
-      const configPath = path.join(path.dirname(analysisPath), '..', '.codeatlas.json');
+      const configPath = path.join(path.dirname(currentAnalysisPath), '..', '.codeatlas.json');
       let config: Record<string, unknown> = {};
       try {
         const existing = readFileSync(configPath, 'utf-8');
@@ -956,7 +998,7 @@ Response format: ["keyword1", "keyword2", ...]`;
   // ---- GET /api/wiki ---------------------------------------------------------
   // Sprint 19 T9: Returns the wiki manifest or not_generated status.
   fastify.get('/api/wiki', async (_req, reply) => {
-    const wikiDir = path.join(path.dirname(analysisPath), 'wiki');
+    const wikiDir = path.join(path.dirname(currentAnalysisPath), 'wiki');
     const manifestPath = path.join(wikiDir, 'wiki-manifest.json');
 
     let raw: string;
@@ -993,7 +1035,7 @@ Response format: ["keyword1", "keyword2", ...]`;
       });
     }
 
-    const wikiDir = path.join(path.dirname(analysisPath), 'wiki');
+    const wikiDir = path.join(path.dirname(currentAnalysisPath), 'wiki');
     const manifestPath = path.join(wikiDir, 'wiki-manifest.json');
 
     let manifestRaw: string;
@@ -1087,7 +1129,7 @@ Response format: ["keyword1", "keyword2", ...]`;
     }
 
     // Locate the wiki manifest
-    const wikiDir = path.join(path.dirname(analysisPath), 'wiki');
+    const wikiDir = path.join(path.dirname(currentAnalysisPath), 'wiki');
     const manifestPath = path.join(wikiDir, 'wiki-manifest.json');
 
     let manifest: WikiManifest;
@@ -1181,7 +1223,7 @@ Response format: ["keyword1", "keyword2", ...]`;
 
       // Read source files referenced by this concept
       const sourceCode: Array<{ path: string; content: string }> = [];
-      const projectRoot = path.dirname(path.dirname(analysisPath)); // .codeatlas is one level deep
+      const projectRoot = path.dirname(path.dirname(currentAnalysisPath)); // .codeatlas is one level deep
       for (const srcFile of wikiNode.sourceFiles ?? []) {
         try {
           const absPath = path.resolve(projectRoot, srcFile);
@@ -1287,6 +1329,313 @@ Response format: ["keyword1", "keyword2", ...]`;
 
     return reply.send({ jobId });
   });
+
+  // ==========================================================================
+  // Sprint 20 T5: /api/project/* routes
+  // ==========================================================================
+
+  // ---- GET /api/project/status -----------------------------------------------
+  fastify.get('/api/project/status', async (_req, reply) => {
+    const status: ServerStatus = { mode: serverMode };
+    if (currentProjectPath !== undefined) {
+      status.currentPath = currentProjectPath;
+      status.projectName = path.basename(currentProjectPath);
+    }
+    await reply.send(status);
+  });
+
+  // ---- POST /api/project/validate --------------------------------------------
+  fastify.post<{ Body: { path?: string } }>('/api/project/validate', async (req, reply) => {
+    const body = req.body ?? {};
+    const rawPath = body.path;
+
+    if (typeof rawPath !== 'string' || rawPath.trim().length === 0) {
+      return reply.code(400).send({
+        error: 'invalid_request',
+        message: 'Request body must include a non-empty "path" string.',
+      });
+    }
+
+    // Guard: path length
+    if (rawPath.length > 4096) {
+      return reply.send({ valid: false, reason: 'path_too_long' });
+    }
+
+    // Guard: path traversal — reject paths containing null bytes or suspicious sequences
+    if (rawPath.includes('\0')) {
+      return reply.send({ valid: false, reason: 'not_found' });
+    }
+
+    let resolvedPath: string;
+    try {
+      resolvedPath = path.resolve(rawPath);
+    } catch {
+      return reply.send({ valid: false, reason: 'not_found' });
+    }
+
+    // Validate existence and directory
+    let stat: Awaited<ReturnType<typeof fs.stat>>;
+    try {
+      stat = await fs.stat(resolvedPath);
+    } catch {
+      return reply.send({ valid: false, reason: 'not_found' });
+    }
+
+    if (!stat.isDirectory()) {
+      return reply.send({ valid: false, reason: 'not_directory' });
+    }
+
+    // Validate that source files exist
+    let fileCount = 0;
+    const languages: string[] = [];
+    try {
+      const scanResult = await scanDirectory(resolvedPath, {});
+      const fileNodes = scanResult.nodes.filter((n) => n.type === 'file');
+      fileCount = fileNodes.length;
+
+      const langSet = new Set<string>();
+      for (const node of fileNodes) {
+        const ext = path.extname(node.filePath).toLowerCase();
+        if (ext === '.ts' || ext === '.tsx') langSet.add('typescript');
+        else if (ext === '.py' || ext === '.pyw') langSet.add('python');
+        else if (ext === '.java') langSet.add('java');
+        else if (ext === '.js' || ext === '.jsx' || ext === '.mjs' || ext === '.cjs') langSet.add('javascript');
+      }
+      languages.push(...langSet);
+    } catch {
+      // Scan failure counts as no source files
+    }
+
+    if (fileCount === 0) {
+      return reply.send({ valid: false, reason: 'no_source_files' });
+    }
+
+    return reply.send({
+      valid: true,
+      stats: { fileCount, languages },
+    });
+  });
+
+  // ---- POST /api/project/analyze ---------------------------------------------
+  fastify.post<{ Body: { path?: string } }>('/api/project/analyze', async (req, reply) => {
+    const body = req.body ?? {};
+    const rawPath = body.path;
+
+    if (typeof rawPath !== 'string' || rawPath.trim().length === 0) {
+      return reply.code(400).send({
+        error: 'invalid_request',
+        message: 'Request body must include a non-empty "path" string.',
+      });
+    }
+
+    // Guard: path traversal
+    if (rawPath.includes('\0')) {
+      return reply.code(400).send({ error: 'invalid_path', message: 'Path contains invalid characters.' });
+    }
+
+    let resolvedPath: string;
+    try {
+      resolvedPath = path.resolve(rawPath);
+    } catch {
+      return reply.code(400).send({ error: 'invalid_path', message: 'Cannot resolve path.' });
+    }
+
+    // Dedup: if server is already ready for the same path, return immediately
+    if (serverMode === 'ready' && currentProjectPath === resolvedPath) {
+      return reply.code(200).send({ jobId: 'already-ready', status: 'completed' });
+    }
+
+    // Dedup: if an analysis job for the same path is already running, return its jobId
+    for (const [existingJobId, existingJob] of projectJobs.entries()) {
+      const isRunning = existingJob.progress.status !== 'completed' && existingJob.progress.status !== 'failed';
+      if (isRunning) {
+        return reply.code(202).send({ jobId: existingJobId });
+      }
+    }
+
+    // Create job state
+    const jobId = `project-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const startedAt = new Date().toISOString();
+
+    const initialProgress: AnalysisProgress = {
+      jobId,
+      status: 'queued',
+      startedAt,
+      stages: {
+        scanning: { status: 'pending', progress: 0 },
+        parsing: { status: 'pending', progress: 0 },
+        building: { status: 'pending', progress: 0 },
+      },
+    };
+
+    const job: ProjectJob = { progress: initialProgress, listeners: new Set() };
+    projectJobs.set(jobId, job);
+
+    // Update server mode
+    serverMode = 'analyzing';
+    currentProjectPath = resolvedPath;
+    const newAnalysisPath = path.join(resolvedPath, '.codeatlas', 'analysis.json');
+
+    // T7: Read project's .codeatlas.json for AI settings, but only if the Web UI
+    // has NOT already explicitly configured a provider via POST /api/ai/configure.
+    // Priority chain: Web settings > CLI flags > .codeatlas.json > env > defaults
+    if (!aiConfiguredByWeb) {
+      try {
+        const projectConfigPath = path.join(resolvedPath, '.codeatlas.json');
+        const projectConfigRaw = readFileSync(projectConfigPath, 'utf-8');
+        const projectConfig = JSON.parse(projectConfigRaw) as Record<string, unknown>;
+        if (typeof projectConfig.aiProvider === 'string') currentAiProvider = projectConfig.aiProvider;
+        if (typeof projectConfig.aiApiKey === 'string') currentAiKey = projectConfig.aiApiKey;
+        if (typeof projectConfig.ollamaModel === 'string') currentOllamaModel = projectConfig.ollamaModel;
+      } catch {
+        // No config file — keep current AI settings
+      }
+    }
+
+    // Fire-and-forget analysis — update progress and notify SSE listeners
+    void (async () => {
+      function notify(p: AnalysisProgress): void {
+        job.progress = p;
+        for (const listener of job.listeners) {
+          listener(p);
+        }
+      }
+
+      try {
+        // Ensure .codeatlas directory exists
+        const dotCodeatlasDir = path.join(resolvedPath, '.codeatlas');
+        await fs.mkdir(dotCodeatlasDir, { recursive: true });
+
+        const result = await runAnalysis({
+          projectPath: resolvedPath,
+          onProgress: (p) => {
+            // Override jobId to match the project job id
+            notify({ ...p, jobId });
+          },
+        });
+
+        // Write analysis.json
+        await fs.writeFile(newAnalysisPath, JSON.stringify(result, null, 2), 'utf-8');
+
+        // Switch server to ready mode
+        currentAnalysisPath = newAnalysisPath;
+        serverMode = 'ready';
+
+        // Update recent projects
+        await addRecentProject({
+          path: resolvedPath,
+          name: path.basename(resolvedPath),
+          lastOpened: new Date().toISOString(),
+          stats: {
+            fileCount: result.stats.analyzedFiles,
+            languages: [...new Set(
+              result.graph.nodes
+                .filter((n) => n.type === 'file' && n.metadata.language)
+                .map((n) => n.metadata.language as string),
+            )],
+          },
+        });
+      } catch (err) {
+        serverMode = 'idle';
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        const failedProgress: AnalysisProgress = {
+          ...job.progress,
+          status: 'failed',
+          error: errorMessage,
+          completedAt: new Date().toISOString(),
+        };
+        notify(failedProgress);
+      }
+    })();
+
+    return reply.code(202).send({ jobId });
+  });
+
+  // ---- GET /api/project/progress/:jobId (SSE + polling) ----------------------
+  fastify.get<{ Params: { jobId: string } }>(
+    '/api/project/progress/:jobId',
+    async (req, reply) => {
+      const { jobId } = req.params;
+
+      if (!jobId || jobId.includes('..')) {
+        return reply.code(400).send({ error: 'invalid_job_id', message: 'Invalid job ID.' });
+      }
+
+      const job = projectJobs.get(jobId);
+      if (!job) {
+        return reply.code(404).send({ error: 'job_not_found', message: `No job found: ${jobId}` });
+      }
+
+      const acceptHeader = req.headers.accept ?? '';
+      const wantsSSE = acceptHeader.includes('text/event-stream');
+
+      if (wantsSSE) {
+        // SSE: keep connection open, push progress on each update
+        const rawReply = reply.raw;
+        rawReply.setHeader('Content-Type', 'text/event-stream');
+        rawReply.setHeader('Cache-Control', 'no-cache');
+        rawReply.setHeader('Connection', 'keep-alive');
+        rawReply.setHeader('X-Accel-Buffering', 'no');
+        rawReply.flushHeaders();
+
+        // Send current snapshot immediately
+        rawReply.write(`data: ${JSON.stringify(job.progress)}\n\n`);
+
+        // If already terminal, close immediately
+        const terminalStatuses = new Set(['completed', 'failed']);
+        if (terminalStatuses.has(job.progress.status)) {
+          rawReply.end();
+          return reply;
+        }
+
+        // Register listener for future updates
+        const listener = (p: AnalysisProgress): void => {
+          rawReply.write(`data: ${JSON.stringify(p)}\n\n`);
+          if (terminalStatuses.has(p.status)) {
+            rawReply.end();
+          }
+        };
+
+        job.listeners.add(listener);
+
+        // Clean up listener on client disconnect
+        req.raw.on('close', () => {
+          job.listeners.delete(listener);
+        });
+
+        // Prevent Fastify from sending any automatic response
+        await reply.hijack();
+      } else {
+        // Polling: return current progress snapshot as JSON
+        return reply.send(job.progress);
+      }
+    },
+  );
+
+  // ---- GET /api/project/recent -----------------------------------------------
+  fastify.get('/api/project/recent', async (_req, reply) => {
+    const projects = await getRecentProjects();
+    return reply.send(projects);
+  });
+
+  // ---- DELETE /api/project/recent/:index -------------------------------------
+  fastify.delete<{ Params: { index: string } }>(
+    '/api/project/recent/:index',
+    async (req, reply) => {
+      const indexStr = req.params.index;
+      const index = parseInt(indexStr, 10);
+
+      if (isNaN(index) || index < 0) {
+        return reply.code(400).send({
+          error: 'invalid_index',
+          message: 'Index must be a non-negative integer.',
+        });
+      }
+
+      await removeRecentProject(index);
+      return reply.send({ success: true });
+    },
+  );
 
   // ---- SPA Fallback -----------------------------------------------------------
   // All non-API routes serve index.html for client-side routing

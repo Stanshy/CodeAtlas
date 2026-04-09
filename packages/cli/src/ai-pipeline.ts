@@ -264,13 +264,26 @@ export async function runPhase2DirectorySummaries(
         `directory ${dirNode.id}`,
       );
 
-      // Try structured JSON first; fall back to raw text as summary
+      // Try structured JSON first; fall back gracefully for different model capabilities
       let dirResult: Record<string, unknown> | undefined;
       try {
         const parsed = extractJson(raw);
         const validated = safeValidateDirectorySummary(parsed);
         if (validated.success) {
           dirResult = validated.data as Record<string, unknown>;
+        } else {
+          // Schema validation failed — truncate and use raw fields
+          const obj = parsed as Record<string, unknown>;
+          if (typeof obj.oneLineSummary === 'string' || typeof obj.role === 'string') {
+            dirResult = {
+              directoryPath: typeof obj.directoryPath === 'string' ? obj.directoryPath : dirNode.id,
+              role: typeof obj.role === 'string' ? obj.role.slice(0, 100) : '未分類',
+              oneLineSummary: typeof obj.oneLineSummary === 'string' ? obj.oneLineSummary.slice(0, 200) : '',
+              keyResponsibilities: Array.isArray(obj.keyResponsibilities) ? obj.keyResponsibilities : [],
+              confidence: typeof obj.confidence === 'number' ? obj.confidence : 0.5,
+            };
+            console.warn(`[AI Pipeline] Directory ${dirNode.id}: schema validation failed, using truncated fields`);
+          }
         }
       } catch {
         // JSON extraction failed — build a minimal result from raw text
@@ -283,6 +296,7 @@ export async function runPhase2DirectorySummaries(
             keyResponsibilities: [],
             confidence: 0.4,
           };
+          console.warn(`[AI Pipeline] Directory ${dirNode.id}: JSON extraction failed, using raw text`);
         }
       }
 
@@ -370,19 +384,31 @@ export async function runPhase3EndpointAnalysis(
           `endpoint ${endpoint.id}`,
         );
 
-        // Try structured JSON first; fall back to raw text as description
+        // Try structured JSON first; fall back gracefully for different model capabilities
         let endpointDescription: string | undefined;
         try {
           const parsedEndpoint = extractJson(rawEndpoint);
           const validatedEndpoint = safeValidateEndpointDescription(parsedEndpoint);
           if (validatedEndpoint.success) {
             endpointDescription = validatedEndpoint.data.chineseDescription;
+          } else {
+            // Schema validation failed — try extracting chineseDescription directly
+            // (model returned valid JSON but fields exceeded limits or missing optional fields)
+            const obj = parsedEndpoint as Record<string, unknown>;
+            if (typeof obj.chineseDescription === 'string' && obj.chineseDescription.length > 0) {
+              endpointDescription = obj.chineseDescription.slice(0, 500);
+              console.warn(`[AI Pipeline] Endpoint ${endpoint.id}: schema validation failed, using raw chineseDescription (${obj.chineseDescription.length} chars)`);
+            } else if (typeof obj.purpose === 'string' && obj.purpose.length > 0) {
+              endpointDescription = obj.purpose.slice(0, 500);
+              console.warn(`[AI Pipeline] Endpoint ${endpoint.id}: schema validation failed, falling back to purpose field`);
+            }
           }
         } catch {
           // JSON extraction failed — use raw text as-is (common with local models)
           const trimmed = rawEndpoint.trim();
-          if (trimmed.length > 0) {
+          if (trimmed.length > 0 && trimmed.length < 1000) {
             endpointDescription = trimmed;
+            console.warn(`[AI Pipeline] Endpoint ${endpoint.id}: JSON extraction failed, using raw text (${trimmed.length} chars)`);
           }
         }
 
@@ -447,6 +473,19 @@ export async function runPhase3EndpointAnalysis(
               const v = safeValidateStepDetail(step);
               if (v.success) {
                 validatedSteps.push(v.data);
+              } else {
+                // Fallback: truncate fields that exceeded max length
+                const raw = step as Record<string, unknown>;
+                if (typeof raw.stepIndex === 'number' && typeof raw.methodId === 'string') {
+                  validatedSteps.push({
+                    stepIndex: raw.stepIndex,
+                    methodId: raw.methodId,
+                    description: typeof raw.description === 'string' ? raw.description.slice(0, 200) : '',
+                    input: typeof raw.input === 'string' ? raw.input.slice(0, 200) : '',
+                    output: typeof raw.output === 'string' ? raw.output.slice(0, 200) : '',
+                    transform: typeof raw.transform === 'string' ? raw.transform.slice(0, 300) : '',
+                  });
+                }
               }
             }
             if (validatedSteps.length > 0) {

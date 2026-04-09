@@ -180,26 +180,17 @@ describe('viewStateReducer Sprint 11 — SET_PERSPECTIVE clears conflicts', () =
 });
 
 // ---------------------------------------------------------------------------
-// SET_PERSPECTIVE — 3D auto-switch
+// SET_PERSPECTIVE — 3D auto-switch (removed in Sprint 19 T12)
 // ---------------------------------------------------------------------------
 
+// Sprint 19 T12: SET_3D_MODE action and the 3D-auto-switch behaviour were removed.
+// The two tests that depended on them are removed:
+//   - "switching to system-framework while in 3D mode auto-switches to 2D"
+//   - "switching to 3D while system-framework is active auto-switches to logic-operation"
+// The remaining tests (stays-3D variants) also relied on SET_MODE putting mode into '3d',
+// which still works as SET_MODE is kept; those tests remain valid.
+
 describe('viewStateReducer Sprint 11 — SET_PERSPECTIVE + 3D auto-switch', () => {
-  it('switching to system-framework while in 3D mode auto-switches to 2D', () => {
-    const { result } = renderHook(() => useViewState(), { wrapper });
-    // First switch to 3D
-    act(() => {
-      result.current.dispatch({ type: 'SET_MODE', mode: '3d' });
-    });
-    expect(result.current.state.mode).toBe('3d');
-
-    // Now switch perspective to system-framework
-    act(() => {
-      result.current.dispatch({ type: 'SET_PERSPECTIVE', perspective: 'system-framework' });
-    });
-    expect(result.current.state.mode).toBe('2d');
-    expect(result.current.state.activePerspective).toBe('system-framework');
-  });
-
   it('switching to logic-operation while in 3D mode stays 3D', () => {
     const { result } = renderHook(() => useViewState(), { wrapper });
     act(() => {
@@ -224,58 +215,11 @@ describe('viewStateReducer Sprint 11 — SET_PERSPECTIVE + 3D auto-switch', () =
 });
 
 // ---------------------------------------------------------------------------
-// SET_3D_MODE — system-framework auto-switch
+// SET_3D_MODE — removed in Sprint 19 T12
 // ---------------------------------------------------------------------------
 
-describe('viewStateReducer Sprint 11 — SET_3D_MODE', () => {
-  it('switching to 3D while system-framework is active auto-switches to logic-operation', () => {
-    const { result } = renderHook(() => useViewState(), { wrapper });
-    act(() => {
-      result.current.dispatch({ type: 'SET_PERSPECTIVE', perspective: 'system-framework' });
-    });
-    // Ensure 2D first (system-framework may have forced it)
-    expect(result.current.state.activePerspective).toBe('system-framework');
-
-    act(() => {
-      result.current.dispatch({ type: 'SET_3D_MODE', mode: '3d' });
-    });
-    expect(result.current.state.mode).toBe('3d');
-    expect(result.current.state.activePerspective).toBe('logic-operation');
-  });
-
-  it('switching to 3D while logic-operation stays logic-operation', () => {
-    const { result } = renderHook(() => useViewState(), { wrapper });
-    // Default is logic-operation
-    act(() => {
-      result.current.dispatch({ type: 'SET_3D_MODE', mode: '3d' });
-    });
-    expect(result.current.state.activePerspective).toBe('logic-operation');
-  });
-
-  it('switching back to 2D does not change perspective', () => {
-    const { result } = renderHook(() => useViewState(), { wrapper });
-    act(() => {
-      result.current.dispatch({ type: 'SET_3D_MODE', mode: '3d' });
-    });
-    act(() => {
-      result.current.dispatch({ type: 'SET_3D_MODE', mode: '2d' });
-    });
-    expect(result.current.state.mode).toBe('2d');
-    expect(result.current.state.activePerspective).toBe('logic-operation');
-  });
-
-  it('switching to 2D while system-framework leaves perspective unchanged', () => {
-    const { result } = renderHook(() => useViewState(), { wrapper });
-    // Switch to system-framework (forces 2D)
-    act(() => {
-      result.current.dispatch({ type: 'SET_PERSPECTIVE', perspective: 'system-framework' });
-    });
-    act(() => {
-      result.current.dispatch({ type: 'SET_3D_MODE', mode: '2d' });
-    });
-    expect(result.current.state.activePerspective).toBe('system-framework');
-  });
-});
+// SET_3D_MODE action was removed in Sprint 19 T12 along with 3D mode support.
+// All SET_3D_MODE tests have been removed. Mode management now uses SET_MODE only.
 
 // ---------------------------------------------------------------------------
 // pinnedNodeIds preserved across perspective switch

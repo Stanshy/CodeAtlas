@@ -64,4 +64,18 @@ program
     });
   });
 
+// ---------------------------------------------------------------------------
+// Sprint 20 T6: Zero-arg launch
+//
+// When `codeatlas` is invoked with no subcommand, behave like `codeatlas web`
+// with no path — server starts in idle mode, browser auto-opens to welcome page.
+// ---------------------------------------------------------------------------
+
+program
+  .action(async () => {
+    // This action fires only when no sub-command is recognised.
+    // Default port mirrors the `web` command default.
+    await webCommand(undefined, { port: 3004 });
+  });
+
 program.parse(process.argv);

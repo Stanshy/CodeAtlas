@@ -574,6 +574,20 @@ interface ViewStateProviderProps {
 export function ViewStateProvider({ children }: ViewStateProviderProps) {
   const [state, dispatch] = useReducer(viewStateReducer, initialState);
 
+  // Sprint 20: Sync AI provider from server on mount
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/ai/status')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!cancelled && data && data.provider && data.provider !== 'disabled') {
+          dispatch({ type: 'SET_AI_PROVIDER', provider: data.provider });
+        }
+      })
+      .catch(() => { /* server not ready */ });
+    return () => { cancelled = true; };
+  }, []);
+
   // Sprint 10: Store ref for selector mechanism
   const stateRef = useRef(state);
   stateRef.current = state;

@@ -17,38 +17,11 @@ function renderWithProvider(ui: React.ReactElement) {
   return render(React.createElement(ViewStateProvider, null, ui));
 }
 
+// Sprint 19 T12: 3D has been removed. ViewToggle is now a no-op placeholder that returns null.
+// All 3D toggle interaction tests removed — the component renders nothing.
 describe('ViewToggle', () => {
-  it('displays "3D" text when initial mode is 2d', () => {
-    renderWithProvider(React.createElement(ViewToggle));
-    expect(screen.getByRole('button').textContent).toBe('3D');
-  });
-
-  it('has an aria-label when in 2d mode', () => {
-    renderWithProvider(React.createElement(ViewToggle));
-    expect(screen.getByRole('button').getAttribute('aria-label')).toBe('Switch to 3D view');
-  });
-
-  it('displays "2D" text after clicking to switch to 3d mode', () => {
-    renderWithProvider(React.createElement(ViewToggle));
-    fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByRole('button').textContent).toBe('2D');
-  });
-
-  it('has aria-label "Switch to 2D view" after switching to 3d mode', () => {
-    renderWithProvider(React.createElement(ViewToggle));
-    fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByRole('button').getAttribute('aria-label')).toBe('Switch to 2D view');
-  });
-
-  it('toggles back to "3D" text after two clicks', () => {
-    renderWithProvider(React.createElement(ViewToggle));
-    fireEvent.click(screen.getByRole('button'));
-    fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByRole('button').textContent).toBe('3D');
-  });
-
-  it('renders a single button element', () => {
-    renderWithProvider(React.createElement(ViewToggle));
-    expect(screen.getAllByRole('button')).toHaveLength(1);
+  it('renders nothing (3D removed in Sprint 19 T12)', () => {
+    const { container } = renderWithProvider(React.createElement(ViewToggle));
+    expect(container.firstChild).toBeNull();
   });
 });

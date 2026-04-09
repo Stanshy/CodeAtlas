@@ -8,6 +8,7 @@
  * Sprint 9 — T9: Toolbar + ControlPanel integration
  * Sprint 19 — T12: 3D removal
  * Sprint 19 — T13: Wiki Knowledge Graph tab
+ * Sprint 20 — T9: AppState routing (welcome / progress / analysis)
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -30,6 +31,9 @@ import { TabBar } from './components/TabBar';
 import { WikiGraph } from './components/WikiGraph';
 import { ToastStack } from './components/Toast';
 import { ViewStateProvider, useViewState } from './contexts/ViewStateContext';
+import { AppStateProvider, useAppState } from './contexts/AppStateContext';
+import { WelcomePage } from './pages/WelcomePage';
+import { ProgressPage } from './pages/ProgressPage';
 import type { PerspectiveName } from './types/graph';
 
 // ---------------------------------------------------------------------------
@@ -148,18 +152,33 @@ function AppInner() {
     return () => { cancelled = true; clearTimeout(timer); };
   }, [aiDone, refetch]);
 
+  // Wiki page count — fetch manifest on mount
+  const [wikiPageCount, setWikiPageCount] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/wiki')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!cancelled && data && data.status === 'ready' && Array.isArray(data.pages)) {
+          setWikiPageCount(data.pages.length);
+        }
+      })
+      .catch(() => { /* wiki not generated yet */ });
+    return () => { cancelled = true; };
+  }, []);
+
   // Compute per-tab node counts for the badge
   const tabCounts = useMemo(() => {
-    // sf: directory nodes (system-framework reads directory-level data)
+    // sf: directory count
     const sf = directoryGraph ? directoryGraph.nodes.length : rawNodes.filter(n => n.type === 'directory').length;
-    // lo: all file nodes
-    const lo = rawNodes.filter(n => n.type === 'file').length;
-    // dj: file nodes with data-flow edges
-    const dj = lo;
-    // wiki: count shown as 0 until manifest loaded (WikiGraph manages its own count internally)
-    const wiki = 0;
+    // lo: function/class count
+    const lo = rawNodes.filter(n => n.type === 'function' || n.type === 'class').length;
+    // dj: API endpoint count
+    const dj = endpointGraph ? endpointGraph.nodes.length : 0;
+    // wiki: knowledge document page count
+    const wiki = wikiPageCount;
     return { sf, lo, dj, wiki };
-  }, [rawNodes, directoryGraph]);
+  }, [rawNodes, directoryGraph, endpointGraph, wikiPageCount]);
 
   if (isLoading) {
     return (
@@ -307,15 +326,52 @@ function AppInner() {
 }
 
 // ---------------------------------------------------------------------------
-// App — root with providers
+// AnalysisView — the full graph UI (only rendered when page='analysis')
 // ---------------------------------------------------------------------------
 
-export function App() {
+function AnalysisView() {
   return (
     <ViewStateProvider>
       <ReactFlowProvider>
         <AppInner />
       </ReactFlowProvider>
     </ViewStateProvider>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AppRouter — switches between welcome / progress / analysis
+// ---------------------------------------------------------------------------
+
+function AppRouter() {
+  const { page, jobId, projectPath, projectName } = useAppState();
+
+  if (page === 'welcome') {
+    return <WelcomePage />;
+  }
+
+  if (page === 'progress') {
+    return (
+      <ProgressPage
+        jobId={jobId ?? ''}
+        projectPath={projectPath ?? ''}
+        projectName={projectName ?? ''}
+      />
+    );
+  }
+
+  // page === 'analysis'
+  return <AnalysisView />;
+}
+
+// ---------------------------------------------------------------------------
+// App — root with providers
+// ---------------------------------------------------------------------------
+
+export function App() {
+  return (
+    <AppStateProvider>
+      <AppRouter />
+    </AppStateProvider>
   );
 }

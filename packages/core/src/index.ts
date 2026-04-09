@@ -37,6 +37,21 @@ export type {
   HttpMethod,
 } from './analyzers/endpoint-detector.js';
 
+// Sprint 20 — Launch Experience types
+export type {
+  ServerMode,
+  ServerStatus,
+  ValidateRequest,
+  ValidateFailReason,
+  ValidateResponse,
+  StageStatus,
+  StageProgress,
+  AnalysisJobStatus,
+  AnalysisProgress,
+  RecentProject,
+  AppPage,
+} from './types.js';
+
 // Sprint 19 — Wiki Knowledge Export
 export { exportWiki } from './wiki-exporter/index.js';
 export type {

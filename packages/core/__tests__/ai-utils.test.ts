@@ -73,7 +73,7 @@ describe('buildPrompt', () => {
 });
 
 describe('AI_TIMEOUT_MS', () => {
-  it('is 10 seconds', () => {
-    expect(AI_TIMEOUT_MS).toBe(10_000);
+  it('is 120 seconds', () => {
+    expect(AI_TIMEOUT_MS).toBe(120_000);
   });
 });

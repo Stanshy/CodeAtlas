@@ -262,7 +262,7 @@ describe('parseConceptExtractionResponse — field validation', () => {
     expect(parseConceptExtractionResponse(raw)).toEqual([]);
   });
 
-  it('skips concepts missing required slug field', () => {
+  it('auto-generates slug when slug field is missing', () => {
     const raw = JSON.stringify({
       concepts: [
         {
@@ -275,10 +275,15 @@ describe('parseConceptExtractionResponse — field validation', () => {
         },
       ],
     });
-    expect(parseConceptExtractionResponse(raw)).toEqual([]);
+    // Implementation generates slug from name rather than rejecting the concept
+    const result = parseConceptExtractionResponse(raw);
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('認證機制');
+    expect(typeof result[0].slug).toBe('string');
+    expect(result[0].slug.length).toBeGreaterThan(0);
   });
 
-  it('skips concepts missing required summary field', () => {
+  it('uses name as fallback summary when summary field is missing', () => {
     const raw = JSON.stringify({
       concepts: [
         {
@@ -291,10 +296,14 @@ describe('parseConceptExtractionResponse — field validation', () => {
         },
       ],
     });
-    expect(parseConceptExtractionResponse(raw)).toEqual([]);
+    // Implementation falls back to name as summary rather than rejecting the concept
+    const result = parseConceptExtractionResponse(raw);
+    expect(result).toHaveLength(1);
+    expect(result[0].slug).toBe('auth');
+    expect(result[0].summary).toBe('認證機制');
   });
 
-  it('skips concepts missing sourceFiles', () => {
+  it('uses placeholder sourceFiles when sourceFiles field is missing', () => {
     const raw = JSON.stringify({
       concepts: [
         {
@@ -307,10 +316,14 @@ describe('parseConceptExtractionResponse — field validation', () => {
         },
       ],
     });
-    expect(parseConceptExtractionResponse(raw)).toEqual([]);
+    // Implementation inserts a placeholder rather than rejecting the concept
+    const result = parseConceptExtractionResponse(raw);
+    expect(result).toHaveLength(1);
+    expect(result[0].sourceFiles).toHaveLength(1);
+    expect(result[0].sourceFiles[0]).toContain('認證機制');
   });
 
-  it('skips concepts with empty sourceFiles array', () => {
+  it('uses placeholder sourceFiles when sourceFiles array is empty', () => {
     const raw = JSON.stringify({
       concepts: [
         {
@@ -324,7 +337,11 @@ describe('parseConceptExtractionResponse — field validation', () => {
         },
       ],
     });
-    expect(parseConceptExtractionResponse(raw)).toEqual([]);
+    // Implementation fills empty sourceFiles with a placeholder rather than rejecting
+    const result = parseConceptExtractionResponse(raw);
+    expect(result).toHaveLength(1);
+    expect(result[0].sourceFiles).toHaveLength(1);
+    expect(result[0].sourceFiles[0]).toContain('認證機制');
   });
 
   it('defaults invalid type to "concept"', () => {

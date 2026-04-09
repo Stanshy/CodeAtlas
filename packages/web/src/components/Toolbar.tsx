@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import { useViewState } from '../contexts/ViewStateContext';
+import { useAppState } from '../contexts/AppStateContext';
 import { PERSPECTIVE_PRESETS } from '../adapters/perspective-presets';
 import { colors } from '../styles/theme';
 
@@ -73,9 +74,11 @@ function BarChartIcon() {
 export function Toolbar({ onSearchClick }: ToolbarProps) {
   const { state, dispatch } = useViewState();
   const { isSettingsPanelOpen, activePerspective } = state;
+  const { returnToWelcome } = useAppState();
 
   const [searchHovered, setSearchHovered] = useState(false);
   const [overviewHovered, setOverviewHovered] = useState(false);
+  const [switchHovered, setSwitchHovered] = useState(false);
 
   const perspectivePreset = PERSPECTIVE_PRESETS[activePerspective];
   const perspectiveLabel = perspectivePreset?.label ?? activePerspective;
@@ -212,6 +215,25 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
     flexShrink: 0,
   };
 
+  // Screenshot 09: btn padding 6px 12px, border-radius 6px, font 12px 500
+  const switchProjectButtonStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 5,
+    padding: '6px 12px',
+    borderRadius: 6,
+    border: 'none',
+    background: switchHovered ? 'rgba(255,255,255,0.08)' : 'transparent',
+    color: switchHovered ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)',
+    fontSize: 12,
+    fontWeight: 500,
+    fontFamily: "'Inter', system-ui, sans-serif",
+    cursor: 'pointer',
+    transition: 'color 0.15s ease-out, background 0.15s ease-out',
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
+  };
+
   return (
     <div style={toolbarStyle} role="banner" aria-label="CodeAtlas 主工具列">
       {/* Left section — hamburger toggle */}
@@ -267,7 +289,7 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
         </div>
       </div>
 
-      {/* Right section — perspective pill + overview */}
+      {/* Right section — perspective pill + overview + switch project */}
       <div style={rightSectionStyle}>
         {/* Perspective pill */}
         <span style={perspectivePillStyle} title={`目前視角: ${perspectiveLabel}`}>
@@ -295,6 +317,20 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
           onMouseLeave={() => setOverviewHovered(false)}
         >
           <BarChartIcon />
+        </button>
+
+        {/* Switch project button — Sprint 20 T12 */}
+        <button
+          type="button"
+          style={switchProjectButtonStyle}
+          title="切換專案"
+          aria-label="切換專案"
+          onClick={returnToWelcome}
+          onMouseEnter={() => setSwitchHovered(true)}
+          onMouseLeave={() => setSwitchHovered(false)}
+        >
+          <span style={{ fontSize: 14, lineHeight: 1 }}>📁</span>
+          切換專案
         </button>
       </div>
     </div>

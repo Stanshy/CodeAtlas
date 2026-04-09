@@ -99,7 +99,7 @@ export type BatchMethodSummary = z.infer<typeof BatchMethodSummarySchema>;
 export const DirectorySummarySchema = z.object({
   directoryPath: z.string(),
   role: z.string(),
-  oneLineSummary: z.string().max(30),
+  oneLineSummary: z.string().max(200),
   keyResponsibilities: z.array(z.string()).optional(),
   confidence: z.number().min(0).max(1),
 });
@@ -110,8 +110,8 @@ export const EndpointDescriptionSchema = z.object({
   endpointId: z.string(),
   method: z.string(),
   path: z.string(),
-  chineseDescription: z.string().max(20),
-  purpose: z.string(),
+  chineseDescription: z.string().max(500),
+  purpose: z.string().max(200),
   confidence: z.number().min(0).max(1),
 });
 export type EndpointDescription = z.infer<typeof EndpointDescriptionSchema>;
@@ -120,10 +120,10 @@ export type EndpointDescription = z.infer<typeof EndpointDescriptionSchema>;
 export const StepDetailSchema = z.object({
   stepIndex: z.number(),
   methodId: z.string(),
-  description: z.string().max(30),
-  input: z.string(),
-  output: z.string(),
-  transform: z.string(),
+  description: z.string().max(200),
+  input: z.string().max(200),
+  output: z.string().max(200),
+  transform: z.string().max(300),
 });
 export type StepDetail = z.infer<typeof StepDetailSchema>;
 

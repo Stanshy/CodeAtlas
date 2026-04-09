@@ -70,7 +70,7 @@ export const AISettingsSection = memo(function AISettingsSection({
       if (isConfiguringProvider) return;
       setIsConfiguringProvider(true);
       try {
-        const result = await postAIConfigure(newProvider);
+        const result = await postAIConfigure(newProvider, aiApiKey || undefined);
         if (result.ok) {
           if (result.persisted) {
             onShowToast(
@@ -94,8 +94,20 @@ export const AISettingsSection = memo(function AISettingsSection({
         setIsConfiguringProvider(false);
       }
     },
-    [dispatch, isConfiguringProvider, onShowToast],
+    [dispatch, isConfiguringProvider, onShowToast, aiApiKey],
   );
+
+  // -----------------------------------------------------------------------
+  // Sync API key to server (debounced)
+  // -----------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!aiApiKey || aiProvider === 'disabled') return;
+    const timer = setTimeout(() => {
+      void postAIConfigure(aiProvider, aiApiKey);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [aiApiKey, aiProvider]);
 
   // -----------------------------------------------------------------------
   // Connection test
@@ -415,7 +427,8 @@ export const AISettingsSection = memo(function AISettingsSection({
               cursor: isConfiguringProvider ? 'wait' : 'pointer',
             }}
           >
-            <option value="claude-code">Claude Code CLI (本地)</option>
+            <option value="anthropic">Claude (Anthropic)</option>
+            <option value="claude-code">Claude Code CLI</option>
             <option value="gemini">Gemini (Google)</option>
             <option value="openai">OpenAI (GPT)</option>
             <option value="ollama">Ollama (本地)</option>

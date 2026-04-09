@@ -236,20 +236,9 @@ export const SettingsPopover = memo(function SettingsPopover({
         </button>
       </div>
 
-      {/* Sections */}
-      <Section title="分析工具" icon={<GraphIcon />} defaultOpen>
-        <AnalysisSection
-          directoryGraph={directoryGraph}
-          graphNodes={graphNodes}
-          dispatch={dispatch}
-        />
-      </Section>
+      {/* Sections — 分析工具 & 過濾器 hidden per boss directive (Sprint 20) */}
 
-      <Section title="過濾器" icon={<FilterIcon />}>
-        <FilterPanel embedded allNodes={graphNodes} />
-      </Section>
-
-      <Section title="AI 設定" icon={<SparklesIcon />}>
+      <Section title="AI 設定" icon={<SparklesIcon />} defaultOpen>
         <AISettingsSection onShowToast={onShowToast} />
       </Section>
     </div>

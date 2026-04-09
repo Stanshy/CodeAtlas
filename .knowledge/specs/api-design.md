@@ -1,6 +1,6 @@
 # CodeAtlas API 設計
 
-> 版本: v8.0 | Sprint 19 | 最後更新: 2026-04-08
+> 版本: v9.0 | Sprint 20 | 最後更新: 2026-04-09
 
 ## 概述
 
@@ -539,3 +539,196 @@ HTTP 404
 |------|-------------|------|
 | (400) | 400 | POST /api/wiki/analyze slug 格式不合法或 AI 未設定 |
 | (404) | 404 | GET /api/wiki/page/:slug 或 POST /api/wiki/analyze slug 不存在 |
+
+## Sprint 20 新增端點
+
+> Sprint 20 啟動體驗改造：零參啟動 + 歡迎頁 + 進度頁 + 專案切換。
+
+### GET /api/project/status
+
+取得 Server 當前運行狀態。
+
+**Response:**
+```json
+{
+  "mode": "idle",
+  "currentPath": "/path/to/project",
+  "projectName": "project"
+}
+```
+
+| 欄位 | 型別 | 說明 |
+|------|------|------|
+| mode | `"idle"` \| `"analyzing"` \| `"ready"` | Server 模式 |
+| currentPath | string? | 當前專案路徑（idle 時可能缺）|
+| projectName | string? | 當前專案目錄名 |
+
+### POST /api/project/validate
+
+驗證路徑是否為有效專案目錄。
+
+**Request:**
+```json
+{
+  "path": "/path/to/project"
+}
+```
+
+**Response（有效）:**
+```json
+{
+  "valid": true,
+  "stats": {
+    "fileCount": 156,
+    "languages": ["typescript", "javascript"]
+  }
+}
+```
+
+**Response（無效）:**
+```json
+{
+  "valid": false,
+  "reason": "no_source_files"
+}
+```
+
+| reason 值 | 說明 |
+|-----------|------|
+| `not_found` | 路徑不存在 |
+| `not_directory` | 不是目錄 |
+| `no_source_files` | 目錄內無 JS/TS/Python/Java 原始碼 |
+| `path_too_long` | 路徑超過 4096 字元 |
+
+**安全防護**: 拒絕包含 null byte 的路徑，防止 path traversal。
+
+### POST /api/project/analyze
+
+觸發專案分析 job（fire-and-forget）。Server 轉入 `analyzing` 模式。
+
+**Request:**
+```json
+{
+  "path": "/path/to/project"
+}
+```
+
+**Response (202 Accepted):**
+```json
+{
+  "jobId": "project-1712505600000-a1b2c3"
+}
+```
+
+**行為**:
+1. 建立分析 job → 回傳 job_id（202）
+2. 背景執行 scan → parse → build 管線
+3. 每步更新 AnalysisProgress，推送給 SSE 訂閱者
+4. 完成後寫入 `.codeatlas/analysis.json`，server 轉為 `ready`
+5. 失敗時 server 退回 `idle`
+
+**AI 設定讀取**: 分析啟動時，若 Web 端未主動 configure（`aiConfiguredByWeb=false`），從專案目錄 `.codeatlas.json` 讀取 AI 設定。優先級鏈：Web 設定 > CLI flag > .codeatlas.json > env > default。
+
+### GET /api/project/progress/:jobId
+
+查詢分析 job 進度。支援 SSE（即時推送）和 JSON polling（快照）。
+
+**SSE 模式**（`Accept: text/event-stream`）:
+```
+data: {"jobId":"...","status":"scanning","stages":{...},"startedAt":"..."}
+
+data: {"jobId":"...","status":"parsing","stages":{...},"startedAt":"..."}
+
+data: {"jobId":"...","status":"completed","stages":{...},"startedAt":"...","completedAt":"..."}
+```
+
+**Polling 模式**（預設）:
+```json
+{
+  "jobId": "project-1712505600000-a1b2c3",
+  "status": "scanning",
+  "stages": {
+    "scanning": { "status": "running", "progress": 45, "current": "src/utils/helper.ts", "total": 156, "done": 70 },
+    "parsing": { "status": "pending", "progress": 0 },
+    "building": { "status": "pending", "progress": 0 }
+  },
+  "startedAt": "2026-04-09T12:00:00.000Z"
+}
+```
+
+**AnalysisProgress 狀態流轉**: `queued → scanning → parsing → building → [ai_analyzing] → completed | failed`
+
+**StageProgress**:
+
+| 欄位 | 型別 | 說明 |
+|------|------|------|
+| status | `"pending"` \| `"running"` \| `"completed"` \| `"skipped"` \| `"failed"` | 階段狀態 |
+| progress | number | 0-100 百分比 |
+| current | string? | 當前處理的檔案名 |
+| total | number? | 總項目數 |
+| done | number? | 已完成項目數 |
+
+**錯誤:**
+- 400: job_id 無效
+- 404: job 不存在
+
+### GET /api/project/recent
+
+取得最近開啟的專案清單。
+
+**Response:**
+```json
+[
+  {
+    "path": "/path/to/project",
+    "name": "project",
+    "lastOpened": "2026-04-09T12:00:00.000Z",
+    "stats": {
+      "fileCount": 156,
+      "languages": ["typescript"]
+    }
+  }
+]
+```
+
+最多 10 筆，按 `lastOpened` 降序。儲存位置：`~/.codeatlas/recent.json`。
+
+### DELETE /api/project/recent/:index
+
+從最近專案清單中移除指定項目。
+
+**Parameters:**
+- `index`: 項目索引（0-based 非負整數）
+
+**Response:**
+```json
+{ "success": true }
+```
+
+**錯誤:**
+- 400: index 非有效非負整數
+
+## Sprint 20 新增 CLI 行為
+
+| 指令 | 說明 | Sprint |
+|------|------|--------|
+| `codeatlas`（零參數） | 等同 `codeatlas web`，server mode=idle，自動開瀏覽器 | 20 |
+
+### CLI Flag 優先級鏈（Sprint 20 更新）
+
+AI Provider 設定的優先級（高→低）：
+1. Web 端 `POST /api/ai/configure`（`aiConfiguredByWeb` 旗標）
+2. CLI flag（`--ai-provider`、`--ai-key`）
+3. 專案目錄 `.codeatlas.json`
+4. 環境變數
+5. 預設值（disabled）
+
+## Sprint 20 新增錯誤碼
+
+| 代碼 | HTTP Status | 說明 |
+|------|-------------|------|
+| `invalid_request` | 400 | POST /api/project/validate 或 /analyze 缺少 path |
+| `invalid_path` | 400 | POST /api/project/analyze 路徑含無效字元 |
+| `invalid_job_id` | 400 | GET /api/project/progress/:jobId id 無效 |
+| `job_not_found` | 404 | GET /api/project/progress/:jobId job 不存在 |
+| `invalid_index` | 400 | DELETE /api/project/recent/:index 非有效索引 |
