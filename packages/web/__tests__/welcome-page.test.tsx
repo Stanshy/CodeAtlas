@@ -98,7 +98,7 @@ describe('WelcomePage — rendering', () => {
 
   it('renders the tagline about understanding a project in 5 minutes', () => {
     const { container } = render(React.createElement(WelcomePage));
-    expect(container.textContent).toContain('5 分鐘');
+    expect(container.textContent).toContain('5 minutes');
   });
 
   it('renders the ProjectInput component', () => {
@@ -115,7 +115,7 @@ describe('WelcomePage — rendering', () => {
 
   it('renders the version footer', () => {
     const { container } = render(React.createElement(WelcomePage));
-    expect(container.textContent).toContain('v20.0.0');
+    expect(container.textContent).toContain('CodeAtlas v');
   });
 });
 
@@ -124,14 +124,15 @@ describe('WelcomePage — rendering', () => {
 // ---------------------------------------------------------------------------
 
 describe('WelcomePage — AI setup block', () => {
-  it('does not show AI setup block when AI is enabled', async () => {
+  it('always shows AI setup block regardless of AI status', async () => {
     mockFetch({ enabled: true, provider: 'claude' });
     const { container } = render(React.createElement(WelcomePage));
 
-    // Wait for fetch to resolve and state to update
     await new Promise((r) => setTimeout(r, 20));
 
-    expect(container.textContent).not.toContain('設定 AI 分析');
+    // AI setup block is always visible on welcome page (showAiSetup defaults to true,
+    // no fetch-based logic hides it — users adjust via the block itself)
+    expect(container.textContent).toContain('Set up AI analysis');
   });
 
   it('shows AI setup block when provider is disabled', async () => {
@@ -140,7 +141,7 @@ describe('WelcomePage — AI setup block', () => {
 
     await new Promise((r) => setTimeout(r, 20));
 
-    expect(container.textContent).toContain('設定 AI 分析');
+    expect(container.textContent).toContain('Set up AI analysis');
   });
 
   it('shows AI setup block when provider is none', async () => {
@@ -149,17 +150,17 @@ describe('WelcomePage — AI setup block', () => {
 
     await new Promise((r) => setTimeout(r, 20));
 
-    expect(container.textContent).toContain('設定 AI 分析');
+    expect(container.textContent).toContain('Set up AI analysis');
   });
 
-  it('does not show AI setup block when fetch fails', async () => {
+  it('keeps AI setup block visible when fetch fails', async () => {
     global.fetch = vi.fn().mockRejectedValue(new Error('network error'));
     const { container } = render(React.createElement(WelcomePage));
 
     await new Promise((r) => setTimeout(r, 20));
 
-    // fetch failure silently suppresses the AI setup block
-    expect(container.textContent).not.toContain('設定 AI 分析');
+    // fetch failure leaves the AI setup block visible (default showAiSetup=true)
+    expect(container.textContent).toContain('Set up AI analysis');
   });
 });
 
@@ -168,15 +169,15 @@ describe('WelcomePage — AI setup block', () => {
 // ---------------------------------------------------------------------------
 
 describe('WelcomePage — dark mode', () => {
-  it('passes isDark=true to ProjectInput (always dark mode)', () => {
+  it('passes isDark=false to ProjectInput (welcome page uses light theme)', () => {
     const { container } = render(React.createElement(WelcomePage));
     const input = container.querySelector('[data-testid="project-input"]');
-    expect(input?.getAttribute('data-dark')).toBe('true');
+    expect(input?.getAttribute('data-dark')).toBe('false');
   });
 
-  it('passes isDark=true to RecentProjects', () => {
+  it('passes isDark=false to RecentProjects (welcome page uses light theme)', () => {
     const { container } = render(React.createElement(WelcomePage));
     const recent = container.querySelector('[data-testid="recent-projects"]');
-    expect(recent?.getAttribute('data-dark')).toBe('true');
+    expect(recent?.getAttribute('data-dark')).toBe('false');
   });
 });

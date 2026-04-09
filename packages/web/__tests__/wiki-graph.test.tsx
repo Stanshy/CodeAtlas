@@ -126,7 +126,7 @@ describe('WikiGraph', () => {
     // Loading state renders a loading indicator, not an SVG
     const svgs = container.querySelectorAll('svg');
     // In loading state, no main SVG canvas is rendered
-    expect(container.textContent).toContain('載入');
+    expect(container.textContent).toContain('Loading knowledge graph');
   });
 
   it('shows not-generated message when manifestStatus is not_generated', () => {

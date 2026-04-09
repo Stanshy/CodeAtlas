@@ -148,7 +148,7 @@ describe('renderMarkdown — 概述 section', () => {
     const node = makeWikiNode();
     const links = makeNodeLinks();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).toContain('## 概述');
   });
@@ -157,7 +157,7 @@ describe('renderMarkdown — 概述 section', () => {
     const node = makeWikiNode({ summary: '處理使用者認證的核心機制，支援 JWT 和 Session。' });
     const links = makeNodeLinks();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).toContain('處理使用者認證的核心機制，支援 JWT 和 Session。');
   });
@@ -166,7 +166,7 @@ describe('renderMarkdown — 概述 section', () => {
     const node = makeWikiNode({ summary: '' });
     const links = makeNodeLinks();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).toContain('（待分析）');
   });
@@ -175,7 +175,7 @@ describe('renderMarkdown — 概述 section', () => {
     const node = makeWikiNode({ summary: '   ' });
     const links = makeNodeLinks();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).toContain('（待分析）');
   });
@@ -190,7 +190,7 @@ describe('renderMarkdown — 詳細說明 section', () => {
     const node = makeWikiNode();
     const links = makeNodeLinks();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).toContain('## 詳細說明');
   });
@@ -199,7 +199,7 @@ describe('renderMarkdown — 詳細說明 section', () => {
     const node = makeWikiNode();
     const links = makeNodeLinks();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).toContain('執行 AI 深度分析以生成詳細內容');
   });
@@ -214,7 +214,7 @@ describe('renderMarkdown — 相關程式碼 section', () => {
     const node = makeWikiNode({ sourceFiles: ['src/auth/service.ts'] });
     const links = makeNodeLinks();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).toContain('## 相關程式碼');
   });
@@ -223,7 +223,7 @@ describe('renderMarkdown — 相關程式碼 section', () => {
     const node = makeWikiNode({ sourceFiles: ['src/auth/service.ts'] });
     const links = makeNodeLinks();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).toContain('`service.ts`');
     expect(md).toContain('src/auth/service.ts');
@@ -233,7 +233,7 @@ describe('renderMarkdown — 相關程式碼 section', () => {
     const node = makeWikiNode({ sourceFiles: [] });
     const links = makeNodeLinks();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).not.toContain('## 相關程式碼');
   });
@@ -244,7 +244,7 @@ describe('renderMarkdown — 相關程式碼 section', () => {
     });
     const links = makeNodeLinks();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).toContain('`service.ts`');
     expect(md).toContain('`jwt.ts`');
@@ -265,7 +265,7 @@ describe('renderMarkdown — 相關概念 section', () => {
     });
     const node = makeWikiNode();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).toContain('## 相關概念');
   });
@@ -278,7 +278,7 @@ describe('renderMarkdown — 相關概念 section', () => {
     });
     const node = makeWikiNode();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).toContain('[[jwt-token|JWT Token]]');
   });
@@ -291,7 +291,7 @@ describe('renderMarkdown — 相關概念 section', () => {
     });
     const node = makeWikiNode();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).toContain('- [[jwt-token|JWT Token]]');
   });
@@ -300,7 +300,7 @@ describe('renderMarkdown — 相關概念 section', () => {
     const node = makeWikiNode();
     const links = makeNodeLinks();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).not.toContain('## 相關概念');
   });
@@ -313,7 +313,7 @@ describe('renderMarkdown — 相關概念 section', () => {
     });
     const node = makeWikiNode();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).toContain('[[session-management|Session管理]]');
     expect(md).toContain('依賴');
@@ -327,7 +327,7 @@ describe('renderMarkdown — 相關概念 section', () => {
     });
     const node = makeWikiNode();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).toContain('實作');
   });
@@ -342,7 +342,7 @@ describe('renderMarkdown — 相關概念 section', () => {
     });
     const node = makeWikiNode();
 
-    const md = renderMarkdown(node, links);
+    const md = renderMarkdown(node, links, { locale: 'zh-TW' });
 
     expect(md).toContain('延伸');
     expect(md).toContain('使用');
