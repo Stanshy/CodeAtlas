@@ -352,8 +352,8 @@ T1（設計）→ T2（型別）→ T3（框架）→ T4（en.json）→ T5（zh
 |------|------|------|---------|
 | G0 | 2026-04-09 | ✅ 調整後通過 | 附錄 C locale 傳遞鏈 + 4 線 rollout |
 | G2 | 2026-04-10 | ✅ 通過 | 0 Blocker, 0 Major, 3 Minor（chineseDescription 語義/AiSummary 遺留/en.json 重複 key） |
-| G3 | | | |
-| G4 | | | |
+| G3 | 2026-04-10 | ✅ 通過 | Web 999/999, CLI 226/226, Core 983/989（6=既有 schema maxLength 技術債）。103 新 i18n 測試全通過，翻譯完整性 100% |
+| G4 | 2026-04-10 | ✅ 通過 | feature-spec v20.0 + api-design v10.0 + i18n-design v1.0 + CLAUDE.md 索引，文件與程式碼一致 |
 
 ---
 
