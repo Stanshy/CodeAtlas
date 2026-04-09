@@ -2,27 +2,23 @@
  * useHighlightPriority — shared highlight mode detection hook (Sprint 17 T9)
  *
  * Determines which highlight mode is currently active based on the priority
- * chain documented in GraphCanvas.tsx and implemented independently in both
- * useNodeEdgeStyling (2D) and use3DHighlightEffects (3D).
+ * chain documented in GraphCanvas.tsx and useNodeEdgeStyling.
  *
  * Priority order (highest → lowest):
  *   e2eTracing > impact > tracing (symbol) > searchFocus > loClickFocus > hover > normal
  *
  * Note: 2D-specific modes (dataJourney DJ, logicOperation LO chain, systemFramework SF)
- * are not represented here because they are React Flow canvas constructs that do not
- * exist in the 3D renderer. The hook covers only the cross-renderer shared priority
+ * are React Flow canvas constructs. The hook covers the cross-renderer shared priority
  * modes. Callers may extend the returned union with renderer-specific overrides.
  *
  * Integration:
- *   - Graph3DCanvas: use3DHighlightEffects encodes the same priority chain via
- *     imperative useEffect guards (`if (!isActive) return`). We integrate
- *     useHighlightPriority there so the active mode is computable in one place.
  *   - GraphCanvas / useNodeEdgeStyling: the styling logic is tightly coupled with
  *     RF node/edge transformation (inline map calls with style mutations). The
  *     complexity of decoupling the priority detection from the style application
  *     without risking visual regressions means we provide the hook but leave full
  *     integration for a follow-up refactor. The hook can be consumed alongside
  *     useNodeEdgeStyling to derive the mode label (e.g. for analytics or testing).
+ *   - Future renderers (e.g. Wiki knowledge graph) can consume this hook directly.
  */
 
 import { useMemo } from 'react';

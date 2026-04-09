@@ -13,6 +13,7 @@
  * Design: white-paper theme (#fafafa background), consistent with Sprint 12.
  *
  * Sprint 13 — T4. Sprint 15 — T6: AI summaries + MethodRole badges.
+ * Sprint 19 — T15: "查看知識文件" button for Wiki bidirectional jump.
  */
 
 import { useState, useMemo, useCallback, type CSSProperties } from 'react';

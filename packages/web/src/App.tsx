@@ -1,12 +1,13 @@
 /**
  * CodeAtlas — Main App Component
  *
- * Integrates Toolbar, ControlPanel, GraphContainer, NodePanel, SearchBar,
+ * Integrates Toolbar, GraphContainer, NodePanel, SearchBar,
  * E2EPanel, TracingPanel, and CameraPresets. Handles loading, error, and
  * empty states.
  *
- * Sprint 4 — T3: 3d-force-graph Integration
  * Sprint 9 — T9: Toolbar + ControlPanel integration
+ * Sprint 19 — T12: 3D removal
+ * Sprint 19 — T13: Wiki Knowledge Graph tab
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -26,6 +27,7 @@ import { SettingsPopover } from './components/SettingsPopover';
 import { Toolbar } from './components/Toolbar';
 import { E2EPanel } from './components/E2EPanel';
 import { TabBar } from './components/TabBar';
+import { WikiGraph } from './components/WikiGraph';
 import { ToastStack } from './components/Toast';
 import { ViewStateProvider, useViewState } from './contexts/ViewStateContext';
 import type { PerspectiveName } from './types/graph';
@@ -37,7 +39,7 @@ import type { PerspectiveName } from './types/graph';
 function AppInner() {
   const { nodes, edges, rawNodes, rawEdges, directoryGraph, endpointGraph, isLoading, error, refetch } = useGraphData();
   const { state, dispatch } = useViewState();
-  const { selectedNodeId, isPanelOpen, mode, tracingSymbol, e2eTracing, activePerspective, isSettingsPanelOpen } = state;
+  const { selectedNodeId, isPanelOpen, tracingSymbol, e2eTracing, activePerspective, isSettingsPanelOpen } = state;
 
   const reactFlow = useReactFlow();
 
@@ -51,25 +53,21 @@ function AppInner() {
     clearTracing: e2eClearTracing,
   } = useE2ETracing({ nodes: rawNodes, edges: rawEdges });
 
-  // Focus a node: for 2D use ReactFlow viewport; for 3D dispatch FOCUS_NODE
+  // Focus a node: select it and pan the ReactFlow viewport to it
   const focusNode = useCallback(
     (nodeId: string) => {
       dispatch({ type: 'SELECT_NODE', nodeId });
 
-      if (mode === '2d') {
-        const rfNode = reactFlow.getNode(nodeId);
-        if (rfNode) {
-          reactFlow.setCenter(
-            rfNode.position.x + (rfNode.measured?.width ?? 100) / 2,
-            rfNode.position.y + (rfNode.measured?.height ?? 40) / 2,
-            { zoom: 1.2, duration: 500 },
-          );
-        }
-      } else {
-        dispatch({ type: 'FOCUS_NODE', nodeId });
+      const rfNode = reactFlow.getNode(nodeId);
+      if (rfNode) {
+        reactFlow.setCenter(
+          rfNode.position.x + (rfNode.measured?.width ?? 100) / 2,
+          rfNode.position.y + (rfNode.measured?.height ?? 40) / 2,
+          { zoom: 1.2, duration: 500 },
+        );
       }
     },
-    [reactFlow, dispatch, mode],
+    [reactFlow, dispatch],
   );
 
   // Search hook
@@ -158,7 +156,9 @@ function AppInner() {
     const lo = rawNodes.filter(n => n.type === 'file').length;
     // dj: file nodes with data-flow edges
     const dj = lo;
-    return { sf, lo, dj };
+    // wiki: count shown as 0 until manifest loaded (WikiGraph manages its own count internally)
+    const wiki = 0;
+    return { sf, lo, dj, wiki };
   }, [rawNodes, directoryGraph]);
 
   if (isLoading) {
@@ -218,7 +218,7 @@ function AppInner() {
       {/* Toast notifications — fixed top:60px right:16px */}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
-      {/* Camera Presets — 3D only, keep existing position */}
+      {/* Camera Presets — renders null in 2D mode (kept for future use) */}
       <CameraPresets />
 
       {/* Tab Bar — perspective switcher, positioned below Toolbar */}
@@ -256,16 +256,20 @@ function AppInner() {
         </div>
       )}
 
-      {/* Graph renderer — switches between 2D and 3D */}
-      <GraphContainer
-        rfNodes={nodes}
-        rfEdges={edges}
-        graphNodes={rawNodes}
-        graphEdges={rawEdges}
-        directoryGraph={directoryGraph}
-        endpointGraph={endpointGraph}
-        onStartE2ETracing={e2eStartTracing}
-      />
+      {/* Graph renderer — Wiki tab gets its own D3 canvas; all other tabs use GraphContainer */}
+      {activePerspective === 'wiki' ? (
+        <WikiGraph />
+      ) : (
+        <GraphContainer
+          rfNodes={nodes}
+          rfEdges={edges}
+          graphNodes={rawNodes}
+          graphEdges={rawEdges}
+          directoryGraph={directoryGraph}
+          endpointGraph={endpointGraph}
+          onStartE2ETracing={e2eStartTracing}
+        />
+      )}
 
       {/* Search Bar — toggle with Ctrl+K */}
       <SearchBar search={search} />
@@ -274,25 +278,29 @@ function AppInner() {
        * Right-side panels — mutually exclusive, priority: E2E > Tracing > Node.
        * Sprint 12 T7: data-journey perspective uses JourneyPanel (inside GraphCanvas);
        * E2EPanel is suppressed in that case to prevent overlap.
+       * Sprint 19 T13: all right-side panels are suppressed in wiki perspective —
+       * the wiki tab manages its own preview panel (T14).
        */}
-      {e2eTracing?.active && activePerspective !== 'data-journey' ? (
-        <E2EPanel
-          onFocusNode={focusNode}
-          onUpdateDepth={e2eUpdateDepth}
-          onClose={e2eClearTracing}
-        />
-      ) : tracingSymbol !== null ? (
-        <TracingPanel />
-      ) : (
-        <NodePanel
-          nodeId={isPanelOpen ? selectedNodeId : null}
-          onClose={handleClosePanel}
-          onNavigate={handleNavigate}
-          renderCodePreview={(sourceCode, language) => (
-            <CodePreview sourceCode={sourceCode} language={language} />
-          )}
-          renderAiSummary={(nodeId) => <AiSummary nodeId={nodeId} />}
-        />
+      {activePerspective !== 'wiki' && (
+        e2eTracing?.active && activePerspective !== 'data-journey' ? (
+          <E2EPanel
+            onFocusNode={focusNode}
+            onUpdateDepth={e2eUpdateDepth}
+            onClose={e2eClearTracing}
+          />
+        ) : tracingSymbol !== null ? (
+          <TracingPanel />
+        ) : (
+          <NodePanel
+            nodeId={isPanelOpen ? selectedNodeId : null}
+            onClose={handleClosePanel}
+            onNavigate={handleNavigate}
+            renderCodePreview={(sourceCode, language) => (
+              <CodePreview sourceCode={sourceCode} language={language} />
+            )}
+            renderAiSummary={(nodeId) => <AiSummary nodeId={nodeId} />}
+          />
+        )
       )}
     </>
   );

@@ -1,10 +1,10 @@
 # CodeAtlas — 產品開發路線圖
 
-> **版本**: v7.0
-> **日期**: 2026-04-08
+> **版本**: v9.0
+> **日期**: 2026-04-09
 > **撰寫**: PM
 > **狀態**: ✅ 已核准
-> **變更說明**: Phase 4 完成（Sprint 13-16 + 15.1 全部結案）。Phase 5 完成（Sprint 17 程式碼優化結案）。Phase 6 進行中：Sprint 18 = Python + Java 多語言支援（G0 通過 2026-04-08，12 任務）。Sprint 19 = 開源發佈。
+> **變更說明**: Sprint 19 完成（Wiki 知識輸出 + Obsidian 知識圖）。Phase 6 ✅ 全部完成。新增 Phase 7：Sprint 20 啟動體驗改造（零參啟動 + Web 選路徑 + 進度顯示）。i18n 推至 Phase 8 Sprint 21。開源推至 Phase 9 Sprint 22。CLI/VSC 推至 Phase 10 Sprint 23+。老闆決策 #25：啟動體驗優先於 i18n。
 
 ---
 
@@ -26,10 +26,14 @@
 
 ```bash
 npm install -g codeatlas
-cd my-project
-codeatlas analyze            # 掃描專案，產出分析結果
-codeatlas web                # 啟動本地 Web UI → localhost:3000
-codeatlas web --ai-provider ollama  # 使用本地 AI（Ollama）
+
+# Sprint 20 後（目標體驗）：
+codeatlas                    # 零參啟動 → 自動開瀏覽器 → Web 選路徑 + AI 設定
+
+# 現有方式（仍支援）：
+codeatlas analyze [path]     # CLI 指定路徑掃描
+codeatlas web [path]         # CLI 指定路徑啟動 Web UI
+codeatlas wiki [path]        # CLI 輸出知識 Wiki
 ```
 
 ---
@@ -60,26 +64,27 @@ codeatlas web --ai-provider ollama  # 使用本地 AI（Ollama）
 | 20 | **Sprint 13 完成後加入 AI 智慧分析。Phase 4 擴展為 Sprint 13-15。Sprint 14 = AI 基礎層（Contract Layer + Provider + Settings UI）+ LO AI 整合。Sprint 15 = SF + DJ AI 整合。多語言順延至 Sprint 16。四項設計決策通過：(1) MethodRole enum 取代二元 noise 過濾 (2) AI Contract typed schema (3) Provider 優先級：Claude Code CLI > Gemini API > Ollama Gemma 4 > Disabled (4) Prompt Input Budget 三級（small 2K / medium 8K / large 20K）** | 2026-04-05 |
 | 21 | **Phase 4 擴展至 Sprint 16（AI 體驗完整化）。Sprint 14-15 完成 AI 基礎+管線。Sprint 15.1 Hotfix 補管線串接。Sprint 16 = 按需分析+設定連動+快取持久化+Prompt 中文化+視覺強化。新增 Phase 5 = 程式碼優化（Sprint 17），產品碼疑似過大需瘦身。Phase 6 多語言+開源順延至 Sprint 18-19。** | 2026-04-07 |
 | 22 | **Phase 4 + Phase 5 全部完成。Sprint 18 = Python + Java 雙語言同時做（PM 建議先 Python only 但老闆決定一起做）。功能驗證（3D 等 7 項）和專案概述頁面延後處理。** | 2026-04-08 |
+| 23 | **3D 星圖視覺層改為 Obsidian 風格知識關聯圖。新增 `codeatlas wiki` 指令產出互連 .md 知識庫。產品方向從「視覺衝擊力」轉為「知識實用性」。** | 2026-04-08 |
+| 24 | **i18n 中英多語系獨立為 Sprint 20。開源發佈順延至 Sprint 21。Sprint 排序：19 Wiki + 知識圖 → 20 i18n → 21 開源 → 22+ CLI/VSC。** | 2026-04-08 |
+| 25 | **啟動體驗改造優先於 i18n。Sprint 20 = 零參啟動 + Web 選路徑 + 處理進度。i18n 推至 Sprint 21。開源推至 Sprint 22。Sprint 排序：20 啟動體驗 → 21 i18n → 22 開源 → 23+ CLI/VSC。** | 2026-04-09 |
 
 ---
 
 ## 路線圖總覽
 
 ```
-Phase 1（已完成）     Phase 2（已完成）     Phase 3（已完成）       Phase 4（進行中）                     Phase 5          Phase 6             Phase 7
-核心引擎+2D 視覺     3D+資料流+隱私       深度分析+智慧策展       方法/端點級 + AI 智慧分析               程式碼優化        多語言+開源上線       CLI+VSC+社群
-━━━━━━━━━━━━━     ━━━━━━━━━━━━━     ━━━━━━━━━━━━━━━━   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   ━━━━━━━━━━━   ━━━━━━━━━━━━━    ━━━━━━━━━━━━
-core engine         3D 力導向渲染       函式級呼叫鏈           S13: 方法/端點級三視角 ✅               LOC 盤點        Python / Java        CLI 完整功能
-JS/TS 解析          2D/3D 切換         影響分析+搜尋強化       S14: AI Contract+Provider ✅           重複碼合併       效能打磨             VSC Extension
-模組依賴圖           資料流動視覺化       控制面板+UX 整合       S14: LO AI 智慧分析 ✅                 死碼移除        npm 發佈             Git diff 視覺化
-2D 霓虹視覺          Ollama 本地模型     智慧策展+效能優化       S15: SF+DJ AI 智慧分析 ✅              模組拆分/整合    GitHub repo          Plugin 機制
-AI 節點摘要          金鑰安全+隱私標示    3D 空間參考系          S15.1: AI 管線串接 Hotfix ✅           測試碼瘦身       README + Demo        社群語言包
-搜尋定位            邊上 symbol 標示     三種故事視角           S16: AI 體驗完整化                     打包優化        跨平台驗證            自訂主題
-面板+原始碼          路徑追蹤模式        白紙黑格+呈現邏輯重做
-                                       分層/路徑佈局
-━━━━━━━━━━━━━     ━━━━━━━━━━━━━     ━━━━━━━━━━━━━━━━   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   ━━━━━━━━━━━   ━━━━━━━━━━━━━    ━━━━━━━━━━━━
-Sprint 1-3 ✅       Sprint 4-6 ✅       Sprint 7-12 ✅       Sprint 13-16 ✅                     Sprint 17 ✅     Sprint 18-19         Sprint 20+
-已完成               已完成               真正好用             方法級+AI 理解+體驗完整化 ✅            精簡+瘦身 ✅     對外發佈              日常工作流
+Phase 1（已完成）  Phase 2（已完成）  Phase 3（已完成）    Phase 4（已完成）                   Phase 5（已完成） Phase 6（已完成）     Phase 7        Phase 8        Phase 9      Phase 10
+核心引擎+2D       3D+資料流+隱私    深度分析+智慧策展    方法/端點級+AI                      程式碼優化       多語言+Wiki知識       啟動體驗改造    i18n 多語系    開源發佈     CLI+VSC+社群
+━━━━━━━━━━━━    ━━━━━━━━━━━━    ━━━━━━━━━━━━━━   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   ━━━━━━━━━━  ━━━━━━━━━━━━━━   ━━━━━━━━━━  ━━━━━━━━━━  ━━━━━━━━  ━━━━━━━━━━━━
+core engine      3D 力導向渲染    函式級呼叫鏈        S13: 方法/端點級 ✅                 LOC 盤點       S18: Python+Java ✅  零參啟動       Web UI 中英   npm 發佈    CLI 完整功能
+JS/TS 解析       2D/3D 切換      影響分析+搜尋       S14: AI Contract ✅                重複碼合併      S19: Wiki+知識圖 ✅   Web 選路徑     AI 輸出語言   GitHub      VSC Extension
+模組依賴圖        資料流動視覺化   控制面板+UX        S14: LO AI ✅                      死碼移除                             處理進度顯示   Wiki 語言     Demo        Plugin 機制
+2D 霓虹視覺       Ollama 本地模型  智慧策展+效能       S15: SF+DJ AI ✅                   模組拆分                             專案記憶       翻譯框架      首發傳播     社群語言包
+AI 節點摘要       金鑰安全+隱私   3D 空間+視角        S15.1: 管線 Hotfix ✅              測試瘦身                             歡迎頁引導
+搜尋+面板        路徑追蹤模式    白紙黑格重做         S16: AI 體驗 ✅                    打包優化
+━━━━━━━━━━━━    ━━━━━━━━━━━━    ━━━━━━━━━━━━━━   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   ━━━━━━━━━━  ━━━━━━━━━━━━━━   ━━━━━━━━━━  ━━━━━━━━━━  ━━━━━━━━  ━━━━━━━━━━━━
+Sprint 1-3 ✅    Sprint 4-6 ✅    Sprint 7-12 ✅    Sprint 13-16 ✅                  Sprint 17 ✅  Sprint 18-19 ✅      Sprint 20    Sprint 21    Sprint 22  Sprint 23+
+已完成            已完成           真正好用          方法級+AI ✅                      精簡 ✅       多語言+知識化 ✅      Web 驅動啟動  中英切換     對外發佈    日常工作流
 ```
 
 ---
@@ -461,44 +466,128 @@ Sprint 1-3 ✅       Sprint 4-6 ✅       Sprint 7-12 ✅       Sprint 13-16 ✅
 
 ---
 
-## Phase 6：多語言 + 開源上線（進行中）
+## Phase 6：多語言 + Wiki 知識輸出（✅ 已完成）
 
-> **目標**：支援多語言，品質打磨到極致，正式開源發佈。
+> **目標**：支援多語言 + 產出知識化 .md 文件 + Obsidian 風格知識圖取代 3D。
 > **預估**：2 個 Sprint（Sprint 18-19）
-> **交付**：Python/Java 支援 + npm 套件 + GitHub repo + README + demo
+> **交付**：Python/Java 支援 + Wiki .md 知識庫 + Obsidian 知識圖 Tab
+> **老闆決策 #23**：3D→Obsidian 知識圖 + Wiki 輸出。
 
 ### 里程碑
 
-| # | 里程碑 | 目標 | 交付物 |
-|---|--------|------|--------|
-| M18 | 多語言 | Python + Java 可用 | 語言擴充 | ⏳ 進行中 |
-| M19 | 開源上線 | GitHub + npm | 公開發佈 | 待開始 |
+| # | 里程碑 | 目標 | 交付物 | 狀態 |
+|---|--------|------|--------|------|
+| M18 | 多語言 | Python + Java 可用 | 語言擴充 | ✅ |
+| M19 | Wiki 知識輸出 | .md 知識庫 + Obsidian 知識圖 | codeatlas wiki + 知識圖 Tab | ✅ |
 
-### Sprint 18：多語言 + 打磨
+### Sprint 18：多語言支援（✅ 已完成）
+
+> **完成紀錄**：65 新測試、784 total pass、G2+G3+G4 通過。
 
 | 功能 | 說明 |
 |------|------|
-| Python 支援 | tree-sitter python grammar + import 解析 |
-| Java 支援 | tree-sitter java grammar + import/package 解析 |
-| 語言自動偵測 | 根據副檔名 + 專案結構自動切換 parser |
-| 版本號統一 | 共用常數管理，CLI / API / package.json 一致 |
-| 跨平台驗證 | Windows + macOS + Linux |
+| Python 支援 | tree-sitter python grammar + import/function extractor |
+| Java 支援 | tree-sitter java grammar + import/function extractor |
+| 語言自動偵測 | 根據副檔名自動選擇語言 + parser |
+| call-analyzer 多語言 | Python self.method() + Java this.method() |
+| import-resolver 多語言 | Python module + Java package 路徑解析 |
 
-### Sprint 19：開源發佈
+### Sprint 19：Wiki 知識輸出 + Obsidian 知識圖（✅ 已完成）
+
+> **核心改變**：從「只有互動式 Web UI」到「Wiki .md 知識庫 + Obsidian 知識圖」。3D 星圖移除，改為實用知識圖。
+> **老闆決策 #23**：產品方向從「視覺衝擊力」轉為「知識實用性」。
+> **提案書**：`proposal/sprint19-proposal.md`
+> **完成紀錄**：19 任務完成（含 T19 Post-G2 Hotfix）、136 新測試、G2+G4 ✅、G3 附條件通過（35 既有測試待清理）。
+
+| # | 功能 | 說明 |
+|---|------|------|
+| 1 | **Wiki Exporter** | core：Graph JSON → AI 萃取知識概念 → 結構化 .md 檔案群 |
+| 2 | **Wiki-link 生成** | 知識概念關聯 → `[[wiki-link]]` → Obsidian 知識關聯圖 |
+| 3 | **AI 深度分析** | 全域概念萃取 + 單頁深度分析（知識節點，非框架節點） |
+| 4 | **CLI `codeatlas wiki`** | 新指令：掃描 → AI 萃取 → 輸出知識 .md |
+| 5 | **知識圖 Tab** | Web UI 第四 Tab，D3 force Obsidian 風格，概念關係網絡 |
+| 6 | **雙向跳轉** | 知識圖 ↔ SF/LO/DJ（sources 反向引用） |
+| 7 | **移除 3D** | 3d-force-graph / Three.js 完全移除 |
+
+---
+
+## Phase 7：啟動體驗改造（Sprint 20）
+
+> **目標**：從 CLI 驅動改為 Web 驅動。零參啟動 → Web 選路徑 → 即時處理進度。
+> **預估**：1 個 Sprint
+> **交付**：零參啟動 + 歡迎頁 + 路徑選擇 + 全域處理進度 + 專案記憶
+> **老闆決策 #25**：啟動體驗優先於 i18n，開源前必須完成。
+
+### 里程碑
+
+| # | 里程碑 | 目標 | 交付物 | 狀態 |
+|---|--------|------|--------|------|
+| M20 | 啟動體驗 | Web 驅動啟動 | 歡迎頁 + 進度頁 + 零參 CLI | 待開始 |
+
+### Sprint 20：啟動體驗改造
+
+| # | 功能 | 說明 |
+|---|------|------|
+| 1 | **零參啟動** | `codeatlas` 不帶路徑直接啟動 server，進入「選擇專案」模式 |
+| 2 | **歡迎頁/專案選擇** | Web 首頁：輸入路徑 / 瀏覽最近開啟的專案 / 拖放資料夾 |
+| 3 | **AI Provider 引導** | 首次啟動引導流程包含 AI Provider 選擇（復用現有 Settings 邏輯） |
+| 4 | **全域處理進度** | 掃描→解析→建圖→(可選)AI 分析，每步進度條，前端即時更新（SSE/polling） |
+| 5 | **專案記憶** | 記住最近開啟的專案路徑，下次啟動快速選擇（.codeatlas/recent.json） |
+| 6 | **CLI flag 降級為可選** | `--ai-provider` / `--port` 等 flag 保留但非必須，Web 端可覆蓋 |
+| 7 | **過時測試清理** | Sprint 19 G3 附條件：修正 35 個過時測試 |
+
+---
+
+## Phase 8：i18n 中英多語系（Sprint 21）
+
+> **目標**：全面支援繁體中文 / English 切換。
+> **預估**：1 個 Sprint
+> **交付**：Web UI 中英切換 + AI 分析輸出語言切換 + Wiki 輸出語言選擇
+
+### 里程碑
+
+| # | 里程碑 | 目標 | 交付物 | 狀態 |
+|---|--------|------|--------|------|
+| M21 | i18n 多語系 | 中英完整切換 | i18n 框架 + 翻譯檔 + 語言設定 | 待開始 |
+
+### Sprint 21：i18n 中英多語系
+
+| 功能 | 說明 |
+|------|------|
+| i18n 框架 | locale 設定 + 翻譯檔結構（JSON key-value）+ 語言切換機制 |
+| Web UI 中英切換 | Tab 名稱、按鈕、面板標題、提示文字全部 i18n 化 + Settings 語言切換 |
+| AI 分析語言切換 | Prompt 模板化，根據 locale 切換中文/英文輸出 |
+| Wiki 輸出語言 | `codeatlas wiki --lang zh-TW/en` |
+
+---
+
+## Phase 9：開源發佈（Sprint 22）
+
+> **目標**：品質打磨到極致，正式開源發佈。
+> **預估**：1 個 Sprint
+> **交付**：npm 套件 + GitHub repo + README + Demo
+
+### 里程碑
+
+| # | 里程碑 | 目標 | 交付物 | 狀態 |
+|---|--------|------|--------|------|
+| M22 | 開源上線 | GitHub + npm | 公開發佈 | 待開始 |
+
+### Sprint 22：開源發佈
 
 | 功能 | 說明 |
 |------|------|
 | npm 發佈 | `npm install -g codeatlas` 單一套件 |
 | GitHub repo | README（demo GIF）+ LICENSE（MIT）+ CONTRIBUTING |
-| Demo 素材 | 截圖 3 張 + GIF 2 個（2D + 3D 各一）|
+| Demo 素材 | 截圖 + GIF（2D 三視角 + 知識圖 + Obsidian）|
 | 首發傳播 | Twitter + Reddit + Hacker News + Dev.to |
 
 ---
 
-## Phase 7：CLI 強化 + VSC 插件 + 社群
+## Phase 10：CLI 強化 + VSC 插件 + 社群
 
 > **目標**：嵌入開發者日常工作流，建立社群生態。
-> **預估**：Sprint 20+，依需求動態調整
+> **預估**：Sprint 23+，依需求動態調整
 > **交付**：VSC Extension + Plugin 機制 + Git 整合
 
 ### 功能方向

@@ -177,7 +177,14 @@
       "Skill(task-delegation)",
       "Skill(task-start)",
       "Skill(review)",
-      "Skill(gate-record)"
+      "Skill(gate-record)",
+      "Bash(git checkout:*)",
+      "Bash(git stash:*)",
+      "Bash(powershell -NoProfile -Command \"Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object OwningProcess\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f''''Status: {d[status]}''''\\); print\\(f''''Pages: {len\\(d[pages]\\)}''''\\); print\\(f''''Nodes: {len\\(d[nodes]\\)}''''\\); print\\(f''''Edges: {len\\(d[edges]\\)}''''\\); print\\(f''''Stats: {d[stats]}''''\\)\")",
+      "Bash(where.exe ollama:*)",
+      "Bash(powershell.exe -Command \"Get-Command ollama -ErrorAction SilentlyContinue | Select-Object Source\")",
+      "Bash(\"C:/projects/VideoBrief/.codeatlas.json\":*)"
     ]
   }
 }

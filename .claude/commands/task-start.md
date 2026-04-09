@@ -1,7 +1,7 @@
 ---
 name: task-start
 description: Mark a task as in_progress when agent begins working
-allowed-tools: Read, Edit, Glob
+allowed-tools: Read, Edit, Glob, Bash
 ---
 
 # 任務開始
@@ -34,13 +34,39 @@ Agent 開始執行任務時呼叫，將狀態從 `assigned` 改為 `in_progress`
    - **若 `開始時間` 已有非 `—` 的值，不覆蓋**（代表曾被 blocked 後恢復，保留首次開始時間）
    - **若找不到 `| 開始時間 |` 欄位**，在 `| 建立時間 |` 行之後插入 `| 開始時間 | $NOW |`
 
-4. **事件紀錄（必要，不可跳過）**：在 `## 事件紀錄` 區塊底部 append：
+4. **依賴檢查（必要）**：
+   - 讀取任務檔的 `| 依賴 |` 欄位
+   - 若不為 `—`，使用 Glob tool 逐一找到依賴任務檔，確認其 `| 狀態 |` = `done`
+   - 任一依賴狀態非 `done` → 輸出 block 訊息並停止：
+     ```
+     ⛔ $0 無法開始：依賴 {T?} 狀態為 {狀態}，尚未完成
+     ```
+   - 全部 done → 繼續
+
+5. **事件紀錄（必要，不可跳過）**：在 `## 事件紀錄` 區塊底部 append：
    ```
    ### $NOW — 狀態變更 → in_progress
    開始執行任務
    ```
 
-5. 輸出確認：
+6. **Git Branch 處理**：
+   讀取任務檔的 `| 並行組 |` 欄位：
+
+   **若 `並行組 = —`（循序任務）：**
+   - 確認當前 branch 為 `sprint-{N}`（從任務檔 Sprint 欄位取 N）
+   - 若不在正確 branch，切換：`git checkout sprint-{N}`
+   - 輸出：`📌 循序任務，在 sprint-{N} 直接開發`
+
+   **若 `並行組 = A/B/C...`（並行任務）：**
+   - 從任務標題產生 slug（小寫 kebab-case，最長 30 字元）
+   - 從 sprint-{N} 建立 task branch：
+     ```bash
+     git checkout sprint-{N}
+     git checkout -b task/s{N}-$0-{slug}
+     ```
+   - 輸出：`🌿 並行任務，已建立 branch: task/s{N}-$0-{slug}`
+
+7. 輸出確認：
 ```
 ▶️ $0 狀態已更新為 in_progress
 ```

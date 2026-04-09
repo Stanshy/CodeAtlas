@@ -2,15 +2,14 @@
  * useGraphAdjacency — shared adjacency map hook (Sprint 17 T9)
  *
  * Builds a bidirectional adjacency map from a GraphEdge array.
- * Both Graph3DCanvas (3D) and useHoverHighlight (2D) build equivalent
- * adjacency structures independently; this hook provides the shared version.
  *
  * Integration:
- *   - Graph3DCanvas: replaces its inline adjacency useMemo
  *   - useHoverHighlight (2D): builds a richer structure (outEdges, inEdges,
  *     connectedNodes, edgeMap) from React Flow Edge objects. Because it
  *     operates on RF Edge types and is tightly coupled with hover state
  *     management, we leave it unchanged and do not integrate here.
+ *   - Available for future renderers (e.g. Wiki knowledge graph) that need
+ *     a lightweight bidirectional adjacency structure.
  */
 
 import { useMemo } from 'react';

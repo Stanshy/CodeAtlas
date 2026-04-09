@@ -1,6 +1,6 @@
 ---
 name: project-kickoff
-description: Initialize new project with CLAUDE.md, .knowledge/ structure, and company rules
+description: Initialize new project with CLAUDE.md, .knowledge/ structure, company rules, and git
 allowed-tools: Read, Write, Glob, Bash
 ---
 
@@ -40,13 +40,41 @@ PM 啟動新專案時使用，確保所有基礎結構就位。
    - 複製 `company-rules.md` → `.knowledge/company-rules.md`
    - 複製 `team-workflow.md` → `.knowledge/team-workflow.md`
 
-5. **輸出下一步 Checklist**
+5. **Git 初始化**
+
+   5a. 檢查是否已有 git repo（`.git/` 目錄存在）：
+   - 已存在 → 跳過 `git init`
+   - 不存在 → 執行 `git init`
+
+   5b. 建立 `.gitignore`（若已存在則跳過）：
+   ```
+   node_modules/
+   dist/
+   .env
+   .env.*
+   .claude/
+   coverage/
+   *.log
+   .DS_Store
+   ```
+
+   5c. 執行初始 commit（若 working tree 有變更）：
+   ```bash
+   git add -A
+   git commit -m "chore: project kickoff — {project-name}"
+   ```
+
+6. **輸出下一步 Checklist**
    ```
    ✅ 專案初始化完成
+
+   Git：已初始化 ✅
+   初始 commit：chore: project kickoff — {project-name} ✅
 
    下一步：
    - [ ] 填寫 CLAUDE.md 專案簡介佔位符
    - [ ] 填寫技術棧表格
    - [ ] 建立 proposal/ 目錄
    - [ ] 撰寫 Sprint 提案書（/sprint-proposal）
+   - [ ] 執行 /dev-plan 建立 sprint branch
    ```

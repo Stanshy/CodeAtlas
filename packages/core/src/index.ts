@@ -36,3 +36,35 @@ export type {
   ChainStep,
   HttpMethod,
 } from './analyzers/endpoint-detector.js';
+
+// Sprint 19 — Wiki Knowledge Export
+export { exportWiki } from './wiki-exporter/index.js';
+export type {
+  WikiExportOptions,
+  WikiExporterInput,
+} from './wiki-exporter/index.js';
+
+// Sprint 19 T10 — Wiki AI Prompt Builders (Knowledge Node Edition)
+export {
+  buildConceptExtractionPrompt,
+  parseConceptExtractionResponse,
+  buildConceptDeepAnalysisPrompt,
+  parseConceptDeepAnalysisResponse,
+  buildProjectContext,
+} from './wiki-exporter/ai-prompts.js';
+export type {
+  WikiExportResult,
+  WikiManifest,
+  WikiExportStats,
+  WikiPageMeta,
+  WikiNode,
+  WikiEdge,
+  WikiNodeType,
+  WikiEdgeType,
+  WikiPageDetail,
+  SlugRegistryEntry,
+  ISlugRegistry,
+  ExtractedConcept,
+  ConceptExtractionResult,
+  ProjectContext,
+} from './wiki-exporter/types.js';

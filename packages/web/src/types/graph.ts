@@ -251,7 +251,7 @@ export type ViewModeName = 'panorama' | 'dependency' | 'dataflow' | 'callchain';
 
 // === Sprint 11: Perspective (Story View) Types ===
 
-export type PerspectiveName = 'system-framework' | 'logic-operation' | 'data-journey';
+export type PerspectiveName = 'system-framework' | 'logic-operation' | 'data-journey' | 'wiki';
 
 export type LayoutEngine = 'dagre-hierarchical' | 'force-directed' | 'path-tracing';
 export type ColorScheme =

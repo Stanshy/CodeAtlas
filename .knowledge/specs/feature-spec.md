@@ -1,6 +1,6 @@
 # CodeAtlas 功能規格
 
-> 版本: v17.0 | Sprint 18 | 最後更新: 2026-04-08
+> 版本: v18.0 | Sprint 19 | 最後更新: 2026-04-08
 
 ## 概述
 
@@ -22,6 +22,7 @@ Sprint 15：SF + DJ 視角 AI 整合 — AI Contract 擴展（DirectorySummary /
 Sprint 16：AI 體驗完整化 — 按需分析 + 快取持久化 + Provider 即時切換 + Prompt 中文化 + Response Sanitizer。
 Sprint 17：程式碼優化 — 三大元件瘦身（GraphCanvas/Graph3DCanvas/SettingsPopover）+ 死碼清除 + 共用 hook 提取 + debug log 清理。
 Sprint 18：Python + Java 多語言支援 — SupportedLanguage 統一型別、tree-sitter Python/Java grammar 載入（native + WASM fallback）、Python/Java import extractor（含 relative import / static import / wildcard）、Python/Java function extractor（含 class / method / decorator / interface / enum / constructor）、call-analyzer 多語言適配（Python self.method() / Java this.method()）、import-resolver 語言感知路徑解析、scanner 副檔名擴充 + ignore dirs。
+Sprint 19：Wiki 知識輸出 + Obsidian 知識圖 — wiki-exporter 模組（PageGenerator + SlugRegistry + LinkResolver + MDRenderer + WikiExporter 主入口）、`codeatlas wiki` CLI 指令（--output + --ai）、`/api/wiki`（manifest）+ `/api/wiki/page/:slug`（lazy load）+ `/api/wiki/analyze`（AI 深度分析復用 Job 狀態機）三端點、知識圖 Tab（D3 force 2D Obsidian 風格力導向圖 + Level 1/2/3 控制 + 暗色/亮色主題）、WikiPreviewPanel（markdown 渲染 + wiki-link 導航 + viewAnchor 三視角跳轉 + AI 分析按鈕 + polling）、雙向跳轉（Wiki↔SF/LO/DJ + ViewKnowledgeDocButton）、3D 視覺層完全移除（Graph3DCanvas + three-scene-helpers + use3DHighlightEffects + 3d-force-graph/three 依賴）、四語言 fixture（TS/JS/Python/Java）、136 個新測試。
  — 按需分析（AIJobManager + POST /api/ai/analyze + GET /api/ai/jobs/:jobId + method/method-group/directory/endpoint 四種 scope）、快取持久化（PersistentAICache + 磁碟儲存 + LRU eviction + contentHash 失效）、移除啟動自動全量掃描、Provider 即時切換（POST /api/ai/configure + .codeatlas.json 持久化）、Prompt 全面中文化（PROMPT_VERSION v16.1 + 6 個 prompt 模板全繁體中文 + REPLY_RULES）、Response Sanitizer（markdown fence strip + zod partial parse + 純文字 fallback）、Claude CLI 穩定化（空輸出/stderr 隔離/Windows path）、三視角按需分析按鈕移至右側明細面板（SF SFAISection scope=directory / LO LOAISection scope=method 單一方法級 / DJ DJAIResultSection scope=endpoint + 5 種狀態 + useSyncExternalStore 共享狀態持久化）、AIResultBlock 共用元件（compact/full + RoleBadge 9色 + DJAIBlocks 四區塊色彩）、控制面板分析操作（✨ 分析全部 + ✨ 分析核心目錄 + 進度條）、Settings onChange 連動（Provider select + ⭐ 推薦 + Toast 三色回饋）、Settings 精簡（移除冗餘「故事視角」「顯示偏好」section）、LO 改進（★ 入口方法排序置頂 + 群組卡片一句話摘要 CATEGORY_SUMMARIES）、AI Metrics（success/fail/cacheHit 計數器 + /api/ai/status 暴露）。
 
 ## 功能規格

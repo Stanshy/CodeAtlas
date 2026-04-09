@@ -7,6 +7,7 @@
 import { Command } from 'commander';
 import { analyzeCommand } from './commands/analyze.js';
 import { webCommand } from './commands/web.js';
+import { wikiCommand } from './commands/wiki.js';
 
 const program = new Command();
 
@@ -45,6 +46,21 @@ program
       aiKey: options.aiKey,
       aiProvider: options.aiProvider,
       ollamaModel: options.ollamaModel,
+    });
+  });
+
+program
+  .command('wiki [path]')
+  .description('Export a wiki knowledge base from the codebase to Markdown files')
+  .option('--output <dir>', 'output directory for wiki files (default: .codeatlas/wiki)')
+  .option('--ai', 'enable AI deep analysis (T10 integration)', false)
+  .action(async (
+    targetPath: string | undefined,
+    options: { output?: string; ai?: boolean },
+  ) => {
+    await wikiCommand(targetPath, {
+      ...(options.output !== undefined && { output: options.output }),
+      ...(options.ai !== undefined && { ai: options.ai }),
     });
   });
 

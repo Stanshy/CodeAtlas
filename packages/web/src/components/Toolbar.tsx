@@ -72,7 +72,7 @@ function BarChartIcon() {
 
 export function Toolbar({ onSearchClick }: ToolbarProps) {
   const { state, dispatch } = useViewState();
-  const { isSettingsPanelOpen, activePerspective, mode } = state;
+  const { isSettingsPanelOpen, activePerspective } = state;
 
   const [searchHovered, setSearchHovered] = useState(false);
   const [overviewHovered, setOverviewHovered] = useState(false);
@@ -80,19 +80,15 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
   const perspectivePreset = PERSPECTIVE_PRESETS[activePerspective];
   const perspectiveLabel = perspectivePreset?.label ?? activePerspective;
 
-  // system-framework does not support 3D — disable the 3D toggle button
-  const is3DDisabled = activePerspective === 'system-framework';
-
-  // Perspective accent color and badge info
-  const PERSPECTIVE_META: Record<string, { color: string; accentRgb: string; badge: string }> = {
-    'system-framework': { color: '#00d4ff', accentRgb: '0, 212, 255', badge: '2D 專用' },
-    'logic-operation': { color: '#ff00ff', accentRgb: '255, 0, 255', badge: '2D + 3D' },
-    'data-journey': { color: '#00ff88', accentRgb: '0, 255, 136', badge: '2D + 3D' },
+  // Perspective accent color
+  const PERSPECTIVE_META: Record<string, { color: string; accentRgb: string }> = {
+    'system-framework': { color: '#00d4ff', accentRgb: '0, 212, 255' },
+    'logic-operation':  { color: '#ff00ff', accentRgb: '255, 0, 255' },
+    'data-journey':     { color: '#00ff88', accentRgb: '0, 255, 136' },
   };
   const perspectiveMeta = PERSPECTIVE_META[activePerspective] ?? {
     color: colors.primary.DEFAULT,
     accentRgb: '0, 212, 255',
-    badge: '',
   };
 
   // ---------------------------------------------------------------------------
@@ -201,44 +197,6 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
     flexShrink: 0,
   };
 
-  const perspectiveBadgeStyle: React.CSSProperties = {
-    fontSize: 10,
-    fontWeight: 500,
-    padding: '2px 8px',
-    borderRadius: 4,
-    background: `rgba(${perspectiveMeta.accentRgb}, 0.08)`,
-    border: `1px solid rgba(${perspectiveMeta.accentRgb}, 0.25)`,
-    color: perspectiveMeta.color,
-    flexShrink: 0,
-    whiteSpace: 'nowrap',
-  };
-
-  const mode2dStyle: React.CSSProperties = {
-    padding: '3px 8px',
-    fontSize: 11,
-    fontWeight: 600,
-    borderRadius: '4px 0 0 4px',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
-    cursor: 'pointer',
-    background: mode === '2d' ? colors.primary.DEFAULT : 'rgba(255,255,255,0.04)',
-    color: mode === '2d' ? colors.text.onNeon : colors.text.secondary,
-    transition: 'background 0.15s ease-out, color 0.15s ease-out',
-  };
-
-  const mode3dStyle: React.CSSProperties = {
-    padding: '3px 8px',
-    fontSize: 11,
-    fontWeight: 600,
-    borderRadius: '0 4px 4px 0',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
-    borderLeft: 'none',
-    cursor: is3DDisabled ? 'not-allowed' : 'pointer',
-    background: mode === '3d' ? colors.primary.DEFAULT : 'rgba(255,255,255,0.04)',
-    color: mode === '3d' ? colors.text.onNeon : colors.text.secondary,
-    opacity: is3DDisabled ? 0.35 : 1,
-    transition: 'background 0.15s ease-out, color 0.15s ease-out, opacity 0.15s ease-out',
-  };
-
   const overviewButtonStyle: React.CSSProperties = {
     width: 30,
     height: 30,
@@ -309,7 +267,7 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
         </div>
       </div>
 
-      {/* Right section — perspective pill + badge, 2D/3D toggle, overview */}
+      {/* Right section — perspective pill + overview */}
       <div style={rightSectionStyle}>
         {/* Perspective pill */}
         <span style={perspectivePillStyle} title={`目前視角: ${perspectiveLabel}`}>
@@ -326,34 +284,6 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
           />
           {perspectiveLabel}
         </span>
-        {/* 2D/3D badge — tightly placed after pill */}
-        <span style={perspectiveBadgeStyle}>
-          {perspectiveMeta.badge}
-        </span>
-
-        {/* 2D / 3D toggle — uses SET_3D_MODE for system-framework guard */}
-        <div style={{ display: 'flex', flexShrink: 0 }} role="group" aria-label="渲染模式">
-          <button
-            type="button"
-            style={mode2dStyle}
-            onClick={() => dispatch({ type: 'SET_3D_MODE', mode: '2d' })}
-            aria-label="2D 模式"
-            aria-pressed={mode === '2d'}
-          >
-            2D
-          </button>
-          <button
-            type="button"
-            style={mode3dStyle}
-            onClick={() => dispatch({ type: 'SET_3D_MODE', mode: '3d' })}
-            aria-label="3D 模式"
-            aria-pressed={mode === '3d'}
-            disabled={is3DDisabled}
-            title={is3DDisabled ? '系統架構視角僅支援 2D 模式' : undefined}
-          >
-            3D
-          </button>
-        </div>
 
         {/* Overview button */}
         <button

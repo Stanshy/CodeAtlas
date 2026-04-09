@@ -271,6 +271,6 @@ Sprint 18 — Python + Java 多語言支援
 | Gate | 日期 | 決策 | 審核意見 |
 |------|------|------|---------|
 | G0 | 2026-04-08 | ✅ 通過 | Python + Java 雙語言同時做 |
-| G2 | 2026-04-08 | ✅ 通過 | 實作 Review 通過（Blocker:0 Major:0 Minor:0）。Python/Java grammar 載入、import/function extractor、call-analyzer 多語言分支、import-resolver 語言感知解析全部完成，JS/TS 零回歸，pnpm build 零錯誤 |
-| G3 | 2026-04-08 | ✅ 通過 | 測試 Review 通過（Blocker:0 Major:0 Minor:0）。65 新測試（Python 21 + Java 18 + 語言偵測 12 + call-analyzer 14），784 total pass / 0 fail / 0 regression |
-| G4 | 2026-04-08 | ✅ 通過 | 文件 Review 通過（Blocker:0 Major:0 Minor:0）。feature-spec v17.0 新增 F101-F105 Python/Java 支援章節，CLAUDE.md 版本更新，文件與程式碼一致 |
+| G2 | 2026-04-08 | ✅ 通過 | 老闆批准。PM 審核 6 項 checklist 全過。65 新測試超標、零回歸、build 零錯誤 |
+| G3 | 2026-04-08 | ✅ 通過 | 老闆批准。784 total pass / 0 fail / 65 new tests / 0 regression |
+| G4 | 2026-04-08 | ✅ 通過 | 老闆批准。feature-spec v17.0 + CLAUDE.md 更新，文件與程式碼一致 |

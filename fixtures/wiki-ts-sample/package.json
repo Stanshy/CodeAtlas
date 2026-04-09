@@ -1,0 +1,12 @@
+{
+  "name": "wiki-ts-sample",
+  "version": "1.0.0",
+  "description": "TypeScript Express-like fixture for CodeAtlas wiki export testing",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

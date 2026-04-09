@@ -108,12 +108,27 @@ web（純前端）     → 讀 JSON 渲染，不直接依賴 core
 | `/pitfall-record` | 記錄踩坑經驗 | 發現問題時立即記錄 |
 | `/pitfall-resolve` | 標記踩坑已解決 | 問題修復後 |
 | `/sprint-retro` | Sprint 回顧報告 | Sprint 結束時 |
+| `/sprint-close` | 結案 Sprint，merge 回主幹 | 老闆 + PM 確認所有 Gate 通過後 |
 | `/harness-audit` | Harness 健康度稽核 | 定期檢查 |
 | `/sop-plan` | L1 計畫模式 SOP（上下文載入 + Plan Mode 評估） | L1 收到任務分派後，開始規劃前 |
 | `/sop-execute` | L2 任務執行 SOP（規範強制載入 + 驗收確認） | L2 開始執行任務時 |
 | `/sop-review` | L1 Code Review SOP（規範對照 + 審核決策） | L1 進行 Code Review 時 |
 | `/sop-deploy` | 部署 SOP（品質 checklist + Gate G5） | 部署前 |
 | `/spec-update` | 規範文件更新（版本遞增 + 變更記錄） | 修改任何 .knowledge/specs/ 文件時 |
+
+## Git 版控流程（強制）
+
+> 詳細規範見 AgentHub `.knowledge/company/sop/git-flow.md`
+
+| 角色 | 操作 | 說明 |
+|------|------|------|
+| dev-plan 產出後 | `git checkout -b sprint-{N}` | 從主幹建立 Sprint branch |
+| task-start（循序） | 直接在 sprint-{N} commit | `並行組 = —` 的任務 |
+| task-start（並行） | `git checkout -b task/s{N}-T{id}-{slug}` | `並行組 = A/B/C...` 的任務 |
+| task-approve（並行） | merge task → sprint-{N}，刪 branch | code 進 sprint 後依賴才解鎖 |
+| sprint-close | merge sprint-{N} → 主幹，tag，清理 | 老闆 + PM 確認後執行 |
+
+**task-dispatch 必須標記 `| 並行組 |` 欄位**：`—` = 循序，`A/B/C` = 同組可並行。
 
 ## 專案文件索引
 
@@ -125,10 +140,10 @@ web（純前端）     → 讀 JSON 渲染，不直接依賴 core
 | `.knowledge/company-rules.md` | 共用開發規則（所有 Agent 必讀） |
 | `.knowledge/team-workflow.md` | 共用工作流程（所有 Agent 必讀） |
 | `.knowledge/specs/data-model.md` | 資料模型規格 v8.0（🔴 規範） |
-| `.knowledge/specs/api-design.md` | API 設計規格 v5.0（🔴 規範） |
-| `.knowledge/specs/feature-spec.md` | 功能規格 v17.0（🟡 規格） |
+| `.knowledge/specs/api-design.md` | API 設計規格 v8.0（🔴 規範） |
+| `.knowledge/specs/feature-spec.md` | 功能規格 v18.0（🟡 規格） |
 | `.knowledge/sprint14-ai-architecture.md` | Sprint 14 AI 架構設計文件 |
-| `proposal/roadmap.md` | 產品路線圖 v7.0（已核准） |
+| `proposal/roadmap.md` | 產品路線圖 v9.0（已核准） |
 | `proposal/sprint15-dev-plan.md` | Sprint 15 開發計畫書（✅ 已完成） |
 | `proposal/sprint15.1-dev-plan.md` | Sprint 15.1 AI 資料管線串接 Hotfix（✅ 附條件通過） |
 | `proposal/sprint16-proposal.md` | Sprint 16 提案書（✅ G0 通過） |
@@ -139,4 +154,6 @@ web（純前端）     → 讀 JSON 渲染，不直接依賴 core
 | `proposal/sprint17-refactor-report.md` | Sprint 17 重構報告（前後 LOC 對比） |
 | `proposal/sprint18-diagnosis.md` | Sprint 18 產品診斷報告 |
 | `proposal/sprint18-proposal.md` | Sprint 18 提案書（✅ G0 通過） |
-| `proposal/sprint18-dev-plan.md` | Sprint 18 開發計畫書 — Python + Java 多語言支援（⬅️ 當前 Sprint） |
+| `proposal/sprint18-dev-plan.md` | Sprint 18 開發計畫書 — Python + Java 多語言支援（✅ 完成） |
+| `proposal/sprint19-proposal.md` | Sprint 19 提案書（✅ G0 通過，含附錄 A-F 規格） |
+| `proposal/sprint19-dev-plan.md` | Sprint 19 開發計畫書 — Wiki 知識輸出 + Obsidian 知識圖（✅ 完成，G3 附條件通過） |

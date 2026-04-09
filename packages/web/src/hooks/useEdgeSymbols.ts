@@ -3,7 +3,7 @@
  *
  * Formats imported symbols for edge label display.
  * Pure computation hook — no side effects, no context dependencies.
- * Shared between 2D (EdgeSymbolLabel) and 3D (Graph3DCanvas sprite).
+ * Used by EdgeSymbolLabel (2D) and available for future renderers.
  *
  * Sprint 5 — T3/T4: Edge Symbol Labels
  * Design: .knowledge/sprint5-dataflow-architecture.md §5.1

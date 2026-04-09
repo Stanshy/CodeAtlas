@@ -18,6 +18,7 @@
  * expand ONLY on manual click — never during auto-playback.
  *
  * Sprint 13-15
+ * Sprint 19 — T15: "查看知識文件" button for Wiki bidirectional jump.
  */
 
 import { memo, useRef, useEffect, useState, useCallback, type CSSProperties } from 'react';

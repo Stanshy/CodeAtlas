@@ -23,6 +23,11 @@ import {
   detectEndpoints,
 } from '@codeatlas/core';
 import type { DirectorySummary, StepDetail } from '@codeatlas/core';
+import type { WikiManifest, WikiNode, WikiPageMeta } from '@codeatlas/core';
+import {
+  buildConceptDeepAnalysisPrompt,
+  parseConceptDeepAnalysisResponse,
+} from '@codeatlas/core';
 import { getCachedSummary, setCachedSummary } from './cache.js';
 import { PersistentAICache } from './ai-cache.js';
 import type { AICacheEntry } from './ai-cache.js';
@@ -142,6 +147,39 @@ function findEntryByPrefix(cache: PersistentAICache, prefix: string): AICacheEnt
     .filter((e) => e.key.startsWith(prefix))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   return matches[0] ?? null;
+}
+
+/**
+ * Sprint 19 T9: Parse YAML frontmatter from .md content.
+ * Handles only simple key: value pairs (no nested structures or arrays).
+ * Does NOT add a heavy dependency — manual parsing only.
+ */
+function parseFrontmatter(content: string): Record<string, unknown> {
+  const match = /^---\n([\s\S]*?)\n---/.exec(content);
+  if (!match) return {};
+
+  const result: Record<string, unknown> = {};
+  for (const line of match[1].split('\n')) {
+    const colonIdx = line.indexOf(':');
+    if (colonIdx === -1) continue;
+    const key = line.slice(0, colonIdx).trim();
+    if (!key) continue;
+    let value: unknown = line.slice(colonIdx + 1).trim();
+    // Remove surrounding quotes from string values
+    if (
+      typeof value === 'string' &&
+      value.startsWith('"') &&
+      value.endsWith('"') &&
+      value.length >= 2
+    ) {
+      value = value.slice(1, -1);
+    }
+    // Coerce boolean literals
+    if (value === 'true') value = true;
+    if (value === 'false') value = false;
+    result[key] = value;
+  }
+  return result;
 }
 
 /** Shared handler for analysis read errors. Returns true if reply was sent. */
@@ -913,6 +951,341 @@ Response format: ["keyword1", "keyword2", ...]`;
       return reply.status(404).send({ ok: false, message: 'Job not found' });
     }
     return reply.send({ ok: true, job });
+  });
+
+  // ---- GET /api/wiki ---------------------------------------------------------
+  // Sprint 19 T9: Returns the wiki manifest or not_generated status.
+  fastify.get('/api/wiki', async (_req, reply) => {
+    const wikiDir = path.join(path.dirname(analysisPath), 'wiki');
+    const manifestPath = path.join(wikiDir, 'wiki-manifest.json');
+
+    let raw: string;
+    try {
+      raw = await fs.readFile(manifestPath, 'utf-8');
+    } catch {
+      return reply.send({
+        status: 'not_generated',
+        message: "Wiki has not been generated. Run 'codeatlas wiki' first.",
+      });
+    }
+
+    try {
+      const manifest = JSON.parse(raw) as Record<string, unknown>;
+      return reply.send(manifest);
+    } catch {
+      return reply.code(500).send({
+        error: 'wiki_manifest_corrupt',
+        message: 'wiki-manifest.json is malformed. Re-run `codeatlas wiki`.',
+      });
+    }
+  });
+
+  // ---- GET /api/wiki/page/:slug -----------------------------------------------
+  // Sprint 19 T9: Returns single page .md content (lazy load).
+  fastify.get<{ Params: { slug: string } }>('/api/wiki/page/:slug', async (request, reply) => {
+    const { slug } = request.params;
+
+    // Reject path traversal attempts
+    if (!slug || slug.includes('..') || slug.includes('/') || slug.includes('\\')) {
+      return reply.code(400).send({
+        error: 'invalid_slug',
+        message: 'Slug contains invalid characters.',
+      });
+    }
+
+    const wikiDir = path.join(path.dirname(analysisPath), 'wiki');
+    const manifestPath = path.join(wikiDir, 'wiki-manifest.json');
+
+    let manifestRaw: string;
+    try {
+      manifestRaw = await fs.readFile(manifestPath, 'utf-8');
+    } catch {
+      return reply.code(404).send({
+        error: 'wiki_not_generated',
+        message: "Wiki has not been generated. Run 'codeatlas wiki' first.",
+      });
+    }
+
+    let manifest: { pages?: Array<{ slug: string; mdPath: string }> };
+    try {
+      manifest = JSON.parse(manifestRaw) as { pages?: Array<{ slug: string; mdPath: string }> };
+    } catch {
+      return reply.code(500).send({
+        error: 'wiki_manifest_corrupt',
+        message: 'wiki-manifest.json is malformed. Re-run `codeatlas wiki`.',
+      });
+    }
+
+    const page = manifest.pages?.find((p) => p.slug === slug);
+    if (!page) {
+      return reply.code(404).send({
+        error: 'page_not_found',
+        message: `Wiki page not found: ${slug}`,
+        slug,
+      });
+    }
+
+    // Resolve the .md file path relative to wikiDir and guard against traversal
+    const resolvedMdPath = path.resolve(wikiDir, page.mdPath);
+    if (!resolvedMdPath.startsWith(path.resolve(wikiDir))) {
+      return reply.code(400).send({
+        error: 'invalid_md_path',
+        message: 'Page path escapes the wiki directory.',
+        slug,
+      });
+    }
+
+    let content: string;
+    try {
+      content = await fs.readFile(resolvedMdPath, 'utf-8');
+    } catch {
+      return reply.code(404).send({
+        error: 'page_file_not_found',
+        message: `Wiki page file not found on disk: ${page.mdPath}`,
+        slug,
+      });
+    }
+
+    const frontmatter = parseFrontmatter(content);
+    return reply.send({ slug, content, frontmatter });
+  });
+
+  // ---- POST /api/wiki/analyze ------------------------------------------------
+  // Sprint 19 T10: Create an async AI analysis job for a wiki page.
+  // Returns { jobId } immediately; client polls GET /api/ai/jobs/:jobId.
+  fastify.post<{ Body: { slug?: string } }>('/api/wiki/analyze', async (request, reply) => {
+    const body = request.body as { slug?: string } | null;
+
+    const slug = body?.slug;
+
+    if (!slug || typeof slug !== 'string') {
+      return reply.code(400).send({
+        error: 'invalid_request',
+        message: 'Request body must include "slug".',
+      });
+    }
+
+    // Reject path traversal in slug
+    if (slug.includes('..') || slug.includes('/') || slug.includes('\\')) {
+      return reply.code(400).send({
+        error: 'invalid_slug',
+        message: 'Slug contains invalid characters.',
+      });
+    }
+
+    // Check AI provider is available
+    const wikiProvider = createProvider(
+      currentAiProvider,
+      currentAiKey,
+      currentAiProvider === 'ollama' ? { ollamaModel: currentOllamaModel } : undefined,
+    );
+    if (!wikiProvider.isConfigured()) {
+      return reply.code(400).send({
+        error: 'ai_not_configured',
+        message: 'AI provider is disabled or not configured. Configure a provider first.',
+      });
+    }
+
+    // Locate the wiki manifest
+    const wikiDir = path.join(path.dirname(analysisPath), 'wiki');
+    const manifestPath = path.join(wikiDir, 'wiki-manifest.json');
+
+    let manifest: WikiManifest;
+    let manifestRaw: string;
+    try {
+      manifestRaw = await fs.readFile(manifestPath, 'utf-8');
+    } catch {
+      return reply.code(404).send({
+        error: 'wiki_not_generated',
+        message: "Wiki has not been generated. Run 'codeatlas wiki' first.",
+      });
+    }
+    try {
+      manifest = JSON.parse(manifestRaw) as WikiManifest;
+    } catch {
+      return reply.code(500).send({
+        error: 'wiki_manifest_corrupt',
+        message: 'wiki-manifest.json is malformed. Re-run `codeatlas wiki`.',
+      });
+    }
+
+    // Find the page in the manifest
+    const page = manifest.pages?.find((p: WikiPageMeta) => p.slug === slug);
+    if (!page) {
+      return reply.code(404).send({
+        error: 'page_not_found',
+        message: `Wiki page not found in manifest: ${slug}`,
+        slug,
+      });
+    }
+
+    // Find the full WikiNode (needed for concept deep analysis)
+    const wikiNode = manifest.nodes?.find((n: WikiNode) => n.slug === slug);
+    if (!wikiNode) {
+      return reply.code(404).send({
+        error: 'node_not_found',
+        message: `Wiki node not found in manifest: ${slug}`,
+        slug,
+      });
+    }
+
+    // Resolve the .md file path and guard against traversal
+    const resolvedMdPath = path.resolve(wikiDir, page.mdPath);
+    if (!resolvedMdPath.startsWith(path.resolve(wikiDir))) {
+      return reply.code(400).send({
+        error: 'invalid_md_path',
+        message: 'Page path escapes the wiki directory.',
+        slug,
+      });
+    }
+
+    // Create a wiki job via AIJobManager for state tracking.
+    // AIJobScope does not include 'wiki' — use 'directory' scope with a
+    // prefixed target ("wiki:{slug}") to distinguish wiki jobs from regular ones.
+    // The job object returned by createJob() is the same reference stored in the
+    // manager's internal map, so status mutations on it are visible to getJob().
+
+    // Deduplication: if a wiki job for this slug is already running or queued,
+    // return its existing jobId so the client continues polling.
+    const existingJob = aiJobManager
+      .getAllJobs()
+      .find(
+        (j) =>
+          j.target === `wiki:${slug}` &&
+          (j.status === 'running' || j.status === 'queued'),
+      );
+    if (existingJob) {
+      return reply.send({ jobId: existingJob.jobId });
+    }
+
+    // Create a new queued job. force=true bypasses the cache-hit check since
+    // wiki jobs do not use the standard AI analysis cache.
+    const job = aiJobManager.createJob('directory', `wiki:${slug}`, true);
+    const jobId = job.jobId;
+
+    // Fire-and-forget: run wiki AI analysis in background
+    void (async () => {
+      job.status = 'running';
+      job.startedAt = new Date().toISOString();
+
+      // Read current .md content
+      let currentContent: string;
+      try {
+        currentContent = await fs.readFile(resolvedMdPath, 'utf-8');
+      } catch (err) {
+        job.status = 'failed';
+        job.completedAt = new Date().toISOString();
+        job.error = `Failed to read wiki page file: ${err instanceof Error ? err.message : String(err)}`;
+        return;
+      }
+
+      // Read source files referenced by this concept
+      const sourceCode: Array<{ path: string; content: string }> = [];
+      const projectRoot = path.dirname(path.dirname(analysisPath)); // .codeatlas is one level deep
+      for (const srcFile of wikiNode.sourceFiles ?? []) {
+        try {
+          const absPath = path.resolve(projectRoot, srcFile);
+          const content = await fs.readFile(absPath, 'utf-8');
+          // Truncate individual files to ~4000 chars to fit token budget
+          sourceCode.push({ path: srcFile, content: content.slice(0, 4000) });
+        } catch {
+          // File not found — skip silently
+        }
+      }
+
+      // Build concept deep analysis prompt
+      const concept = {
+        name: wikiNode.displayName,
+        type: wikiNode.type,
+        summary: wikiNode.summary ?? '',
+        sourceFiles: wikiNode.sourceFiles ?? [],
+      };
+      const prompt = buildConceptDeepAnalysisPrompt(concept, sourceCode);
+
+      // Call AI
+      let rawAiResponse: string;
+      try {
+        rawAiResponse = await wikiProvider.rawPrompt(prompt);
+      } catch (err) {
+        job.status = 'failed';
+        job.completedAt = new Date().toISOString();
+        job.error = `AI provider error: ${err instanceof Error ? err.message : String(err)}`;
+        return;
+      }
+
+      // Parse response
+      const deepContent = parseConceptDeepAnalysisResponse(rawAiResponse);
+      if (!deepContent) {
+        job.status = 'failed';
+        job.completedAt = new Date().toISOString();
+        job.error = 'AI returned an empty or unparseable response.';
+        return;
+      }
+
+      // Replace "## 詳細說明" section in the .md file.
+      // Match from "## 詳細說明" up to the next "## " header or end of string.
+      // Note: \z is not valid in JS regex — use $ with the m flag for line-end,
+      // but here we need end-of-string, so we use a two-pass approach.
+      const detailHeader = '## 詳細說明';
+      const detailRegex = /^## 詳細說明[ \t]*\n[\s\S]*?(?=\n## )/m;
+      const detailRegexEnd = /^## 詳細說明[ \t]*\n[\s\S]*$/m;
+      let updatedContent: string;
+
+      if (detailRegex.test(currentContent)) {
+        // "詳細說明" is followed by another ## section — replace up to it
+        updatedContent = currentContent.replace(detailRegex, `${detailHeader}\n\n${deepContent}\n`);
+      } else if (detailRegexEnd.test(currentContent)) {
+        // "詳細說明" is the last section — replace to end of file
+        updatedContent = currentContent.replace(detailRegexEnd, `${detailHeader}\n\n${deepContent}\n`);
+      } else {
+        // No "## 詳細說明" section at all — append after existing content
+        updatedContent = `${currentContent.trimEnd()}\n\n${detailHeader}\n\n${deepContent}\n`;
+      }
+
+      try {
+        await fs.writeFile(resolvedMdPath, updatedContent, 'utf-8');
+      } catch (err) {
+        job.status = 'failed';
+        job.completedAt = new Date().toISOString();
+        job.error = `Failed to write updated wiki page: ${err instanceof Error ? err.message : String(err)}`;
+        return;
+      }
+
+      // Update wiki-manifest.json: set hasAiContent = true for this page
+      try {
+        const freshManifestRaw = await fs.readFile(manifestPath, 'utf-8');
+        let freshManifest: WikiManifest;
+        try {
+          freshManifest = JSON.parse(freshManifestRaw) as WikiManifest;
+        } catch {
+          // Manifest corrupted between start and now — skip manifest update
+          job.status = 'succeeded';
+          job.completedAt = new Date().toISOString();
+          job.result = { slug, deepContent, hasAiContent: true };
+          return;
+        }
+
+        const pageEntry = freshManifest.pages?.find((p: WikiPageMeta) => p.slug === slug);
+        if (pageEntry) {
+          pageEntry.hasAiContent = true;
+        }
+        const updatedManifestJson = JSON.stringify(freshManifest, null, 2);
+        await fs.writeFile(manifestPath, updatedManifestJson, 'utf-8');
+      } catch (err) {
+        // Non-fatal: .md was already updated successfully; log and continue
+        console.warn(
+          `[wiki/analyze] Failed to update manifest hasAiContent for "${slug}":`,
+          err instanceof Error ? err.message : String(err),
+        );
+      }
+
+      // Mark job succeeded
+      job.status = 'succeeded';
+      job.completedAt = new Date().toISOString();
+      job.result = { slug, deepContent, hasAiContent: true };
+    })();
+
+    return reply.send({ jobId });
   });
 
   // ---- SPA Fallback -----------------------------------------------------------

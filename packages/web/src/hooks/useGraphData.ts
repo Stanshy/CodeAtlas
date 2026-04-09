@@ -105,13 +105,13 @@ function transformEndpointGraph(raw: ApiEndpointGraphRaw): EndpointGraph {
 }
 
 export interface UseGraphDataResult {
-  /** React Flow nodes (for 2D GraphCanvas) */
+  /** React Flow nodes (for GraphCanvas) */
   nodes: Node<NeonNodeData>[];
-  /** React Flow edges (for 2D GraphCanvas) */
+  /** React Flow edges (for GraphCanvas) */
   edges: Edge<NeonEdgeData>[];
-  /** Raw graph nodes from API (for 3D Graph3DCanvas) */
+  /** Raw graph nodes from API (for SF panel, E2E tracing, future Wiki graph) */
   rawNodes: GraphNode[];
-  /** Raw graph edges from API (for 3D Graph3DCanvas) */
+  /** Raw graph edges from API (for SF panel, E2E tracing, future Wiki graph) */
   rawEdges: GraphEdge[];
   /** Sprint 12: optional directory-level graph (system-framework perspective) */
   directoryGraph: DirectoryGraph | null;

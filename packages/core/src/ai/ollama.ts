@@ -12,7 +12,7 @@ import { buildPrompt } from './utils.js';
 
 const OLLAMA_DEFAULT_BASE_URL = 'http://localhost:11434';
 const OLLAMA_DEFAULT_MODEL = 'gemma3:4b';
-const OLLAMA_TIMEOUT_MS = 300_000; // 300s — local 8B models need generous time for analysis prompts
+const OLLAMA_TIMEOUT_MS = 600_000; // 600s — wiki concept extraction needs generous time for structured JSON output
 
 export interface OllamaProviderOptions {
   baseUrl?: string;

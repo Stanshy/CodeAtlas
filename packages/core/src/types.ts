@@ -133,3 +133,21 @@ export interface SummaryProvider {
   isConfigured(): boolean;
   summarize(code: string, context: SummaryContext): Promise<string>;
 }
+
+// Sprint 19: Wiki Knowledge Export types
+export type {
+  WikiNode,
+  WikiEdge,
+  WikiNodeType,
+  WikiEdgeType,
+  WikiPageMeta,
+  WikiManifest,
+  WikiExportStats,
+  WikiPageDetail,
+  WikiExportResult,
+  SlugRegistryEntry,
+  ISlugRegistry,
+  ExtractedConcept,
+  ConceptExtractionResult,
+  ProjectContext,
+} from './wiki-exporter/types.js';

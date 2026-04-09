@@ -1,11 +1,13 @@
 /**
  * CodeAtlas — ViewStateContext
  *
- * Centralised view state for 2D/3D mode, node selection/hover,
+ * Centralised view state for node selection/hover,
  * search, panel open/close, path tracing, and heatmap.
  *
- * Sprint 4 — T3: 3d-force-graph Integration
+ * Sprint 4 — T3: initial integration
  * Sprint 5 — T2: ViewState 擴充（路徑追蹤 + 熱力圖 + 邊 hover）
+ * Sprint 19 — T12: 3D removal — SET_3D_MODE removed, mode locked to '2d'
+ * Sprint 19 — T13: Wiki tab — selectedWikiNode + SET_WIKI_NODE added
  */
 
 import {
@@ -111,6 +113,10 @@ export interface ViewState {
   enableAiSummary: boolean;     // Toggle AI method summaries
   enableAiRoleClassification: boolean; // Toggle AI role classification
   hiddenMethodRoles: string[];  // Roles to hide in LO view (default: ['utility', 'framework_glue'])
+
+  // Sprint 19: Wiki tab
+  /** Currently selected wiki node slug (null = nothing selected) */
+  selectedWikiNode: string | null;
 }
 
 export type ViewAction =
@@ -154,7 +160,6 @@ export type ViewAction =
   | { type: 'SET_VIEW_MODE'; mode: ViewModeName }
   // === Sprint 11: Perspective ===
   | { type: 'SET_PERSPECTIVE'; perspective: PerspectiveName }
-  | { type: 'SET_3D_MODE'; mode: ViewMode }
   | { type: 'TOGGLE_SETTINGS_PANEL' }
   | { type: 'SET_DISPLAY_PREFS'; prefs: Partial<DisplayPrefs> }
   | { type: 'START_E2E_TRACING'; startNodeId: string;
@@ -172,7 +177,9 @@ export type ViewAction =
   | { type: 'SET_ENABLE_AI_SUMMARY'; enabled: boolean }
   | { type: 'SET_ENABLE_AI_ROLE_CLASSIFICATION'; enabled: boolean }
   | { type: 'SET_HIDDEN_METHOD_ROLES'; roles: string[] }
-  | { type: 'TOGGLE_HIDDEN_METHOD_ROLE'; role: string };
+  | { type: 'TOGGLE_HIDDEN_METHOD_ROLE'; role: string }
+  // Sprint 19: Wiki tab
+  | { type: 'SET_WIKI_NODE'; slug: string | null };
 
 // ---------------------------------------------------------------------------
 // Initial state
@@ -226,6 +233,8 @@ const initialState: ViewState = {
   enableAiSummary: false,
   enableAiRoleClassification: false,
   hiddenMethodRoles: ['utility', 'framework_glue'],
+  // Sprint 19: Wiki tab
+  selectedWikiNode: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -419,24 +428,6 @@ function viewStateReducer(state: ViewState, action: ViewAction): ViewState {
 
     case 'SET_PERSPECTIVE': {
       const perspective = action.perspective;
-      const is3D = state.mode === '3d';
-
-      // system-framework does not support 3D — auto-switch to 2D
-      if (perspective === 'system-framework' && is3D) {
-        return {
-          ...state,
-          activePerspective: perspective,
-          mode: '2d',
-          // Clear conflicting states
-          impactAnalysis: null,
-          isSearchFocused: false,
-          searchFocusNodes: [],
-          searchFocusEdges: [],
-          e2eTracing: null,
-          isE2ESelecting: false,
-          filter: { directories: [], nodeTypes: [], edgeTypes: [] },
-        };
-      }
 
       return {
         ...state,
@@ -450,18 +441,6 @@ function viewStateReducer(state: ViewState, action: ViewAction): ViewState {
         isE2ESelecting: false,
         filter: { directories: [], nodeTypes: [], edgeTypes: [] },
       };
-    }
-
-    case 'SET_3D_MODE': {
-      // If switching to 3D while system-framework is active, auto-switch to logic-operation
-      if (action.mode === '3d' && state.activePerspective === 'system-framework') {
-        return {
-          ...state,
-          mode: action.mode,
-          activePerspective: 'logic-operation',
-        };
-      }
-      return { ...state, mode: action.mode };
     }
 
     case 'TOGGLE_SETTINGS_PANEL':
@@ -549,6 +528,11 @@ function viewStateReducer(state: ViewState, action: ViewAction): ViewState {
           ? state.hiddenMethodRoles.filter(r => r !== action.role)
           : [...state.hiddenMethodRoles, action.role],
       };
+
+    // --- Sprint 19: Wiki tab ---
+
+    case 'SET_WIKI_NODE':
+      return { ...state, selectedWikiNode: action.slug };
 
     default:
       return state;

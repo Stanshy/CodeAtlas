@@ -11,7 +11,7 @@ import type { SummaryContext } from '../types.js';
 const MAX_CODE_LINES = 200;
 
 /** Default timeout for external AI API calls (ms) */
-export const AI_TIMEOUT_MS = 10_000;
+export const AI_TIMEOUT_MS = 120_000;
 
 /**
  * Truncate source code to prevent token overflow.

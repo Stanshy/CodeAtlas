@@ -1,20 +1,15 @@
 /**
  * useFilteredGraphData — shared data computation hook (Sprint 17 T9)
  *
- * Wraps the applyPerspective + applyCuration pipeline that both 2D (GraphCanvas)
- * and 3D (Graph3DCanvas) renderers use for data filtering.
- *
- * Note: Graph3DCanvas skips perspective filtering for 'logic-operation' as a
- * performance optimisation. Callers that need this behaviour should handle it
- * by conditionally passing the raw nodes/edges for that perspective.
+ * Wraps the applyPerspective + applyCuration pipeline for data filtering.
  *
  * NOTE on integration with GraphCanvas (2D):
  * GraphCanvas uses useGraphCanvasFiltering which builds full React Flow RF
  * Node/Edge objects (with specialised card types for DJ/LO/SF perspectives)
  * in the same memo pass. The filtering pipeline is inseparable from the RF node
  * construction there, so we do NOT replace useGraphCanvasFiltering with this
- * hook in GraphCanvas. This hook targets the simpler case in Graph3DCanvas
- * where filtering and rendering representation are independent.
+ * hook in GraphCanvas. This hook is available for future renderers where
+ * filtering and rendering representation are independent.
  */
 
 import { useMemo } from 'react';

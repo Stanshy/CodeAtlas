@@ -4,6 +4,7 @@
  * Three story-driven perspectives replacing Sprint 9 ViewMode presets.
  * Sprint 11 — T3.
  * Sprint 12 — T4: updated colorScheme/interaction values + dataSource field.
+ * Sprint 19 — T13: wiki perspective entry added.
  */
 
 import type { PerspectiveName, PerspectivePreset, DataSource } from '../types/graph';
@@ -60,6 +61,25 @@ export const PERSPECTIVE_PRESETS: Record<PerspectiveName, PerspectivePreset> = {
       showEdgeLabels: true,
       showParticles: true,
       labelDensity: 'smart',
+      expandFiles: false,
+    },
+  },
+  // Sprint 19 T13: Wiki Knowledge Graph — D3 force graph, no ReactFlow
+  wiki: {
+    name: 'wiki',
+    label: '知識圖',
+    description: 'Obsidian 風格知識圖譜',
+    layout: 'force-directed',
+    colorScheme: 'blue-paper',
+    interaction: 'static-hierarchy',
+    supports3D: false,
+    dataSource: 'file' as DataSource,
+    filter: { nodeTypes: [], edgeTypes: [] },
+    display: {
+      showHeatmap: false,
+      showEdgeLabels: false,
+      showParticles: false,
+      labelDensity: 'all',
       expandFiles: false,
     },
   },
