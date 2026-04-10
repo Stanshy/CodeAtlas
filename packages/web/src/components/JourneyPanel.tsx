@@ -9,6 +9,7 @@
  */
 
 import { memo, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { THEME } from '../styles/theme';
 
 // ---------------------------------------------------------------------------
@@ -158,6 +159,7 @@ export const JourneyPanel = memo(function JourneyPanel({
   isPlaying,
   onReplay,
 }: JourneyPanelProps) {
+  const { t } = useTranslation();
   // Playback is complete when all steps have been revealed and we're not playing
   const isComplete = !isPlaying && revealedSteps >= steps.length && steps.length > 0;
 
@@ -175,8 +177,8 @@ export const JourneyPanel = memo(function JourneyPanel({
 
   const hasSteps = steps.length > 0;
   const headerSubText = hasSteps
-    ? `${revealedSteps} / ${steps.length} 步驟`
-    : '請選擇入口';
+    ? t('dj.stepsProgress', { current: revealedSteps, total: steps.length })
+    : t('dj.selectEntryHint');
 
   const replayBtnStyle: React.CSSProperties = {
     width: '100%',
@@ -198,7 +200,7 @@ export const JourneyPanel = memo(function JourneyPanel({
     <div style={panelStyle}>
       {/* Header */}
       <div style={headerStyle}>
-        <h3 style={headerTitleStyle}>資料旅程步驟</h3>
+        <h3 style={headerTitleStyle}>{t('dj.journeySteps')}</h3>
         <p style={headerSubStyle}>{headerSubText}</p>
       </div>
 
@@ -214,7 +216,7 @@ export const JourneyPanel = memo(function JourneyPanel({
               fontFamily: THEME.fontUi,
             }}
           >
-            點擊綠色入口節點開始追蹤
+            {t('dj.clickEntryHint')}
           </div>
         ) : (
           steps.map((step, index) => {
@@ -245,7 +247,7 @@ export const JourneyPanel = memo(function JourneyPanel({
           type="button"
           style={replayBtnStyle}
           onClick={isComplete ? onReplay : undefined}
-          aria-label="重播此旅程"
+          aria-label={t('dj.replayJourney')}
           onMouseEnter={(e) => {
             if (isComplete) {
               (e.currentTarget as HTMLButtonElement).style.background = '#1b5e20';
@@ -257,7 +259,7 @@ export const JourneyPanel = memo(function JourneyPanel({
             }
           }}
         >
-          重播此旅程
+          {t('dj.replayJourney')}
         </button>
       </div>
     </div>

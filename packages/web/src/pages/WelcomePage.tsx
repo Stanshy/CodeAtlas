@@ -16,6 +16,53 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ProjectInput } from '../components/ProjectInput';
 import { RecentProjects } from '../components/RecentProjects';
+import i18n from '../locales';
+
+// ---------------------------------------------------------------------------
+// Language Toggle
+// ---------------------------------------------------------------------------
+
+function LanguageToggle({ isDark }: { isDark: boolean }) {
+  const { i18n: i18nHook } = useTranslation();
+  const { t } = useTranslation();
+  const current = i18nHook.language;
+
+  const toggle = () => {
+    const next = current === 'zh-TW' ? 'en' : 'zh-TW';
+    void i18n.changeLanguage(next);
+    localStorage.setItem('codeatlas-locale', next);
+  };
+
+  const style: React.CSSProperties = {
+    position: 'absolute',
+    top: 16,
+    right: 20,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+    padding: '4px 10px',
+    borderRadius: 20,
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: 'pointer',
+    fontFamily: "'Inter', sans-serif",
+    background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+    border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}`,
+    color: isDark ? '#a0a0c0' : '#6666aa',
+    userSelect: 'none',
+  };
+
+  return (
+    <button
+      type="button"
+      style={style}
+      onClick={toggle}
+      aria-label={t('welcome.languageToggleAriaLabel')}
+    >
+      🌐 {current === 'zh-TW' ? 'EN' : '中'}
+    </button>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // AI Setup Block
@@ -364,6 +411,9 @@ export function WelcomePage() {
 
   return (
     <div style={pageStyle}>
+      {/* Language toggle — top-right corner */}
+      <LanguageToggle isDark={isDark} />
+
       {/* Logo */}
       <div style={logoAreaStyle}>
         <LogoMark />

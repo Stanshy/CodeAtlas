@@ -5,6 +5,7 @@
  */
 
 import { memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useViewState } from '../contexts/ViewStateContext';
 import { colors } from '../styles/theme';
 import type { DisplayPrefs } from '../types/graph';
@@ -152,6 +153,7 @@ function SegmentedControl<T extends string>({
 // ---------------------------------------------------------------------------
 
 export const DisplayPrefsSection = memo(function DisplayPrefsSection() {
+  const { t } = useTranslation();
   const { state, dispatch } = useViewState();
   const { displayPrefs, isHeatmapEnabled } = state;
 
@@ -198,21 +200,21 @@ export const DisplayPrefsSection = memo(function DisplayPrefsSection() {
     >
       {/* 1. Heatmap */}
       <ToggleRow
-        label="Heatmap 熱力圖"
+        label={t('display.heatmap')}
         checked={isHeatmapEnabled}
         onChange={handleToggleHeatmap}
       />
 
       {/* 2. Edge Labels */}
       <ToggleRow
-        label="邊 Symbol 標籤"
+        label={t('display.edgeSymbolLabels')}
         checked={displayPrefs.showEdgeLabels}
         onChange={handleToggleEdgeLabels}
       />
 
       {/* 3. Particles */}
       <ToggleRow
-        label="粒子流動動畫"
+        label={t('display.particleAnimation')}
         checked={displayPrefs.showParticles}
         onChange={handleToggleParticles}
       />
@@ -226,13 +228,13 @@ export const DisplayPrefsSection = memo(function DisplayPrefsSection() {
             marginBottom: 6,
           }}
         >
-          節點標籤密度
+          {t('display.labelDensity')}
         </div>
         <SegmentedControl
           options={[
-            { value: 'none' as const, label: '隱藏' },
-            { value: 'smart' as const, label: '智慧' },
-            { value: 'all' as const, label: '全部' },
+            { value: 'none' as const, label: t('display.hidden') },
+            { value: 'smart' as const, label: t('display.smart') },
+            { value: 'all' as const, label: t('display.all') },
           ]}
           value={displayPrefs.labelDensity}
           onChange={handleLabelDensity}
@@ -250,7 +252,7 @@ export const DisplayPrefsSection = memo(function DisplayPrefsSection() {
             marginBottom: 4,
           }}
         >
-          <span>影響分析深度</span>
+          <span>{t('display.impactDepth')}</span>
           <span style={{ color: colors.text.primary }}>
             {displayPrefs.impactDefaultDepth}
           </span>

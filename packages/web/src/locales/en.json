@@ -42,7 +42,8 @@
     "saved": "Saved",
     "ollama": "Ollama (local)",
     "ollamaLocal": "Ollama (local)",
-    "disabled": "Disabled"
+    "disabled": "Disabled",
+    "languageToggleAriaLabel": "Switch language"
   },
   "progress": {
     "analysisComplete": "Analysis complete!",
@@ -389,5 +390,121 @@
   },
   "tracing": {
     "stopTracing": "Stop Tracing"
+  },
+  "lo": {
+    "category": {
+      "routes": "Routes / API",
+      "middleware": "Middleware",
+      "services": "Services",
+      "models": "Models / Database",
+      "utils": "Utils / Tasks"
+    },
+    "expandMore": "Expand more ({{count}})",
+    "collapse": "Collapse",
+    "noChain": "no call chain",
+    "emptyTitle": "No method nodes detected",
+    "emptyHint": "Ensure the project contains function or method definitions",
+    "summary": {
+      "routes": "Handles HTTP request routing and API endpoints",
+      "middleware": "Request interception (auth, logging, etc.)",
+      "services": "Core business logic and external service integration",
+      "models": "Data model definitions and database operations",
+      "utils": "Shared utility functions and background tasks",
+      "controllers": "Controller layer, coordinates requests and responses"
+    },
+    "entryMarker": "Recommended entry point",
+    "hideUtility": "Hide utility methods",
+    "showUtility": "+{{count}} utility methods",
+    "backToGroups": "← Back to groups"
+  },
+  "legend": {
+    "routes": "Routes",
+    "services": "Services",
+    "controllers": "Controllers",
+    "models": "Models",
+    "utils": "Utils",
+    "middleware": "Middleware"
+  },
+  "hint": {
+    "clickMethod": "Click any method to view call chain",
+    "entryMarker": "★ = Recommended entry point"
+  },
+  "role": {
+    "entrypoint": "Entry Point",
+    "businessCore": "Business Core",
+    "domainRule": "Domain Rule",
+    "orchestration": "Orchestration",
+    "dataAccess": "Data Access",
+    "validation": "Validation",
+    "infrastructure": "Infrastructure",
+    "utility": "Utility",
+    "frameworkGlue": "Framework Glue"
+  },
+  "directory": {
+    "role": {
+      "frontend": "Frontend",
+      "routeLayer": "Route Layer",
+      "dataLayer": "Data Layer",
+      "serviceLayer": "Service Layer",
+      "infrastructure": "Infrastructure",
+      "config": "Config"
+    }
+  },
+  "dj": {
+    "selectEndpoint": "Select API Endpoint — Data Journey",
+    "instruction": "Click an endpoint card below to trace the data flow path step by step",
+    "noEndpoints": "No API endpoints detected in this project — showing file-level data flow",
+    "journeySteps": "Data Journey Steps",
+    "clearSelection": "Clear selection",
+    "stepsOf": "{{current}} / {{total}} steps",
+    "selectEntry": "Select a data entry to start tracing",
+    "clickEntryNode": "Click the green entry node",
+    "observeFlow": "to observe how data flows step by step",
+    "stepsProgress": "{{current}} / {{total}} steps",
+    "selectEntryHint": "Please select an entry point",
+    "syntheticStep": "Processing step {{index}}",
+    "selectEndpointAriaLabel": "Select endpoint {{method}} {{path}}",
+    "stepCount": "{{count}} steps",
+    "replayJourney": "Replay this journey",
+    "clickEntryHint": "Click the green entry node to start tracing"
+  },
+  "perspective": {
+    "systemFramework": {
+      "label": "System Framework",
+      "description": "Layered structure at a glance"
+    },
+    "logicOperation": {
+      "label": "Logic Operation",
+      "description": "Trace call chains from entry points"
+    },
+    "dataJourney": {
+      "label": "Data Journey",
+      "description": "Step-by-step data path tracing"
+    },
+    "wiki": {
+      "label": "Knowledge Graph",
+      "description": "Obsidian-style knowledge map"
+    },
+    "callchain": {
+      "label": "Call Chain View",
+      "description": "Focus on call edges and function nodes, auto-expand files"
+    }
+  },
+  "display": {
+    "labelDensity": "Node label density",
+    "hidden": "Hidden",
+    "smart": "Smart",
+    "all": "All",
+    "impactDepth": "Impact analysis depth",
+    "heatmap": "Heatmap",
+    "edgeSymbolLabels": "Edge Symbol Labels",
+    "particleAnimation": "Particle Flow Animation"
+  },
+  "sf": {
+    "legendModule": "Module directory",
+    "legendDep": "Dependency arrow",
+    "legendHover": "Hover highlight path",
+    "clearSelection": "Clear selection",
+    "clickToView": "Click a directory card to view details"
   }
 }

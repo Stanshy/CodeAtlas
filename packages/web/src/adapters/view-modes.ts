@@ -31,8 +31,8 @@ export interface ViewModePreset {
 export const VIEW_MODE_PRESETS: Record<ViewModeName, ViewModePreset> = {
   panorama: {
     name: 'panorama',
-    label: '全景模式',
-    description: '所有節點 + 所有邊，預設佈局',
+    label: 'perspective.panorama.label',
+    description: 'perspective.panorama.description',
     filter: { nodeTypes: [], edgeTypes: [] },
     display: {
       showHeatmap: false,
@@ -44,8 +44,8 @@ export const VIEW_MODE_PRESETS: Record<ViewModeName, ViewModePreset> = {
   },
   dependency: {
     name: 'dependency',
-    label: '依賴視圖',
-    description: '聚焦 import/export 邊，dim 其他',
+    label: 'perspective.dependency.label',
+    description: 'perspective.dependency.description',
     filter: { nodeTypes: [], edgeTypes: ['import', 'export'] },
     display: {
       showHeatmap: false,
@@ -57,8 +57,8 @@ export const VIEW_MODE_PRESETS: Record<ViewModeName, ViewModePreset> = {
   },
   dataflow: {
     name: 'dataflow',
-    label: '資料流視圖',
-    description: '聚焦 data-flow + export 邊 + symbol 標籤 + heatmap',
+    label: 'perspective.dataflow.label',
+    description: 'perspective.dataflow.description',
     filter: { nodeTypes: [], edgeTypes: ['data-flow', 'export'] },
     display: {
       showHeatmap: true,
@@ -70,8 +70,8 @@ export const VIEW_MODE_PRESETS: Record<ViewModeName, ViewModePreset> = {
   },
   callchain: {
     name: 'callchain',
-    label: '呼叫鏈視圖',
-    description: '聚焦 call 邊 + 函式節點，自動展開檔案',
+    label: 'perspective.callchain.label',
+    description: 'perspective.callchain.description',
     filter: { nodeTypes: ['function', 'class', 'file'], edgeTypes: ['call'] },
     display: {
       showHeatmap: false,

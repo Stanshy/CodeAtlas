@@ -12,8 +12,8 @@ import type { PerspectiveName, PerspectivePreset, DataSource } from '../types/gr
 export const PERSPECTIVE_PRESETS: Record<PerspectiveName, PerspectivePreset> = {
   'system-framework': {
     name: 'system-framework',
-    label: '系統框架',
-    description: '分層結構一目了然',
+    label: 'perspective.systemFramework.label',
+    description: 'perspective.systemFramework.description',
     layout: 'dagre-hierarchical',
     colorScheme: 'blue-paper',
     interaction: 'sf-click-select',   // Sprint 13: click-select + BFS highlight
@@ -30,8 +30,8 @@ export const PERSPECTIVE_PRESETS: Record<PerspectiveName, PerspectivePreset> = {
   },
   'logic-operation': {
     name: 'logic-operation',
-    label: '邏輯運作',
-    description: '從入口追呼叫鏈',
+    label: 'perspective.logicOperation.label',
+    description: 'perspective.logicOperation.description',
     layout: 'dagre-hierarchical',
     colorScheme: 'multi-paper',
     interaction: 'lo-category-drill', // Sprint 13: category drill
@@ -48,8 +48,8 @@ export const PERSPECTIVE_PRESETS: Record<PerspectiveName, PerspectivePreset> = {
   },
   'data-journey': {
     name: 'data-journey',
-    label: '資料旅程',
-    description: '逐步追蹤資料路徑',
+    label: 'perspective.dataJourney.label',
+    description: 'perspective.dataJourney.description',
     layout: 'path-tracing',
     colorScheme: 'green-paper',
     interaction: 'dj-endpoint-play',  // Sprint 13: endpoint playback
@@ -67,8 +67,8 @@ export const PERSPECTIVE_PRESETS: Record<PerspectiveName, PerspectivePreset> = {
   // Sprint 19 T13: Wiki Knowledge Graph — D3 force graph, no ReactFlow
   wiki: {
     name: 'wiki',
-    label: '知識圖',
-    description: 'Obsidian 風格知識圖譜',
+    label: 'perspective.wiki.label',
+    description: 'perspective.wiki.description',
     layout: 'force-directed',
     colorScheme: 'blue-paper',
     interaction: 'static-hierarchy',

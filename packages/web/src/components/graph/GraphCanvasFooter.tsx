@@ -8,6 +8,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { EndpointChain } from '../../types/graph';
 import { THEME } from '../../styles/theme';
 
@@ -47,6 +48,7 @@ export function GraphCanvasFooter({
   loSelectedChain,
   onLOClear,
 }: GraphCanvasFooterProps) {
+  const { t } = useTranslation();
   const isDataJourney = activePerspective === 'data-journey';
   const isLogicOperation = activePerspective === 'logic-operation';
   const isSystemFramework = activePerspective === 'system-framework';
@@ -85,15 +87,15 @@ export function GraphCanvasFooter({
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: THEME.sfBorder, flexShrink: 0 }} />
-          模組目錄
+          {t('sf.legendModule')}
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ display: 'inline-block', width: 18, height: 3, borderRadius: 2, background: THEME.edgeDefault, flexShrink: 0 }} />
-          依賴箭頭
+          {t('sf.legendDep')}
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ display: 'inline-block', width: 18, height: 3, borderRadius: 2, background: THEME.sfLine, flexShrink: 0 }} />
-          Hover 高亮路徑
+          {t('sf.legendHover')}
         </span>
         <span style={{ flex: 1 }} />
         {sfSelectedNodeId ? (
@@ -113,11 +115,11 @@ export function GraphCanvasFooter({
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = THEME.sfBorder; (e.currentTarget as HTMLButtonElement).style.color = THEME.sfBorder; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = THEME.borderDefault; (e.currentTarget as HTMLButtonElement).style.color = THEME.inkSecondary; }}
           >
-            清除選取
+            {t('sf.clearSelection')}
           </button>
         ) : (
           <span style={{ fontSize: 11, color: THEME.inkFaint }}>
-            點擊目錄卡片查看詳情
+            {t('sf.clickToView')}
           </span>
         )}
       </div>
@@ -148,7 +150,7 @@ export function GraphCanvasFooter({
               onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = THEME.djBorder; (e.currentTarget as HTMLButtonElement).style.color = THEME.djBorder; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = THEME.borderDefault; (e.currentTarget as HTMLButtonElement).style.color = THEME.inkSecondary; }}
             >
-              清除選取
+              {t('dj.clearSelection')}
             </button>
             <span
               style={{
@@ -165,7 +167,7 @@ export function GraphCanvasFooter({
               {djSelectedEndpoint}
             </span>
             <span style={{ fontSize: 11, color: THEME.inkFaint, flexShrink: 0 }}>
-              {djCurrentStep + 1} / {djSelectedChain?.steps?.length ?? 0} 步驟
+              {t('dj.stepsOf', { current: djCurrentStep + 1, total: djSelectedChain?.steps?.length ?? 0 })}
             </span>
             <span style={{ width: 1, height: 20, background: THEME.borderDefault, flexShrink: 0 }} />
           </>
@@ -213,7 +215,7 @@ export function GraphCanvasFooter({
               onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = THEME.loRoutes; (e.currentTarget as HTMLButtonElement).style.color = THEME.loRoutes; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = THEME.borderDefault; (e.currentTarget as HTMLButtonElement).style.color = THEME.inkSecondary; }}
             >
-              ← 返回群組
+              {t('lo.backToGroups')}
             </button>
             {loEndpointLabel && (
               <span
@@ -232,23 +234,24 @@ export function GraphCanvasFooter({
               </span>
             )}
             <span style={{ fontSize: 11, color: THEME.inkFaint, flexShrink: 0 }}>
-              {loCurrentStep + 1} / {loSelectedChain?.length ?? 0} 步驟
+              {t('panel.lo.stepOf', { current: loCurrentStep + 1, total: loSelectedChain?.length ?? 0 })}
             </span>
             <span style={{ width: 1, height: 20, background: THEME.borderDefault, flexShrink: 0 }} />
           </>
         )}
         {/* Legend — always visible */}
         {([
-          { label: '路線', color: THEME.loRoutes },
-          { label: '服務', color: THEME.loServices },
-          { label: '控制器', color: THEME.loControllers },
-          { label: '模型', color: THEME.loModels },
-          { label: '工具', color: THEME.loUtils },
-          { label: '中間層', color: THEME.loMiddleware },
-        ] as const).map(({ label, color }) => (
-          <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          { key: 'legend.routes',      color: THEME.loRoutes },
+          { key: 'legend.services',    color: THEME.loServices },
+          { key: 'legend.controllers', color: THEME.loControllers },
+          { key: 'legend.models',      color: THEME.loModels },
+          { key: 'legend.utils',       color: THEME.loUtils },
+          { key: 'legend.middleware',  color: THEME.loMiddleware },
+        ] as const).map(({ key, color }) => (
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          <span key={key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
-            {label}
+            {t(key as any)}
           </span>
         ))}
       </div>

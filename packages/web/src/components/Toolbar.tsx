@@ -83,7 +83,7 @@ export function Toolbar({ onSearchClick }: ToolbarProps) {
   const [switchHovered, setSwitchHovered] = useState(false);
 
   const perspectivePreset = PERSPECTIVE_PRESETS[activePerspective];
-  const perspectiveLabel = perspectivePreset?.label ?? activePerspective;
+  const perspectiveLabel = perspectivePreset?.label ? t(perspectivePreset.label as Parameters<typeof t>[0]) : activePerspective;
 
   // Perspective accent color
   const PERSPECTIVE_META: Record<string, { color: string; accentRgb: string }> = {

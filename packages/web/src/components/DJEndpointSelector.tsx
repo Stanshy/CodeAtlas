@@ -14,6 +14,7 @@
  */
 
 import { memo, useMemo, useState, useEffect, useRef, type CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 import { THEME, canvas as canvasTheme } from '../styles/theme';
 import type { EndpointGraph, EndpointChain, DJChainStep } from '../types/graph';
 
@@ -92,7 +93,7 @@ export function parseUrlPrefix(methodPath: string): string {
 // Build synthetic EndpointChain from EndpointNode (when no real chain data)
 // ---------------------------------------------------------------------------
 
-function buildSyntheticChain(node: EndpointGraph['nodes'][number]): EndpointChain {
+function buildSyntheticChain(node: EndpointGraph['nodes'][number], tFn: (key: string, opts?: Record<string, unknown>) => string): EndpointChain {
   // When the API doesn't provide chain detail, synthesize a minimal chain
   // so the DJ panel still has something to render.
   const httpMethod = node.method ?? 'GET';
@@ -100,7 +101,7 @@ function buildSyntheticChain(node: EndpointGraph['nodes'][number]): EndpointChai
   const stepCount = 3;
   const steps: DJChainStep[] = Array.from({ length: stepCount }, (_, i) => ({
     name: `step_${i + 1}()`,
-    desc: `處理步驟 ${i + 1}`,
+    desc: tFn('dj.syntheticStep', { index: i + 1 }),
     method: `step_${i + 1}()`,
     file: node.filePath,
   }));
@@ -130,6 +131,7 @@ const EndpointCard = memo(function EndpointCard({
   categoryColor,
   onSelect,
 }: EndpointCardProps) {
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
   const [pulseVisible, setPulseVisible] = useState(false);
 
@@ -243,7 +245,7 @@ const EndpointCard = memo(function EndpointCard({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       role="button"
-      aria-label={`選擇端點 ${httpMethod} ${path}`}
+      aria-label={t('dj.selectEndpointAriaLabel', { method: httpMethod, path })}
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(node.id, chain); }}
     >
@@ -256,7 +258,7 @@ const EndpointCard = memo(function EndpointCard({
       {node.label && node.label !== path && (
         <div style={descStyle}>{node.label}</div>
       )}
-      <div style={badgeStyle}>{stepCount} 個步驟</div>
+      <div style={badgeStyle}>{t('dj.stepCount', { count: stepCount })}</div>
     </div>
   );
 });
@@ -278,6 +280,7 @@ const CategoryGroup = memo(function CategoryGroup({
   chains,
   onSelect,
 }: CategoryGroupProps) {
+  const { t } = useTranslation();
   const groupHeaderStyle: CSSProperties = {
     display: 'flex',
     alignItems: 'center',
@@ -316,7 +319,7 @@ const CategoryGroup = memo(function CategoryGroup({
       </div>
       <div style={gridStyle}>
         {nodes.map((node) => {
-          const chain = chains.get(node.id) ?? buildSyntheticChain(node);
+          const chain = chains.get(node.id) ?? buildSyntheticChain(node, t);
           return (
             <EndpointCard
               key={node.id}
@@ -340,6 +343,7 @@ export const DJEndpointSelector = memo(function DJEndpointSelector({
   endpointGraph,
   onEndpointClick,
 }: DJEndpointSelectorProps) {
+  const { t } = useTranslation();
   // Build category → nodes map
   const { groups, categoryOrder } = useMemo(() => {
     const groupMap = new Map<string, EndpointGraph['nodes']>();
@@ -410,7 +414,7 @@ export const DJEndpointSelector = memo(function DJEndpointSelector({
 
       // Fall back to synthetic if no connected steps found
       if (steps.length === 0) {
-        map.set(node.id, buildSyntheticChain(node));
+        map.set(node.id, buildSyntheticChain(node, t));
       } else {
         map.set(node.id, {
           id: node.id,
@@ -478,14 +482,14 @@ export const DJEndpointSelector = memo(function DJEndpointSelector({
         }
       `}</style>
       <div style={containerStyle}>
-        <div style={titleStyle}>選擇 API 端點 — 資料旅程</div>
+        <div style={titleStyle}>{t('dj.selectEndpoint')}</div>
         <div style={subtitleStyle}>
-          點擊下方端點卡片，以 stagger 動畫逐步追蹤資料流路徑
+          {t('dj.instruction')}
         </div>
 
         {!hasEndpoints ? (
           <div style={noEndpointsStyle}>
-            此專案未偵測到 API 端點，顯示檔案級資料流
+            {t('dj.noEndpoints')}
           </div>
         ) : (
           categoryOrder.map((key) => {
