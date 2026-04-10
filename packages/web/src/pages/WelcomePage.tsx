@@ -77,7 +77,8 @@ function AiSetupBlock({ isDark, onDismiss }: AiSetupBlockProps) {
   const { t } = useTranslation();
   const [provider, setProvider] = useState('anthropic');
   const [apiKey, setApiKey] = useState('');
-  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success'>('idle');
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [testError, setTestError] = useState<string | null>(null);
 
   const blockStyle: React.CSSProperties = {
     width: '100%',
@@ -204,17 +205,26 @@ function AiSetupBlock({ isDark, onDismiss }: AiSetupBlockProps) {
 
   const handleTestConnection = async () => {
     setTestStatus('testing');
+    setTestError(null);
     try {
       const res = await fetch('/api/ai/test-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider, apiKey: apiKey || undefined }),
       });
-      if (!res.ok) throw new Error('API error');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        const msg = (errorData as { message?: string })?.message ?? `Connection failed (${res.status})`;
+        setTestStatus('error');
+        setTestError(msg);
+        return;
+      }
       const data = await res.json();
-      setTestStatus(data.ok ? 'success' : 'idle');
+      setTestStatus(data.ok ? 'success' : 'error');
+      if (!data.ok) setTestError((data as { message?: string }).message ?? 'Connection failed');
     } catch {
-      setTestStatus('idle');
+      setTestStatus('error');
+      setTestError('Network error — server unreachable');
     }
   };
 
@@ -253,7 +263,7 @@ function AiSetupBlock({ isDark, onDismiss }: AiSetupBlockProps) {
         <select
           style={selectStyle}
           value={provider}
-          onChange={(e) => { setProvider(e.target.value); setTestStatus('idle'); setSaveStatus('idle'); }}
+          onChange={(e) => { setProvider(e.target.value); setTestStatus('idle'); setTestError(null); setSaveStatus('idle'); }}
           aria-label={t('welcome.selectAiProvider')}
         >
           <option value="anthropic">Claude (Anthropic)</option>
@@ -274,7 +284,7 @@ function AiSetupBlock({ isDark, onDismiss }: AiSetupBlockProps) {
           <input
             type="password"
             value={apiKey}
-            onChange={(e) => { setApiKey(e.target.value); setTestStatus('idle'); setSaveStatus('idle'); }}
+            onChange={(e) => { setApiKey(e.target.value); setTestStatus('idle'); setTestError(null); setSaveStatus('idle'); }}
             placeholder={t('welcome.enterApiKey')}
             aria-label="API Key"
             style={{
@@ -301,6 +311,11 @@ function AiSetupBlock({ isDark, onDismiss }: AiSetupBlockProps) {
         {testStatus === 'success' && (
           <span style={{ fontSize: 12, color: isDark ? '#4ade80' : '#16a34a', fontWeight: 500 }}>
             ✓ {t('welcome.connectionSuccess')}
+          </span>
+        )}
+        {testStatus === 'error' && (
+          <span style={{ fontSize: 12, color: '#ef4444', fontWeight: 500 }}>
+            ✗ {testError ?? 'Connection failed'}
           </span>
         )}
       </div>
@@ -431,7 +446,7 @@ export function WelcomePage() {
       {showAiSetup && <AiSetupBlock isDark={isDark} onDismiss={() => setShowAiSetup(false)} />}
 
       {/* Version */}
-      <p style={versionStyle}>{t('welcome.version')}</p>
+      <p style={versionStyle}>{t('welcome.version', { version: '1.0.0' })}</p>
     </div>
   );
 }

@@ -312,7 +312,16 @@
     "reanalyze": "Re-analyze",
     "aiError": "AI analysis failed, please try again later.",
     "justNow": "Just now",
-    "cannotConnect": "Cannot connect to local server, please ensure CodeAtlas is running."
+    "cannotConnect": "Cannot connect to local server, please ensure CodeAtlas is running.",
+    "knowledgeNodes": "Knowledge Nodes",
+    "openPageTab": "Open {{name}}",
+    "closePageTab": "Close {{name}}",
+    "graphTab": "Knowledge Graph",
+    "backToGraph": "Back to graph",
+    "overview": "Overview",
+    "aiDescription": "Use AI to deeply analyze this knowledge node, generating architecture insights, design pattern identification, and optimization suggestions.",
+    "startAnalysis": "Start AI Analysis",
+    "relatedSources": "Related Source Files"
   },
   "toast": {
     "closeNotification": "Close notification",

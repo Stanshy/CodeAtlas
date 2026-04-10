@@ -312,7 +312,16 @@
     "reanalyze": "重新分析",
     "aiError": "AI 分析失敗，請稍後再試。",
     "justNow": "剛剛",
-    "cannotConnect": "無法連線到本地伺服器，請確認 CodeAtlas 正在執行中。"
+    "cannotConnect": "無法連線到本地伺服器，請確認 CodeAtlas 正在執行中。",
+    "knowledgeNodes": "知識節點",
+    "openPageTab": "開啟 {{name}}",
+    "closePageTab": "關閉 {{name}}",
+    "graphTab": "知識圖",
+    "backToGraph": "返回圖譜",
+    "overview": "概述",
+    "aiDescription": "使用 AI 深度分析此知識節點，產出架構洞見、設計模式識別與優化建議。",
+    "startAnalysis": "開始 AI 分析",
+    "relatedSources": "相關原始碼檔案"
   },
   "toast": {
     "closeNotification": "關閉通知",

@@ -5,16 +5,23 @@
  * Renders an SVG with circle nodes, straight-line edges, persistent text
  * labels, drag/zoom/pan, and a level-control toolbar.
  *
- * Data: fetched from /api/wiki via useWikiGraph hook.
- * Not-generated state: full-screen guidance message.
+ * Layout:
+ *  - Center: full-width D3 graph canvas (or WikiContentView when a page tab
+ *    is active)
+ *  - Right panel (260px): knowledge node list grouped by type
+ *
+ * Tab state is fully controlled by the parent (App.tsx) so the TabBar
+ * can reflect open wiki page tabs independently.
  *
  * Sprint 19 — T13: Wiki Knowledge Graph Tab
+ * Sprint 22 — Wiki UI refactor: left sidebar removed, node list moved right,
+ *              wiki page tabs added (controlled by parent).
  */
 
 import { useRef, useEffect, useState, useCallback, type PointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WikiNodeCircle } from './WikiNodeCircle';
-import { WikiPreviewPanel } from './WikiPreviewPanel';
+import { WikiContentView } from './WikiContentView';
 import { useWikiGraph } from '../hooks/useWikiGraph';
 import { THEME } from '../styles/theme';
 import type { WikiSimNode, WikiSimLink } from '../types/wiki';
@@ -32,6 +39,32 @@ const NODE_COLORS: Record<string, string> = {
 };
 
 // ---------------------------------------------------------------------------
+// Wiki page tab shape (exported so App.tsx can import it)
+// ---------------------------------------------------------------------------
+
+export interface WikiPageTab {
+  slug: string;
+  displayName: string;
+}
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
+
+export interface WikiGraphProps {
+  /** Currently open wiki page tabs (controlled by parent) */
+  openPages: WikiPageTab[];
+  /** Slug of the active wiki page tab; null = showing the graph */
+  activePageSlug: string | null;
+  /** Called when user opens a new page (graph node click or node-list click) */
+  onOpenPage: (slug: string, displayName: string) => void;
+  /** Called when user closes a wiki page tab */
+  onClosePage: (slug: string) => void;
+  /** Called when user selects an already-open tab */
+  onSelectPage: (slug: string) => void;
+}
+
+// ---------------------------------------------------------------------------
 // Sub-component: NotGeneratedState
 // ---------------------------------------------------------------------------
 
@@ -44,13 +77,9 @@ function NotGeneratedState() {
           &#x1F4DA;
         </div>
         <p style={styles.emptyTitle}>{t('wiki.notGenerated')}</p>
-        <p style={styles.emptyBody}>
-          {t('wiki.notGeneratedHint')}
-        </p>
+        <p style={styles.emptyBody}>{t('wiki.notGeneratedHint')}</p>
         <code style={styles.emptyCmd}>$ codeatlas wiki</code>
-        <p style={styles.emptyBody}>
-          {t('wiki.notGeneratedAiHint')}
-        </p>
+        <p style={styles.emptyBody}>{t('wiki.notGeneratedAiHint')}</p>
         <code style={styles.emptyCmd}>$ codeatlas wiki --ai</code>
       </div>
     </div>
@@ -181,14 +210,90 @@ function renderEdge(link: WikiSimLink, idx: number): React.ReactNode {
 }
 
 // ---------------------------------------------------------------------------
+// Right panel: Knowledge node list
+// ---------------------------------------------------------------------------
+
+interface WikiNodeListProps {
+  visibleNodes: WikiSimNode[];
+  selectedSlug: string | null;
+  activePageSlug: string | null;
+  onOpenPage: (slug: string, displayName: string) => void;
+}
+
+function WikiNodeList({
+  visibleNodes,
+  selectedSlug,
+  activePageSlug,
+  onOpenPage,
+}: WikiNodeListProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div style={styles.rightPanel}>
+      <div style={styles.rightPanelHeader}>
+        <span style={styles.rightPanelTitle}>{t('wiki.knowledgeNodes')}</span>
+        <span style={styles.rightPanelCount}>{visibleNodes.length}</span>
+      </div>
+      <div style={styles.rightPanelList}>
+        {(['architecture', 'pattern', 'feature', 'integration', 'concept'] as const).map((type) => {
+          const group = visibleNodes.filter((n) => n.type === type);
+          if (group.length === 0) return null;
+          const legend = LEGEND_ITEMS.find((l) => l.type === type);
+          return (
+            <div key={type}>
+              <div style={styles.groupHeader}>
+                <svg width={10} height={10} style={{ flexShrink: 0 }}>
+                  <circle cx={5} cy={5} r={4} fill={NODE_COLORS[type] ?? '#888'} />
+                </svg>
+                <span style={styles.groupLabel}>
+                  {legend ? t(legend.labelKey).toUpperCase() : type.toUpperCase()}
+                </span>
+                <span style={styles.groupCount}>{group.length}</span>
+              </div>
+              {group.map((node) => {
+                const isHighlighted =
+                  activePageSlug === node.slug || selectedSlug === node.slug;
+                return (
+                  <button
+                    key={node.slug}
+                    type="button"
+                    style={{
+                      ...styles.nodeItem,
+                      ...(isHighlighted ? styles.nodeItemActive : {}),
+                    }}
+                    onClick={() => onOpenPage(node.slug, node.displayName)}
+                    title={node.displayName}
+                    aria-label={t('wiki.openPageTab', { name: node.displayName })}
+                  >
+                    {node.displayName}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main WikiGraph component
 // ---------------------------------------------------------------------------
 
-export function WikiGraph() {
+export function WikiGraph({
+  openPages,
+  activePageSlug,
+  onOpenPage,
+  onClosePage: _onClosePage,
+  onSelectPage: _onSelectPage,
+}: WikiGraphProps) {
+  // containerRef is always mounted (but hidden when content view is active)
+  // so the ResizeObserver keeps valid dimensions for the D3 simulation.
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 900, height: 600 });
 
-  // Measure container
+  // Keep dimensions up-to-date from the graph container
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -213,7 +318,13 @@ export function WikiGraph() {
   // ---------------------------------------------------------------------------
 
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
-  const panState = useRef<{ isPanning: boolean; startX: number; startY: number; startTx: number; startTy: number }>({
+  const panState = useRef<{
+    isPanning: boolean;
+    startX: number;
+    startY: number;
+    startTx: number;
+    startTy: number;
+  }>({
     isPanning: false,
     startX: 0,
     startY: 0,
@@ -232,7 +343,6 @@ export function WikiGraph() {
       graph.hoverNode(slug);
       const node = graph.visibleNodes.find((n) => n.slug === slug);
       if (node && node.x !== undefined && node.y !== undefined) {
-        // Convert SVG coords → screen coords for tooltip
         const svgX = node.x * transform.k + transform.x;
         const svgY = node.y * transform.k + transform.y;
         setTooltip({ x: svgX, y: svgY, node });
@@ -247,7 +357,7 @@ export function WikiGraph() {
   }, [graph]);
 
   // ---------------------------------------------------------------------------
-  // Drag handlers (forwarded to hook)
+  // Drag handlers
   // ---------------------------------------------------------------------------
 
   const handleDragStart = useCallback(
@@ -272,43 +382,69 @@ export function WikiGraph() {
   );
 
   // ---------------------------------------------------------------------------
+  // Node click: highlight in graph + open as content tab
+  // ---------------------------------------------------------------------------
+
+  const handleNodeSelect = useCallback(
+    (slug: string | null) => {
+      if (slug === null) return;
+      graph.selectNode(slug);
+      const node =
+        graph.visibleNodes.find((n) => n.slug === slug) ??
+        graph.allNodes.find((n) => n.slug === slug);
+      if (node) {
+        onOpenPage(node.slug, node.displayName);
+      }
+    },
+    [graph, onOpenPage],
+  );
+
+  // ---------------------------------------------------------------------------
   // Background pan
   // ---------------------------------------------------------------------------
 
-  const handleSvgPointerDown = useCallback((e: PointerEvent<SVGSVGElement>) => {
-    // Only start pan if clicking on SVG background (not on a node)
-    if (e.target !== e.currentTarget) return;
-    panState.current = {
-      isPanning: true,
-      startX: e.clientX,
-      startY: e.clientY,
-      startTx: transform.x,
-      startTy: transform.y,
-    };
-    const onMove = (ev: globalThis.PointerEvent) => {
-      if (!panState.current.isPanning) return;
-      setTransform((t) => ({
-        ...t,
-        x: panState.current.startTx + (ev.clientX - panState.current.startX),
-        y: panState.current.startTy + (ev.clientY - panState.current.startY),
-      }));
-    };
-    const onUp = () => {
-      panState.current.isPanning = false;
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  }, [transform]);
+  const handleSvgPointerDown = useCallback(
+    (e: PointerEvent<SVGSVGElement>) => {
+      if (e.target !== e.currentTarget) return;
+      panState.current = {
+        isPanning: true,
+        startX: e.clientX,
+        startY: e.clientY,
+        startTx: transform.x,
+        startTy: transform.y,
+      };
+      const onMove = (ev: globalThis.PointerEvent) => {
+        if (!panState.current.isPanning) return;
+        setTransform((t) => ({
+          ...t,
+          x: panState.current.startTx + (ev.clientX - panState.current.startX),
+          y: panState.current.startTy + (ev.clientY - panState.current.startY),
+        }));
+      };
+      const onUp = () => {
+        panState.current.isPanning = false;
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+      };
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    },
+    [transform],
+  );
 
-  const handleSvgPointerMove = useCallback((_e: PointerEvent<SVGSVGElement>) => {
-    // Pan tracking handled by window-level listener
-  }, []);
+  const handleSvgPointerMove = useCallback(
+    (_e: PointerEvent<SVGSVGElement>) => {
+      // Pan tracking handled by window-level listener
+    },
+    [],
+  );
 
-  const handleSvgPointerUp = useCallback((_e: PointerEvent<SVGSVGElement>) => {
-    // Pan tracking handled by window-level listener
-  }, []);
+  const handleSvgPointerUp = useCallback(
+    (_e: PointerEvent<SVGSVGElement>) => {
+      // Pan tracking handled by window-level listener
+    },
+    [],
+  );
 
   // ---------------------------------------------------------------------------
   // Wheel zoom
@@ -333,13 +469,7 @@ export function WikiGraph() {
   }, []);
 
   // ---------------------------------------------------------------------------
-  // Drag intercept at SVG level — reroute pointer events to the correct node
-  // ---------------------------------------------------------------------------
-
-  // WikiNodeCircle handles its own pointer events, so we only need pan at SVG level.
-
-  // ---------------------------------------------------------------------------
-  // Render
+  // Render: loading / error / not-generated states
   // ---------------------------------------------------------------------------
 
   if (graph.isLoading) return <LoadingState />;
@@ -349,58 +479,38 @@ export function WikiGraph() {
   const { width, height } = dimensions;
   const groupTransform = `translate(${transform.x},${transform.y}) scale(${transform.k})`;
 
-  // Resolve the full node object for the selected slug
-  const selectedNode = graph.selectedSlug
-    ? (graph.visibleNodes.find((n) => n.slug === graph.selectedSlug) ??
-       graph.allNodes.find((n) => n.slug === graph.selectedSlug) ??
-       null)
-    : null;
+  const isShowingContent = activePageSlug !== null;
+
+  // Suppress unused-variable warnings for props consumed only by parent
+  void openPages;
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
 
   return (
     <div style={styles.root}>
-      {/* Left sidebar — concept list */}
-      <div style={styles.sidebar}>
-        <div style={styles.sidebarHeader}>
-          <span style={styles.sidebarTitle}>知識節點</span>
-          <span style={styles.sidebarCount}>{graph.visibleNodes.length}</span>
-        </div>
-        <div style={styles.sidebarList}>
-          {/* Group by type */}
-          {(['architecture', 'pattern', 'feature', 'integration', 'concept'] as const).map((type) => {
-            const group = graph.visibleNodes.filter((n) => n.type === type);
-            if (group.length === 0) return null;
-            const legend = LEGEND_ITEMS.find((l) => l.type === type);
-            return (
-              <div key={type}>
-                <div style={styles.sidebarGroupHeader}>
-                  <svg width={10} height={10} style={{ flexShrink: 0 }}>
-                    <circle cx={5} cy={5} r={4} fill={NODE_COLORS[type] ?? '#888'} />
-                  </svg>
-                  <span style={styles.sidebarGroupLabel}>{legend?.label ?? type}</span>
-                  <span style={styles.sidebarGroupCount}>{group.length}</span>
-                </div>
-                {group.map((node) => (
-                  <button
-                    key={node.slug}
-                    type="button"
-                    style={{
-                      ...styles.sidebarItem,
-                      ...(graph.selectedSlug === node.slug ? styles.sidebarItemActive : {}),
-                    }}
-                    onClick={() => graph.selectNode(node.slug)}
-                    title={node.displayName}
-                  >
-                    {node.displayName}
-                  </button>
-                ))}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* Center area: wiki content view OR the D3 graph */}
+      {isShowingContent ? (
+        <WikiContentView
+          slug={activePageSlug}
+          onOpenPage={onOpenPage}
+        />
+      ) : null}
 
-      {/* Graph canvas */}
-      <div ref={containerRef} style={styles.canvas}>
+      {/*
+       * D3 graph canvas — always mounted so the simulation keeps running.
+       * Hidden behind the content view when a page tab is active, so node
+       * positions are preserved when the user switches back to the graph.
+       */}
+      <div
+        ref={containerRef}
+        style={{
+          ...styles.canvas,
+          display: isShowingContent ? 'none' : 'block',
+        }}
+        aria-hidden={isShowingContent}
+      >
         <svg
           width="100%"
           height="100%"
@@ -425,7 +535,7 @@ export function WikiGraph() {
                 node={node}
                 isSelected={graph.selectedSlug === node.slug}
                 isHovered={graph.hoveredSlug === node.slug}
-                onSelect={graph.selectNode}
+                onSelect={handleNodeSelect}
                 onHoverStart={handleHoverStart}
                 onHoverEnd={handleHoverEnd}
                 onDragStart={handleDragStart}
@@ -444,15 +554,16 @@ export function WikiGraph() {
 
         {/* Node count badge */}
         <div style={styles.countBadge}>
-          {graph.visibleNodes.length} / {graph.totalCount} 頁面
+          {graph.visibleNodes.length} / {graph.totalCount}
         </div>
       </div>
 
-      {/* MD Preview Panel — right side */}
-      <WikiPreviewPanel
-        selectedNode={selectedNode}
-        allNodes={graph.allNodes}
-        onSelectNode={graph.selectNode}
+      {/* Right panel: knowledge node list (always visible) */}
+      <WikiNodeList
+        visibleNodes={graph.visibleNodes}
+        selectedSlug={graph.selectedSlug}
+        activePageSlug={activePageSlug}
+        onOpenPage={onOpenPage}
       />
     </div>
   );
@@ -482,18 +593,19 @@ const styles = {
     overflow: 'hidden',
   },
 
-  // Left sidebar
-  sidebar: {
-    width: 220,
+  // Right panel (knowledge node list)
+  rightPanel: {
+    width: 260,
     flexShrink: 0,
     background: '#ffffff',
-    borderRight: `1px solid ${THEME.borderDefault}`,
+    borderLeft: `1px solid ${THEME.borderDefault}`,
     display: 'flex',
     flexDirection: 'column' as const,
     overflow: 'hidden',
+    zIndex: 40,
   },
 
-  sidebarHeader: {
+  rightPanelHeader: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -502,14 +614,14 @@ const styles = {
     flexShrink: 0,
   },
 
-  sidebarTitle: {
+  rightPanelTitle: {
     fontFamily: THEME.fontUi,
     fontSize: 13,
     fontWeight: 600,
     color: THEME.inkPrimary,
   } as React.CSSProperties,
 
-  sidebarCount: {
+  rightPanelCount: {
     fontFamily: THEME.fontMono,
     fontSize: 10,
     color: THEME.inkFaint,
@@ -519,20 +631,20 @@ const styles = {
     padding: '1px 7px',
   } as React.CSSProperties,
 
-  sidebarList: {
+  rightPanelList: {
     flex: 1,
     overflowY: 'auto' as const,
     padding: '6px 0',
   },
 
-  sidebarGroupHeader: {
+  groupHeader: {
     display: 'flex',
     alignItems: 'center',
     gap: 6,
     padding: '8px 14px 4px',
   },
 
-  sidebarGroupLabel: {
+  groupLabel: {
     fontFamily: THEME.fontUi,
     fontSize: 10,
     fontWeight: 600,
@@ -542,13 +654,13 @@ const styles = {
     flex: 1,
   } as React.CSSProperties,
 
-  sidebarGroupCount: {
+  groupCount: {
     fontFamily: THEME.fontMono,
     fontSize: 9,
     color: THEME.inkFaint,
   } as React.CSSProperties,
 
-  sidebarItem: {
+  nodeItem: {
     display: 'block',
     width: '100%',
     textAlign: 'left' as const,
@@ -566,7 +678,7 @@ const styles = {
     borderRadius: 0,
   } as React.CSSProperties,
 
-  sidebarItemActive: {
+  nodeItemActive: {
     background: 'rgba(21, 101, 192, 0.08)',
     color: THEME.inkPrimary,
     fontWeight: 600,
@@ -687,21 +799,5 @@ const styles = {
     padding: '4px 10px',
     color: THEME.sfBorder,
     marginBottom: 12,
-  } as React.CSSProperties,
-
-  emptyHint: {
-    fontFamily: THEME.fontUi,
-    fontSize: 12,
-    color: THEME.inkMuted,
-  } as React.CSSProperties,
-
-  inlineCode: {
-    fontFamily: THEME.fontMono,
-    fontSize: 11,
-    background: '#f5f5f8',
-    border: `1px solid ${THEME.borderDefault}`,
-    borderRadius: 3,
-    padding: '1px 5px',
-    color: THEME.sfBorder,
   } as React.CSSProperties,
 } as const;
