@@ -2,6 +2,8 @@
 
 > Visualize any codebase in 5 minutes. Local-first, privacy-focused.
 
+**English** | [繁體中文](README.zh-TW.md)
+
 <!-- Screenshots will be added here -->
 **Screenshots coming soon**
 
