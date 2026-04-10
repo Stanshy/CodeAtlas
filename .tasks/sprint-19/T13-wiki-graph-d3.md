@@ -7,12 +7,12 @@
 | Sprint | Sprint 19 |
 | 指派給 | frontend-developer |
 | 優先級 | P0 |
-| 狀態 | in_review |
+| 狀態 | done |
 | 依賴 | T9,T11,T12 |
 | 預估 | 4h |
 | 建立時間 | 2026-04-08T07:25:25.000Z |
 | 開始時間 | 2026-04-08T08:31:24.319Z |
-| 完工時間 | 2026-04-08T08:41:06.515Z |
+| 完工時間 | 2026-04-09T09:30:00.000Z |
 
 ---
 
@@ -57,3 +57,6 @@
 
 ### 2026-04-08T08:41:06.515Z — 狀態變更 → in_review
 新增 wiki.ts（types）、api/wiki.ts、useWikiGraph.ts、WikiNodeCircle.tsx、WikiGraph.tsx；更新 App.tsx、TabBar.tsx、ViewStateContext.tsx、perspective-presets.ts。全驗收標準通過，tsc --noEmit 無新增錯誤。
+
+### 2026-04-09T09:30:00.000Z — 狀態變更 → done（補登）
+Sprint 19 已完成（G3 附條件通過）。L1 補登任務完成狀態。

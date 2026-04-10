@@ -7,10 +7,11 @@
 | Sprint | Sprint 21 |
 | 指派給 | frontend-developer |
 | 優先級 | P0 |
-| 狀態 | assigned |
+| 狀態 | done |
 | 依賴 | T6 |
 | 預估 | 1h |
 | 建立時間 | 2026-04-09T08:56:57.895Z |
+| 完工時間 | 2026-04-09T09:30:00.000Z |
 
 ---
 
@@ -28,10 +29,10 @@
 
 ## 驗收標準
 
-- [ ] 切換語言即時生效（所有 UI 文字更新）
-- [ ] 重新整理後保持語言選擇
-- [ ] 樣式與現有 AI Provider select 一致
-- [ ] localStorage key 為 `codeatlas-locale`
+- [x] 切換語言即時生效（所有 UI 文字更新）
+- [x] 重新整理後保持語言選擇
+- [x] 樣式與現有 AI Provider select 一致
+- [x] localStorage key 為 `codeatlas-locale`
 
 ---
 
@@ -39,3 +40,6 @@
 
 ### 2026-04-09T08:56:57.895Z — 建立任務（assigned）
 由 L1 透過 /task-delegation 建立
+
+### 2026-04-09T09:30:00.000Z — 狀態變更 → done（補登）
+Sprint 21 i18n 全部完成。L1 補登任務完成狀態。

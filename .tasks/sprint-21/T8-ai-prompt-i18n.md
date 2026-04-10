@@ -7,11 +7,12 @@
 | Sprint | Sprint 21 |
 | 指派給 | backend-architect |
 | 優先級 | P1 |
-| 狀態 | assigned |
+| 狀態 | done |
 | 依賴 | T2 |
 | 並行組 | A |
 | 預估 | 3h |
 | 建立時間 | 2026-04-09T08:56:57.895Z |
+| 完工時間 | 2026-04-09T09:30:00.000Z |
 
 ---
 
@@ -40,13 +41,13 @@
 
 ## 驗收標準
 
-- [ ] 6 個 prompt 模板函式支援 `locale` 參數
-- [ ] `prompt-locale.ts` 常數檔建立
-- [ ] 中文 Prompt 輸出品質不退化
-- [ ] 英文 Prompt 可產出正確英文摘要/分析
-- [ ] `ai-pipeline.ts` 正確傳遞 locale
-- [ ] `server.ts` API 路由接收並補齊 locale
-- [ ] `pnpm build` 零錯誤
+- [x] 6 個 prompt 模板函式支援 `locale` 參數
+- [x] `prompt-locale.ts` 常數檔建立
+- [x] 中文 Prompt 輸出品質不退化
+- [x] 英文 Prompt 可產出正確英文摘要/分析
+- [x] `ai-pipeline.ts` 正確傳遞 locale
+- [x] `server.ts` API 路由接收並補齊 locale
+- [x] `pnpm build` 零錯誤
 
 ---
 
@@ -54,3 +55,6 @@
 
 ### 2026-04-09T08:56:57.895Z — 建立任務（assigned）
 由 L1 透過 /task-delegation 建立
+
+### 2026-04-09T09:30:00.000Z — 狀態變更 → done（補登）
+Sprint 21 i18n 全部完成。L1 補登任務完成狀態。

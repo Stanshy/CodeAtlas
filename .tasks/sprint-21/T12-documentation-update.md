@@ -7,10 +7,11 @@
 | Sprint | Sprint 21 |
 | 指派給 | tech-lead |
 | 優先級 | P0 |
-| 狀態 | assigned |
+| 狀態 | done |
 | 依賴 | T11 |
 | 預估 | 1h |
 | 建立時間 | 2026-04-09T08:56:57.895Z |
+| 完工時間 | 2026-04-09T09:30:00.000Z |
 
 ---
 
@@ -34,10 +35,10 @@ Sprint 21 完成後的文件同步更新：
 
 ## 驗收標準
 
-- [ ] feature-spec.md 版本遞增至 v20.0，含 i18n 章節
-- [ ] api-design.md 版本遞增至 v10.0，含 locale 參數
-- [ ] CLAUDE.md 索引更新
-- [ ] 文件與程式碼一致（對規範 Review 通過）
+- [x] feature-spec.md 版本遞增至 v20.0，含 i18n 章節
+- [x] api-design.md 版本遞增至 v10.0，含 locale 參數
+- [x] CLAUDE.md 索引更新
+- [x] 文件與程式碼一致（對規範 Review 通過）
 
 ---
 
@@ -45,3 +46,6 @@ Sprint 21 完成後的文件同步更新：
 
 ### 2026-04-09T08:56:57.895Z — 建立任務（assigned）
 由 L1 透過 /task-delegation 建立
+
+### 2026-04-09T09:30:00.000Z — 狀態變更 → done（補登）
+Sprint 21 i18n 全部完成。L1 補登任務完成狀態。

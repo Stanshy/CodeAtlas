@@ -7,10 +7,11 @@
 | Sprint | Sprint 21 |
 | 指派給 | backend-architect |
 | 優先級 | P2 |
-| 狀態 | assigned |
+| 狀態 | done |
 | 依賴 | T9 |
 | 預估 | 2h |
 | 建立時間 | 2026-04-09T08:56:57.895Z |
+| 完工時間 | 2026-04-09T09:30:00.000Z |
 
 ---
 
@@ -39,11 +40,11 @@ CLI 終端訊息 i18n 化：
 
 ## 驗收標準
 
-- [ ] `--lang en` 切換 CLI 為英文輸出
-- [ ] `--lang zh-TW` 切換 CLI 為中文輸出
-- [ ] 預設英文
-- [ ] 輕量載入器不依賴 i18next
-- [ ] `pnpm build` 零錯誤
+- [x] `--lang en` 切換 CLI 為英文輸出
+- [x] `--lang zh-TW` 切換 CLI 為中文輸出
+- [x] 預設英文
+- [x] 輕量載入器不依賴 i18next
+- [x] `pnpm build` 零錯誤
 
 ---
 
@@ -51,3 +52,6 @@ CLI 終端訊息 i18n 化：
 
 ### 2026-04-09T08:56:57.895Z — 建立任務（assigned）
 由 L1 透過 /task-delegation 建立
+
+### 2026-04-09T09:30:00.000Z — 狀態變更 → done（補登）
+Sprint 21 i18n 全部完成。L1 補登任務完成狀態。

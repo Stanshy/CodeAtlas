@@ -7,12 +7,12 @@
 | Sprint | Sprint 19 |
 | 指派給 | backend-architect |
 | 優先級 | P0 |
-| 狀態 | assigned |
+| 狀態 | done |
 | 依賴 | T7,T9 |
 | 預估 | 2h |
 | 建立時間 | 2026-04-08T07:25:25.000Z |
 | 開始時間 | — |
-| 完工時間 | — |
+| 完工時間 | 2026-04-09T09:30:00.000Z |
 
 ---
 
@@ -32,10 +32,10 @@
 
 ## 驗收標準
 
-- [ ] POST analyze → job 建立 → polling → succeeded 全流程通
-- [ ] 成功後 .md 檔案更新、manifest 更新
-- [ ] 失敗時骨架不受影響
-- [ ] 復用 Sprint 16 Job 狀態機
+- [x] POST analyze → job 建立 → polling → succeeded 全流程通
+- [x] 成功後 .md 檔案更新、manifest 更新
+- [x] 失敗時骨架不受影響
+- [x] 復用 Sprint 16 Job 狀態機
 
 ---
 
@@ -43,3 +43,6 @@
 
 ### 2026-04-08T07:25:25.000Z — 建立任務（assigned）
 由 L1 透過 /task-delegation 建立
+
+### 2026-04-09T09:30:00.000Z — 狀態變更 → done（補登）
+Sprint 19 已完成（G3 附條件通過）。L1 補登任務完成狀態。

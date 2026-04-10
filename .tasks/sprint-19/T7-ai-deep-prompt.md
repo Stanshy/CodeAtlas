@@ -7,12 +7,12 @@
 | Sprint | Sprint 19 |
 | 指派給 | ai-engineer |
 | 優先級 | P0 |
-| 狀態 | in_review |
+| 狀態 | done |
 | 依賴 | T5 |
 | 預估 | 2h |
 | 建立時間 | 2026-04-08T07:25:25.000Z |
 | 開始時間 | 2026-04-08T08:01:26.247Z |
-| 完工時間 | 2026-04-08T08:03:00.731Z |
+| 完工時間 | 2026-04-09T09:30:00.000Z |
 
 ---
 
@@ -51,3 +51,6 @@
 
 ### 2026-04-08T08:03:00.731Z — 狀態變更 → in_review
 建立 packages/core/src/wiki-exporter/ai-prompts.ts，實作 buildWikiSystemPrompt()、buildWikiUserPrompt()、parseWikiAiResponse()。三級 prompt 模板（module/file/endpoint/method）、附錄 C 硬性禁令強制寫入 system prompt、降級回傳空字串。TypeScript 編譯無新增錯誤。
+
+### 2026-04-09T09:30:00.000Z — 狀態變更 → done（補登）
+Sprint 19 已完成（G3 附條件通過）。L1 補登任務完成狀態。

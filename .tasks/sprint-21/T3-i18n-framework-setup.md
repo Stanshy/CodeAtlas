@@ -7,10 +7,11 @@
 | Sprint | Sprint 21 |
 | 指派給 | frontend-developer |
 | 優先級 | P0 |
-| 狀態 | assigned |
+| 狀態 | done |
 | 依賴 | T2 |
 | 預估 | 1h |
 | 建立時間 | 2026-04-09T08:56:57.895Z |
+| 完工時間 | 2026-04-09T09:30:00.000Z |
 
 ---
 
@@ -30,12 +31,12 @@
 
 ## 驗收標準
 
-- [ ] `react-i18next` 和 `i18next` 已安裝
-- [ ] `packages/web/src/locales/index.ts` 初始化完成
-- [ ] 語言偵測邏輯正確（localStorage > navigator > 'en'）
-- [ ] `App.tsx` 已引入 i18n 初始化
-- [ ] `useTranslation()` 可在任意元件使用
-- [ ] `pnpm build` 零錯誤
+- [x] `react-i18next` 和 `i18next` 已安裝
+- [x] `packages/web/src/locales/index.ts` 初始化完成
+- [x] 語言偵測邏輯正確（localStorage > navigator > 'en'）
+- [x] `App.tsx` 已引入 i18n 初始化
+- [x] `useTranslation()` 可在任意元件使用
+- [x] `pnpm build` 零錯誤
 
 ---
 
@@ -43,3 +44,6 @@
 
 ### 2026-04-09T08:56:57.895Z — 建立任務（assigned）
 由 L1 透過 /task-delegation 建立
+
+### 2026-04-09T09:30:00.000Z — 狀態變更 → done（補登）
+Sprint 21 i18n 全部完成。L1 補登任務完成狀態。
