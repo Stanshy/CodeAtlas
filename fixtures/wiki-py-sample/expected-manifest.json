@@ -1,0 +1,43 @@
+{
+  "description": "Python Flask-like sample with auth, products, models, services, and utils",
+  "language": "python",
+  "fileCount": 12,
+  "expectations": {
+    "minPageCount": 12,
+    "maxPageCount": 22,
+    "minLinkCount": 16,
+    "maxLinkCount": 45,
+    "maxDeadLinks": 0,
+    "minCoverage": 0.75,
+    "requiredModules": ["routes", "services", "models", "utils"],
+    "requiredEndpoints": [
+      "POST /auth/login",
+      "POST /auth/register",
+      "GET /products",
+      "GET /products/<product_id>",
+      "POST /products"
+    ],
+    "requiredFiles": [
+      "auth.py",
+      "products.py",
+      "auth_service.py",
+      "product_service.py",
+      "user.py",
+      "product.py",
+      "helpers.py"
+    ],
+    "importEdges": [
+      { "from": "app/__init__.py", "to": "app/routes/auth.py" },
+      { "from": "app/__init__.py", "to": "app/routes/products.py" },
+      { "from": "app/__init__.py", "to": "app/utils/helpers.py" },
+      { "from": "app/routes/auth.py", "to": "app/services/auth_service.py" },
+      { "from": "app/routes/auth.py", "to": "app/utils/helpers.py" },
+      { "from": "app/routes/products.py", "to": "app/services/product_service.py" },
+      { "from": "app/routes/products.py", "to": "app/utils/helpers.py" },
+      { "from": "app/services/auth_service.py", "to": "app/models/user.py" },
+      { "from": "app/services/product_service.py", "to": "app/models/product.py" },
+      { "from": "app/models/__init__.py", "to": "app/models/user.py" },
+      { "from": "app/models/__init__.py", "to": "app/models/product.py" }
+    ]
+  }
+}

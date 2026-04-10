@@ -1,0 +1,29 @@
+{
+  "description": "JavaScript Node.js utility library with calculator, validator, formatter, logger, and config",
+  "language": "javascript",
+  "fileCount": 6,
+  "expectations": {
+    "minPageCount": 7,
+    "maxPageCount": 14,
+    "minLinkCount": 8,
+    "maxLinkCount": 25,
+    "maxDeadLinks": 0,
+    "minCoverage": 0.8,
+    "requiredModules": ["lib", "utils"],
+    "requiredEndpoints": [],
+    "requiredFiles": [
+      "calculator.js",
+      "validator.js",
+      "formatter.js",
+      "logger.js",
+      "config.js"
+    ],
+    "importEdges": [
+      { "from": "index.js", "to": "lib/calculator.js" },
+      { "from": "index.js", "to": "lib/validator.js" },
+      { "from": "index.js", "to": "lib/formatter.js" },
+      { "from": "index.js", "to": "utils/logger.js" },
+      { "from": "index.js", "to": "utils/config.js" }
+    ]
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "name": "codeatlas",
+  "version": "1.0.0",
+  "description": "Visualize any codebase in 5 minutes. Local-first, AI-powered architecture analysis.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Stanshy/CodeAtlas.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/Stanshy/CodeAtlas",
+  "keywords": ["codebase", "visualization", "architecture", "analysis", "cli", "ai", "code-analysis", "dependency-graph"],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "codeatlas": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/static": "^9.0.0",
+    "commander": "^12.1.0",
+    "fastify": "^5.8.4"
+  },
+  "devDependencies": {
+    "@codeatlas/core": "workspace:*"
+  }
+}
