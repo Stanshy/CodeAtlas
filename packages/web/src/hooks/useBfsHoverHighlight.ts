@@ -53,7 +53,7 @@ export function useBfsHoverHighlight(
 
     let qi = 0;
     while (qi < queue.length) {
-      const { nodeId, depth } = queue[qi++]!;
+      const { nodeId, depth } = queue[qi++];
       if (depth >= maxDepth) continue;
 
       // Forward edges (source → target)

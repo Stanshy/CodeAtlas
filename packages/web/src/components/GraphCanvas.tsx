@@ -407,7 +407,7 @@ export function GraphCanvas({ initialNodes, initialEdges, onNodeClick, onStartE2
     } else {
       setEdges((prev) => {
         const nonCall = prev.filter(
-          (e) => (e.data as NeonEdgeData | undefined)?.edgeType !== 'call',
+          (e) => (e.data)?.edgeType !== 'call',
         );
         return [...nonCall, ...expandedRFEdges];
       });

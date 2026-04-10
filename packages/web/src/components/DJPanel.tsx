@@ -376,7 +376,7 @@ function DJAIResultSection({ endpointId }: { endpointId: string | null }) {
 
   // Succeeded → show result block
   if (status === 'succeeded' && job) {
-    const aiResult = (job.result ?? {}) as Record<string, unknown>;
+    const aiResult = (job.result ?? {});
     const description = typeof aiResult.description === 'string' ? aiResult.description
       : typeof aiResult.summary === 'string' ? aiResult.summary : undefined;
     const provider = typeof aiResult.provider === 'string' ? aiResult.provider : undefined;

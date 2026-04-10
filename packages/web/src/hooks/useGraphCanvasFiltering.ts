@@ -68,10 +68,10 @@ export function useGraphCanvasFiltering({
   const rawGraphNodes = useMemo<GraphNode[]>(
     () => initialNodes.map((n) => ({
       id: n.id,
-      type: (n.data as NeonNodeData).nodeType,
-      label: (n.data as NeonNodeData).label,
-      filePath: (n.data as NeonNodeData).filePath,
-      metadata: (n.data as NeonNodeData).metadata,
+      type: (n.data).nodeType,
+      label: (n.data).label,
+      filePath: (n.data).filePath,
+      metadata: (n.data).metadata,
     })),
     [initialNodes],
   );
@@ -81,8 +81,8 @@ export function useGraphCanvasFiltering({
       id: e.id,
       source: e.source,
       target: e.target,
-      type: (e.data as NeonEdgeData | undefined)?.edgeType ?? 'import',
-      metadata: (e.data as NeonEdgeData | undefined)?.metadata,
+      type: (e.data)?.edgeType ?? 'import',
+      metadata: (e.data)?.metadata,
     })),
     [initialEdges],
   );
@@ -176,7 +176,7 @@ export function useGraphCanvasFiltering({
         const layerW = layer.length * CARD_W + (layer.length - 1) * 60;
         const startX = -layerW / 2;
         for (let i = 0; i < layer.length; i++) {
-          const cat = layer[i]!;
+          const cat = layer[i];
           const cfg = CATEGORY_CONFIG[cat];
           const methods = methodMap.get(cat) ?? [];
           rfNodes.push({
@@ -312,7 +312,7 @@ export function useGraphCanvasFiltering({
         for (let i = 0; i < catNodes.length; i++) {
           const col = i % 2;
           const row = Math.floor(i / 2);
-          const epNode = catNodes[i]!;
+          const epNode = catNodes[i];
           rfNodes.push({
             id: `dj-ep-${epNode.id}`,
             type: 'djSelectorCard' as const,
@@ -351,7 +351,7 @@ export function useGraphCanvasFiltering({
     const perspectiveNodes = initialNodes
       .filter((n) => allowedNodeIds.has(n.id))
       .map((n) => {
-        if (useNeonForDirs && (n.data as NeonNodeData).nodeType === 'directory') {
+        if (useNeonForDirs && (n.data).nodeType === 'directory') {
           return { ...n, type: 'neonNode' };
         }
         return n;

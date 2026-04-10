@@ -191,7 +191,7 @@ function LOAISection({ selectedStep }: { selectedStep: ChainStep }) {
 
   // Succeeded → show result block
   if (status === 'succeeded' && job) {
-    const aiResult = (job.result ?? {}) as Record<string, unknown>;
+    const aiResult = (job.result ?? {});
     const description = typeof aiResult.description === 'string' ? aiResult.description
       : typeof aiResult.summary === 'string' ? aiResult.summary
       : typeof aiResult.oneLineSummary === 'string' ? aiResult.oneLineSummary
@@ -696,7 +696,7 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
         ) : (
           <div style={listStyle}>
             {callers.slice(0, 8).map((n) => {
-              const name = 'label' in n ? n.label : (n as ChainStep).methodName;
+              const name = 'label' in n ? n.label : (n).methodName;
               return <ListItem key={n.id} label={`${name}()`} />;
             })}
             {callers.length > 8 && (
@@ -721,7 +721,7 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
         ) : (
           <div style={listStyle}>
             {callees.slice(0, 8).map((n) => {
-              const name = 'label' in n ? n.label : (n as ChainStep).methodName;
+              const name = 'label' in n ? n.label : (n).methodName;
               return <ListItem key={n.id} label={`${name}()`} />;
             })}
             {callees.length > 8 && (

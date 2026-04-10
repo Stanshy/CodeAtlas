@@ -101,7 +101,7 @@ function assignRanks(
   // BFS to assign ranks
   let qi = 0;
   while (qi < queue.length) {
-    const nodeId = queue[qi++]!;
+    const nodeId = queue[qi++];
     const rank = ranks.get(nodeId) ?? 0;
     for (const child of (children.get(nodeId) ?? [])) {
       const existing = ranks.get(child) ?? -1;
@@ -195,7 +195,7 @@ export const dagreLayoutProvider: LayoutProvider = {
     const ranks = assignRanks(nodes, edges);
 
     // Sprint 12: detect system-framework directoryCard nodes and use SF dimensions
-    const isDirectoryCardGraph = nodes.length > 0 && nodes[0]!.type === 'directoryCard';
+    const isDirectoryCardGraph = nodes.length > 0 && nodes[0].type === 'directoryCard';
     const positions = isDirectoryCardGraph
       ? computePositions(nodes, ranks, SF_NODE_WIDTH, SF_NODE_HEIGHT, SF_NODESEP, SF_RANKSEP, SF_MARGINX, SF_MARGINY)
       : computePositions(nodes, ranks);

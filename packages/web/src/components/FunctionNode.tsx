@@ -50,10 +50,10 @@ function formatParams(params: FunctionParam[] | undefined): string {
 function FunctionNodeInner({ data, selected = false }: NodeProps) {
   const nodeData = data as unknown as NeonNodeData;
   const meta = nodeData.metadata;
-  const params = meta?.parameters as FunctionParam[] | undefined;
-  const returnType = meta?.returnType as string | undefined;
-  const isAsync = meta?.isAsync as boolean | undefined;
-  const isExported = meta?.isExported as boolean | undefined;
+  const params = meta?.parameters;
+  const returnType = meta?.returnType;
+  const isAsync = meta?.isAsync;
+  const isExported = meta?.isExported;
 
   return (
     <div

@@ -74,7 +74,7 @@ function transformEndpointGraph(raw: ApiEndpointGraphRaw): EndpointGraph {
     let prevId = chain.endpointId;
 
     for (let i = 0; i < chain.steps.length; i++) {
-      const step = chain.steps[i]!;
+      const step = chain.steps[i];
       const stepId = `${chain.endpointId}::step-${i}::${step.method}`;
 
       if (!nodeIdSet.has(stepId)) {

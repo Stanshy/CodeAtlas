@@ -161,7 +161,7 @@ function FunctionPanelInner({
     return map;
   }, [allNodes]);
 
-  const params = meta.parameters as FunctionParam[] | undefined;
+  const params = meta.parameters;
   const isClass = node.type === 'class';
 
   return (

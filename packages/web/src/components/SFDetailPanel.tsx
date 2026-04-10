@@ -213,8 +213,8 @@ function FileRow({ filePath, fileId, functions }: FileRowProps) {
             </div>
           )}
           {!loading && displayFunctions.map((fn) => {
-            const methodRole = fn.metadata?.methodRole as string | undefined;
-            const aiSummary = fn.metadata?.aiSummary as string | undefined;
+            const methodRole = fn.metadata?.methodRole;
+            const aiSummary = fn.metadata?.aiSummary;
             return (
               <div
                 key={fn.id}
@@ -600,7 +600,7 @@ function SFAISection({ directoryPath }: { directoryPath: string }) {
 
   // Succeeded → show result
   if (status === 'succeeded' && job) {
-    const aiResult = (job.result ?? {}) as Record<string, unknown>;
+    const aiResult = (job.result ?? {});
     const summary = typeof aiResult.oneLineSummary === 'string' ? aiResult.oneLineSummary
       : typeof aiResult.summary === 'string' ? aiResult.summary : undefined;
     const responsibilities = Array.isArray(aiResult.keyResponsibilities) ? aiResult.keyResponsibilities as string[]
