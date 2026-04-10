@@ -20,16 +20,20 @@ import zhTW from './zh-TW.json';
 // ---------------------------------------------------------------------------
 
 function detectLanguage(): string {
-  // 1. localStorage override
-  const stored = localStorage.getItem('codeatlas-locale');
-  if (stored === 'en' || stored === 'zh-TW') {
-    return stored;
-  }
+  try {
+    // 1. localStorage override
+    const stored = localStorage.getItem('codeatlas-locale');
+    if (stored === 'en' || stored === 'zh-TW') {
+      return stored;
+    }
 
-  // 2. navigator.language mapping
-  const nav = navigator.language ?? '';
-  if (nav === 'zh-TW' || nav === 'zh') {
-    return 'zh-TW';
+    // 2. navigator.language mapping
+    const nav = navigator?.language ?? '';
+    if (nav === 'zh-TW' || nav === 'zh') {
+      return 'zh-TW';
+    }
+  } catch {
+    // SSR or test environment — localStorage may not be available
   }
 
   // 3. Fallback
