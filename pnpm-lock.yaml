@@ -47,9 +47,6 @@ importers:
 
   packages/cli:
     dependencies:
-      '@codeatlas/core':
-        specifier: workspace:*
-        version: link:../core
       '@fastify/static':
         specifier: ^9.0.0
         version: 9.0.0
@@ -59,6 +56,10 @@ importers:
       fastify:
         specifier: ^5.8.4
         version: 5.8.4
+    devDependencies:
+      '@codeatlas/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/core:
     dependencies:
