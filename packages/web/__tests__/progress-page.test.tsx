@@ -188,17 +188,17 @@ describe('ProgressPage — stage bars', () => {
 describe('ProgressPage — running state', () => {
   it('shows cancel button while analysis is running', () => {
     const { container } = renderProgressPage();
-    expect(container.textContent).toContain('取消分析');
+    expect(container.textContent).toContain('Cancel analysis');
   });
 
   it('does not show completed footer while running', () => {
     const { container } = renderProgressPage();
-    expect(container.textContent).not.toContain('分析完成');
+    expect(container.textContent).not.toContain('Analysis complete!');
   });
 
   it('does not show failed block while running', () => {
     const { container } = renderProgressPage();
-    expect(container.textContent).not.toContain('分析失敗');
+    expect(container.textContent).not.toContain('Analysis failed');
   });
 });
 
@@ -216,22 +216,22 @@ describe('ProgressPage — completed state', () => {
 
   it('shows completion message when status is completed', () => {
     const { container } = renderProgressPage();
-    expect(container.textContent).toContain('分析完成');
+    expect(container.textContent).toContain('Analysis complete!');
   });
 
-  it('shows 立即查看 button when completed', () => {
+  it('shows View now button when completed', () => {
     const { container } = renderProgressPage();
-    expect(container.textContent).toContain('立即查看');
+    expect(container.textContent).toContain('View now');
   });
 
   it('does not show cancel button when completed', () => {
     const { container } = renderProgressPage();
-    expect(container.textContent).not.toContain('取消分析');
+    expect(container.textContent).not.toContain('Cancel analysis');
   });
 
   it('does not show failed block when completed', () => {
     const { container } = renderProgressPage();
-    expect(container.textContent).not.toContain('分析失敗');
+    expect(container.textContent).not.toContain('Analysis failed');
   });
 
   it('ProgressStages receives completed status', () => {
@@ -261,17 +261,17 @@ describe('ProgressPage — failed state', () => {
 
   it('shows failure message when status is failed', () => {
     const { container } = renderProgressPage();
-    expect(container.textContent).toContain('分析失敗');
+    expect(container.textContent).toContain('Analysis failed');
   });
 
   it('shows retry button when failed', () => {
     const { container } = renderProgressPage();
-    expect(container.textContent).toContain('重試');
+    expect(container.textContent).toContain('Retry');
   });
 
-  it('shows 返回歡迎頁 button when failed', () => {
+  it('shows Back to welcome button when failed', () => {
     const { container } = renderProgressPage();
-    expect(container.textContent).toContain('返回歡迎頁');
+    expect(container.textContent).toContain('Back to welcome');
   });
 
   it('shows the error message from progress', () => {
@@ -281,12 +281,12 @@ describe('ProgressPage — failed state', () => {
 
   it('does not show cancel button when failed', () => {
     const { container } = renderProgressPage();
-    expect(container.textContent).not.toContain('取消分析');
+    expect(container.textContent).not.toContain('Cancel analysis');
   });
 
   it('does not show completed footer when failed', () => {
     const { container } = renderProgressPage();
-    expect(container.textContent).not.toContain('分析完成');
+    expect(container.textContent).not.toContain('Analysis complete!');
   });
 });
 

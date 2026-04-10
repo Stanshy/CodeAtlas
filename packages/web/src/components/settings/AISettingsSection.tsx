@@ -11,6 +11,7 @@
  */
 
 import { memo, useCallback, useEffect, useState, type CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useViewState } from '../../contexts/ViewStateContext';
 import { THEME } from '../../styles/theme';
 import { postAIConfigure } from '../../api/graph';
@@ -31,6 +32,7 @@ export interface AISettingsSectionProps {
 export const AISettingsSection = memo(function AISettingsSection({
   onShowToast,
 }: AISettingsSectionProps) {
+  const { t } = useTranslation();
   const { state, dispatch } = useViewState();
   const { aiProvider, aiApiKey, enableAiSummary, enableAiRoleClassification, hiddenMethodRoles } = state;
 
@@ -75,21 +77,21 @@ export const AISettingsSection = memo(function AISettingsSection({
           if (result.persisted) {
             onShowToast(
               'success',
-              '設定已儲存',
-              `AI Provider 已切換至 ${result.provider} · 已寫入 .codeatlas.json`,
+              t('ai.settingsSaved'),
+              t('ai.settingsSavedDesc', { provider: result.provider }),
             );
           } else {
             onShowToast(
               'warning',
-              '設定已套用（本次有效）',
-              '無法寫入設定檔，本次執行期間有效。請檢查 .codeatlas.json 權限。',
+              t('ai.settingsApplied'),
+              t('ai.settingsAppliedDesc'),
             );
           }
         } else {
-          onShowToast('error', '設定更新失敗', '無法連線至 API。請重新整理後再試。');
+          onShowToast('error', t('ai.settingsFailed'), t('ai.settingsFailedDesc'));
         }
       } catch {
-        onShowToast('error', '設定更新失敗', '無法連線至 API。請重新整理後再試。');
+        onShowToast('error', t('ai.settingsFailed'), t('ai.settingsFailedDesc'));
       } finally {
         setIsConfiguringProvider(false);
       }
@@ -150,14 +152,14 @@ export const AISettingsSection = memo(function AISettingsSection({
 
       if (response.status === 404) {
         setTestStatus('error');
-        setTestError('測試連線功能需要最新版 CLI');
+        setTestError(t('ai.testNeedsLatestCli'));
         return;
       }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         setTestStatus('error');
-        setTestError(errorData?.message ?? `連線失敗 (${response.status})`);
+        setTestError(errorData?.message ?? t('ai.testConnectionFailed', { status: response.status }));
         return;
       }
 
@@ -166,10 +168,10 @@ export const AISettingsSection = memo(function AISettingsSection({
       clearTimeout(timeoutId);
       if (err instanceof DOMException && err.name === 'AbortError') {
         setTestStatus('error');
-        setTestError('連線逾時，請確認服務是否運行');
+        setTestError(t('ai.testTimeout'));
       } else {
         setTestStatus('error');
-        setTestError('連線失敗，請檢查設定');
+        setTestError(t('ai.testFailed'));
       }
     }
   }, [aiProvider, aiApiKey]);
@@ -242,7 +244,7 @@ export const AISettingsSection = memo(function AISettingsSection({
           fontFamily: THEME.fontUi,
         }}
       >
-        ⭐ 推薦
+        ⭐ {t('ai.recommended')}
       </span>
     ) : null;
 
@@ -264,7 +266,7 @@ export const AISettingsSection = memo(function AISettingsSection({
           fontFamily: THEME.fontUi,
         }}
       >
-        {isLocal ? '🔒 本地處理' : '☁️ 雲端服務'}
+        {isLocal ? `🔒 ${t('ai.localProcessing')}` : `☁️ ${t('ai.cloudService')}`}
       </span>
     </div>
   ) : null;
@@ -315,7 +317,7 @@ export const AISettingsSection = memo(function AISettingsSection({
           btn.style.color = THEME.inkSecondary;
         }}
       >
-        {testStatus === 'testing' ? '測試中...' : '測試連線'}
+        {testStatus === 'testing' ? t('ai.testing') : t('ai.testConnection')}
       </button>
       <span
         style={{
@@ -330,9 +332,9 @@ export const AISettingsSection = memo(function AISettingsSection({
           fontWeight: testStatus === 'success' || testStatus === 'error' ? 500 : 400,
         }}
       >
-        {testStatus === 'idle' && '尚未測試'}
-        {testStatus === 'testing' && '連線測試中...'}
-        {testStatus === 'success' && '✓ 連線成功'}
+        {testStatus === 'idle' && t('ai.notTested')}
+        {testStatus === 'testing' && t('ai.connectionTesting')}
+        {testStatus === 'success' && `✓ ${t('ai.connectionSuccess')}`}
         {testStatus === 'error' && `✗ ${testError}`}
       </span>
     </div>
@@ -340,43 +342,43 @@ export const AISettingsSection = memo(function AISettingsSection({
 
   const featureToggles = (
     <div>
-      <label style={labelStyle}>AI 功能</label>
+      <label style={labelStyle}>{t('ai.features')}</label>
       <div style={toggleRowStyle}>
-        <span style={toggleLabelStyle}>AI 方法摘要</span>
+        <span style={toggleLabelStyle}>{t('ai.methodSummary')}</span>
         <input
           type="checkbox"
           checked={enableAiSummary}
           disabled={isDisabled}
           onChange={(e) => dispatch({ type: 'SET_ENABLE_AI_SUMMARY', enabled: e.target.checked })}
           style={{ cursor: isDisabled ? 'not-allowed' : 'pointer', accentColor: THEME.sfAccent }}
-          aria-label="AI 方法摘要"
+          aria-label={t('ai.methodSummary')}
         />
       </div>
       <div style={toggleRowStyle}>
-        <span style={toggleLabelStyle}>AI 角色分類</span>
+        <span style={toggleLabelStyle}>{t('ai.roleClassification')}</span>
         <input
           type="checkbox"
           checked={enableAiRoleClassification}
           disabled={isDisabled}
           onChange={(e) => dispatch({ type: 'SET_ENABLE_AI_ROLE_CLASSIFICATION', enabled: e.target.checked })}
           style={{ cursor: isDisabled ? 'not-allowed' : 'pointer', accentColor: THEME.sfAccent }}
-          aria-label="AI 角色分類"
+          aria-label={t('ai.roleClassification')}
         />
       </div>
     </div>
   );
 
-  const ROLE_OPTIONS: Array<{ value: string; label: string }> = [
-    { value: 'utility', label: '工具函式' },
-    { value: 'framework_glue', label: '框架膠水' },
-    { value: 'infra', label: '基礎設施' },
-    { value: 'validation', label: '輸入驗證' },
-    { value: 'io_adapter', label: 'I/O 轉接' },
+  const ROLE_OPTIONS: Array<{ value: string; labelKey: string }> = [
+    { value: 'utility', labelKey: 'ai.roleUtility' },
+    { value: 'framework_glue', labelKey: 'ai.roleFrameworkGlue' },
+    { value: 'infra', labelKey: 'ai.roleInfra' },
+    { value: 'validation', labelKey: 'ai.roleValidation' },
+    { value: 'io_adapter', labelKey: 'ai.roleIoAdapter' },
   ];
 
   const hiddenRolesSection = (
     <div>
-      <label style={labelStyle}>LO 視角隱藏角色</label>
+      <label style={labelStyle}>{t('ai.loHiddenRoles')}</label>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {ROLE_OPTIONS.map((role) => (
           <label
@@ -399,7 +401,7 @@ export const AISettingsSection = memo(function AISettingsSection({
               style={{ cursor: 'pointer', accentColor: THEME.sfAccent, flexShrink: 0 }}
             />
             <span>{role.value}</span>
-            <span style={{ color: THEME.inkMuted, fontSize: 11 }}>({role.label})</span>
+            <span style={{ color: THEME.inkMuted, fontSize: 11 }}>({t(role.labelKey)})</span>
           </label>
         ))}
       </div>
@@ -414,7 +416,7 @@ export const AISettingsSection = memo(function AISettingsSection({
     <div style={{ padding: '4px 14px 8px', display: 'flex', flexDirection: 'column', gap: 10 }}>
       {/* Provider Select */}
       <div>
-        <label style={labelStyle}>AI 提供者</label>
+        <label style={labelStyle}>{t('ai.provider')}</label>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <select
             value={aiProvider}
@@ -431,8 +433,8 @@ export const AISettingsSection = memo(function AISettingsSection({
             <option value="claude-code">Claude Code CLI</option>
             <option value="gemini">Gemini (Google)</option>
             <option value="openai">OpenAI (GPT)</option>
-            <option value="ollama">Ollama (本地)</option>
-            <option value="disabled">停用</option>
+            <option value="ollama">{t('ai.ollamaLocal')}</option>
+            <option value="disabled">{t('ai.disabled')}</option>
           </select>
           {recommendBadge(aiProvider)}
         </div>

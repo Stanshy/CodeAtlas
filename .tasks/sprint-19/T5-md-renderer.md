@@ -7,12 +7,12 @@
 | Sprint | Sprint 19 |
 | 指派給 | backend-architect |
 | 優先級 | P0 |
-| 狀態 | in_review |
+| 狀態 | done |
 | 依賴 | T2,T4 |
 | 預估 | 2h |
 | 建立時間 | 2026-04-08T07:25:25.000Z |
 | 開始時間 | 2026-04-08T08:07:49.005Z |
-| 完工時間 | 2026-04-08T08:10:03.510Z |
+| 完工時間 | 2026-04-09T09:30:00.000Z |
 
 ---
 
@@ -57,3 +57,6 @@
 
 ### 2026-04-08T08:10:03.510Z — 狀態變更 → in_review
 md-renderer.ts 實作完成：純函式 renderMarkdown() 將 WikiNode + NodeLinks 轉為完整 .md 字串，含 YAML frontmatter（所有字串值 YAML-safe 引號）、四種 type 共用模板、空 section 自動省略、viewAnchors See Also 區塊 + HTML comment metadata。tsc --noEmit 無新增錯誤（唯一錯誤為 graph-builder.ts 既有問題）。
+
+### 2026-04-09T09:30:00.000Z — 狀態變更 → done（補登）
+Sprint 19 已完成（G3 附條件通過）。L1 補登任務完成狀態。

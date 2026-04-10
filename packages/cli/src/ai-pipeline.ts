@@ -38,6 +38,7 @@ import type {
   DirectoryInfo,
   MethodRole,
   StepDetail,
+  Locale,
 } from '@codeatlas/core';
 import { PersistentAICache, computeContentHash } from './ai-cache.js';
 
@@ -92,6 +93,8 @@ export interface PipelineOptions {
   ollamaModel?: string | undefined;
   /** PersistentAICache to read from and write results to */
   cache: PersistentAICache;
+  /** Locale for AI prompt output language. Default: 'en' */
+  locale?: import('@codeatlas/core').Locale;
 }
 
 // Prompt versions — bump these when the prompt template changes so that
@@ -113,6 +116,7 @@ export async function runPhase1MethodBatch(
   analysis: AnalysisResult,
   aiProvider: AIAnalysisProvider,
   cache: PersistentAICache,
+  _locale: Locale = 'en',
 ): Promise<void> {
   const functionNodes = analysis.graph.nodes.filter(
     (n) => n.type === 'function' && n.metadata?.parentFileId,
@@ -215,6 +219,7 @@ export async function runPhase2DirectorySummaries(
   aiProvider: AIAnalysisProvider,
   cache: PersistentAICache,
   targetDirPath?: string,
+  locale: Locale = 'en',
 ): Promise<void> {
   const fileNodes = analysis.graph.nodes.filter(
     (n) => n.metadata?.parentFileId === undefined,
@@ -254,7 +259,7 @@ export async function runPhase2DirectorySummaries(
       };
 
       const directoryContext = buildLargeContext(directoryInfo, 'medium');
-      const prompt = buildDirectorySummaryPrompt(directoryContext, dirNode.id);
+      const prompt = buildDirectorySummaryPrompt(directoryContext, dirNode.id, locale);
 
       // Use rawPrompt to avoid legacy buildPrompt() wrapping an English system
       // message around our Chinese prompt template.
@@ -334,6 +339,7 @@ export async function runPhase3EndpointAnalysis(
   aiProvider: AIAnalysisProvider,
   cache: PersistentAICache,
   targetEndpointId?: string,
+  locale: Locale = 'en',
 ): Promise<void> {
   const endpointGraph = detectEndpoints(analysis);
   if (!endpointGraph) return;
@@ -376,6 +382,7 @@ export async function runPhase3EndpointAnalysis(
           endpoint.id,
           endpoint.method,
           endpoint.path,
+          locale,
         );
 
         const rawEndpoint = await withTimeout(
@@ -459,7 +466,7 @@ export async function runPhase3EndpointAnalysis(
             methodId: `${s.fileId}#${s.method}`,
           }));
 
-          const stepPrompt = buildStepDetailPrompt(context, stepsInput);
+          const stepPrompt = buildStepDetailPrompt(context, stepsInput, locale);
           const rawSteps = await withTimeout(
             aiProvider.rawPrompt(stepPrompt),
             PER_ITEM_TIMEOUT_MS,
@@ -521,6 +528,7 @@ export async function runPhase3EndpointAnalysis(
  */
 export async function runAIPipeline(options: PipelineOptions): Promise<void> {
   const { analysis, providerName, apiKey, ollamaModel, cache } = options;
+  const locale: Locale = options.locale ?? 'en';
 
   const provider = createProvider(
     providerName,
@@ -535,9 +543,9 @@ export async function runAIPipeline(options: PipelineOptions): Promise<void> {
   const aiProvider = provider as unknown as AIAnalysisProvider;
 
   try {
-    await runPhase1MethodBatch(analysis, aiProvider, cache);
-    await runPhase2DirectorySummaries(analysis, aiProvider, cache);
-    await runPhase3EndpointAnalysis(analysis, aiProvider, cache);
+    await runPhase1MethodBatch(analysis, aiProvider, cache, locale);
+    await runPhase2DirectorySummaries(analysis, aiProvider, cache, undefined, locale);
+    await runPhase3EndpointAnalysis(analysis, aiProvider, cache, undefined, locale);
   } catch (err) {
     console.error('[AI Pipeline] Fatal error:', err instanceof Error ? err.message : String(err));
   }

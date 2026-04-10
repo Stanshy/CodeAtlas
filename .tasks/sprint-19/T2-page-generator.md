@@ -7,12 +7,12 @@
 | Sprint | Sprint 19 |
 | 指派給 | backend-architect |
 | 優先級 | P0 |
-| 狀態 | assigned |
+| 狀態 | done |
 | 依賴 | T1 |
 | 預估 | 2h |
 | 建立時間 | 2026-04-08T07:25:25.000Z |
 | 開始時間 | — |
-| 完工時間 | — |
+| 完工時間 | 2026-04-09T09:30:00.000Z |
 
 ---
 
@@ -32,11 +32,11 @@
 
 ## 驗收標準
 
-- [ ] fixture 專案產出正確 WikiNode[]
-- [ ] 四種 type 都有產出
-- [ ] canonical id 格式正確
-- [ ] slug 格式正確且全域唯一
-- [ ] viewAnchors 正確填充
+- [x] fixture 專案產出正確 WikiNode[]
+- [x] 四種 type 都有產出
+- [x] canonical id 格式正確
+- [x] slug 格式正確且全域唯一
+- [x] viewAnchors 正確填充
 
 ---
 
@@ -44,3 +44,6 @@
 
 ### 2026-04-08T07:25:25.000Z — 建立任務（assigned）
 由 L1 透過 /task-delegation 建立
+
+### 2026-04-09T09:30:00.000Z — 狀態變更 → done（補登）
+Sprint 19 已完成（G3 附條件通過）。L1 補登任務完成狀態。

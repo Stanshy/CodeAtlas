@@ -18,6 +18,7 @@
  */
 
 import fs from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   analyze,
@@ -30,7 +31,9 @@ import type {
   AnalysisResult,
   WikiExportOptions,
   WikiExporterInput,
+  Locale,
 } from '@codeatlas/core';
+import { setLocale, t } from '../i18n.js';
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -39,6 +42,8 @@ import type {
 export interface WikiCommandOptions {
   /** Override output directory. Defaults to `<target>/.codeatlas/wiki`. */
   output?: string;
+  /** Output locale. Priority: --lang flag > .codeatlas.json locale > CODEATLAS_LANG env > 'en' */
+  lang?: string;
 }
 
 /**
@@ -65,10 +70,14 @@ export async function wikiCommand(
     process.exit(1);
   }
 
-  console.log('CodeAtlas v0.1.0');
+  // --- Resolve locale: --lang flag > .codeatlas.json locale > CODEATLAS_LANG env > 'en' ---
+  const locale: Locale = resolveLocaleForWiki(options.lang, resolvedPath);
+  setLocale(locale);
+
+  console.log(t('cli.version'));
   console.log('');
-  console.log('📚 Wiki 知識輸出');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(t('cli.wiki.heading'));
+  console.log(t('cli.wiki.separator'));
 
   // --- Step 1: Obtain AnalysisResult ---
   // Try reading a cached analysis.json first to avoid re-scanning large projects.
@@ -93,7 +102,7 @@ export async function wikiCommand(
   }
 
   if (usedCache) {
-    console.log(`Using cached analysis from .codeatlas/analysis.json`);
+    console.log(t('cli.wiki.usingCache'));
   }
 
   // --- Step 2: Build directory graph and endpoint graph ---
@@ -126,9 +135,9 @@ export async function wikiCommand(
   );
 
   if (!aiProvider.isConfigured()) {
-    console.error('Error: AI provider is not configured.');
-    console.error('Wiki knowledge export requires an active AI provider.');
-    console.error('Configure one in .codeatlas.json or use `codeatlas web` → Settings.');
+    console.error(t('cli.wiki.noAiProvider'));
+    console.error(t('cli.wiki.noAiProviderDetail'));
+    console.error(t('cli.wiki.noAiProviderHint'));
     process.exit(1);
   }
 
@@ -145,6 +154,7 @@ export async function wikiCommand(
 
   const exportOptions: WikiExportOptions = {
     outputDir: wikiOutputDir,
+    locale,
   };
 
   let exportResult;
@@ -196,13 +206,13 @@ export async function wikiCommand(
   const coveragePct = (stats.coverage * 100).toFixed(1);
   const relativeOutput = path.relative(process.cwd(), wikiOutputDir) || wikiOutputDir;
 
-  console.log(`Pages:     ${stats.pageCount}`);
-  console.log(`Links:     ${stats.linkCount}`);
-  console.log(`Dead links: ${stats.deadLinks}`);
-  console.log(`Coverage:  ${coveragePct}%`);
+  console.log(`${t('cli.wiki.pages')}     ${stats.pageCount}`);
+  console.log(`${t('cli.wiki.links')}     ${stats.linkCount}`);
+  console.log(`${t('cli.wiki.deadLinks')} ${stats.deadLinks}`);
+  console.log(`${t('cli.wiki.coverage')}  ${coveragePct}%`);
   console.log('');
-  console.log(`Output: ${relativeOutput}/`);
-  console.log('✅ Wiki export complete!');
+  console.log(`${t('cli.wiki.output')} ${relativeOutput}/`);
+  console.log(t('cli.wiki.complete'));
 }
 
 // ---------------------------------------------------------------------------
@@ -221,4 +231,30 @@ async function runAnalysis(projectPath: string): Promise<AnalysisResult> {
     console.error(`Error: Analysis failed — ${message}`);
     process.exit(1);
   }
+}
+
+/**
+ * Resolve output locale with the priority chain:
+ *   --lang flag > .codeatlas.json locale field > CODEATLAS_LANG env > 'en'
+ */
+function resolveLocaleForWiki(langFlag: string | undefined, projectPath: string): Locale {
+  // 1. --lang flag
+  if (langFlag === 'zh-TW' || langFlag === 'en') return langFlag;
+
+  // 2. .codeatlas.json locale field
+  const configPath = path.join(projectPath, '.codeatlas.json');
+  try {
+    const raw = readFileSync(configPath, 'utf-8');
+    const config = JSON.parse(raw) as Record<string, unknown>;
+    if (config.locale === 'zh-TW' || config.locale === 'en') return config.locale;
+  } catch {
+    // File missing or malformed — continue to next priority
+  }
+
+  // 3. CODEATLAS_LANG env var
+  const envLang = process.env.CODEATLAS_LANG;
+  if (envLang === 'zh-TW' || envLang === 'en') return envLang;
+
+  // 4. Default
+  return 'en';
 }

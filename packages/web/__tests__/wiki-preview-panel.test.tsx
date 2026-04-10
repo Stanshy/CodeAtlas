@@ -86,8 +86,7 @@ describe('WikiPreviewPanel — empty state', () => {
     const { container } = render(
       React.createElement(WikiPreviewPanel, makeProps({ selectedNode: null })),
     );
-    // The Chinese text for "select node" is "選取節點"
-    expect(container.textContent).toContain('選取節點');
+    expect(container.textContent).toContain('Select a node to preview');
   });
 
   it('has the Wiki 預覽面板 aria-label', () => {
@@ -113,8 +112,7 @@ describe('WikiPreviewPanel — node selected', () => {
     const { container } = render(
       React.createElement(WikiPreviewPanel, makeProps({ selectedNode })),
     );
-    // AI deep analysis button text
-    expect(container.textContent).toContain('AI 深度分析');
+    expect(container.textContent).toContain('AI Deep Analysis');
   });
 
   it('renders the type badge for the selected node', () => {

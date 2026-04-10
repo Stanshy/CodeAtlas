@@ -23,8 +23,8 @@ core/types.ts 新增 AnalysisProgress、StageProgress、ServerMode、ValidateRes
 
 ## 驗收標準
 
-- [ ] 型別可被 cli 和 web 引用
-- [ ] pnpm build 零錯誤
+- [x] 型別可被 cli 和 web 引用
+- [x] pnpm build 零錯誤
 
 ---
 

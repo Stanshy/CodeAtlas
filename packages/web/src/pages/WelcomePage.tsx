@@ -13,8 +13,56 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ProjectInput } from '../components/ProjectInput';
 import { RecentProjects } from '../components/RecentProjects';
+import i18n from '../locales';
+
+// ---------------------------------------------------------------------------
+// Language Toggle
+// ---------------------------------------------------------------------------
+
+function LanguageToggle({ isDark }: { isDark: boolean }) {
+  const { i18n: i18nHook } = useTranslation();
+  const { t } = useTranslation();
+  const current = i18nHook.language;
+
+  const toggle = () => {
+    const next = current === 'zh-TW' ? 'en' : 'zh-TW';
+    void i18n.changeLanguage(next);
+    localStorage.setItem('codeatlas-locale', next);
+  };
+
+  const style: React.CSSProperties = {
+    position: 'absolute',
+    top: 16,
+    right: 20,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+    padding: '4px 10px',
+    borderRadius: 20,
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: 'pointer',
+    fontFamily: "'Inter', sans-serif",
+    background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+    border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}`,
+    color: isDark ? '#a0a0c0' : '#6666aa',
+    userSelect: 'none',
+  };
+
+  return (
+    <button
+      type="button"
+      style={style}
+      onClick={toggle}
+      aria-label={t('welcome.languageToggleAriaLabel')}
+    >
+      🌐 {current === 'zh-TW' ? 'EN' : '中'}
+    </button>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // AI Setup Block
@@ -26,6 +74,7 @@ interface AiSetupBlockProps {
 }
 
 function AiSetupBlock({ isDark, onDismiss }: AiSetupBlockProps) {
+  const { t } = useTranslation();
   const [provider, setProvider] = useState('anthropic');
   const [apiKey, setApiKey] = useState('');
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success'>('idle');
@@ -194,10 +243,10 @@ function AiSetupBlock({ isDark, onDismiss }: AiSetupBlockProps) {
     <div style={blockStyle}>
       <div style={titleStyle}>
         <span>✨</span>
-        設定 AI 分析（推薦）
+        {t('welcome.setupAiTitle')}
       </div>
       <p style={descStyle}>
-        AI 分析可以幫助你更快理解專案架構，選擇一個 AI 提供者：
+        {t('welcome.setupAiDesc')}
       </p>
 
       <div style={rowStyle}>
@@ -205,18 +254,18 @@ function AiSetupBlock({ isDark, onDismiss }: AiSetupBlockProps) {
           style={selectStyle}
           value={provider}
           onChange={(e) => { setProvider(e.target.value); setTestStatus('idle'); setSaveStatus('idle'); }}
-          aria-label="選擇 AI 提供者"
+          aria-label={t('welcome.selectAiProvider')}
         >
           <option value="anthropic">Claude (Anthropic)</option>
           <option value="claude-code">Claude Code CLI</option>
           <option value="gemini">Gemini (Google)</option>
           <option value="openai">OpenAI (GPT)</option>
-          <option value="ollama">Ollama (本地)</option>
-          <option value="disabled">停用</option>
+          <option value="ollama">{t('welcome.ollamaLocal')}</option>
+          <option value="disabled">{t('welcome.disabled')}</option>
         </select>
 
-        {provider === 'ollama' && <span style={badgePrivateStyle}>🔒 本地處理</span>}
-        {provider === 'anthropic' && <span style={badgeRecommendStyle}>⭐ 推薦</span>}
+        {provider === 'ollama' && <span style={badgePrivateStyle}>🔒 {t('welcome.localProcessing')}</span>}
+        {provider === 'anthropic' && <span style={badgeRecommendStyle}>⭐ {t('welcome.recommended')}</span>}
       </div>
 
       {/* API Key input — only for cloud providers */}
@@ -226,7 +275,7 @@ function AiSetupBlock({ isDark, onDismiss }: AiSetupBlockProps) {
             type="password"
             value={apiKey}
             onChange={(e) => { setApiKey(e.target.value); setTestStatus('idle'); setSaveStatus('idle'); }}
-            placeholder="輸入 API Key"
+            placeholder={t('welcome.enterApiKey')}
             aria-label="API Key"
             style={{
               ...selectStyle,
@@ -247,17 +296,17 @@ function AiSetupBlock({ isDark, onDismiss }: AiSetupBlockProps) {
           onClick={handleTestConnection}
           disabled={testStatus === 'testing' || (needsApiKey && !apiKey)}
         >
-          {testStatus === 'testing' ? '測試中...' : '測試連線'}
+          {testStatus === 'testing' ? t('welcome.testing') : t('welcome.testConnection')}
         </button>
         {testStatus === 'success' && (
           <span style={{ fontSize: 12, color: isDark ? '#4ade80' : '#16a34a', fontWeight: 500 }}>
-            ✓ 連線成功
+            ✓ {t('welcome.connectionSuccess')}
           </span>
         )}
       </div>
 
       <div style={footerStyle}>
-        <button type="button" style={ghostBtnStyle} onClick={handleSkip}>跳過</button>
+        <button type="button" style={ghostBtnStyle} onClick={handleSkip}>{t('welcome.skip')}</button>
         <button
           type="button"
           style={primaryBtnStyle}
@@ -266,7 +315,7 @@ function AiSetupBlock({ isDark, onDismiss }: AiSetupBlockProps) {
           onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#1565c0'; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#1976d2'; }}
         >
-          {saveStatus === 'saving' ? '儲存中...' : saveStatus === 'saved' ? '✓ 已儲存' : '儲存設定'}
+          {saveStatus === 'saving' ? t('welcome.saving') : saveStatus === 'saved' ? `✓ ${t('welcome.saved')}` : t('welcome.saveSettings')}
         </button>
       </div>
     </div>
@@ -305,6 +354,7 @@ function LogoMark() {
 // ---------------------------------------------------------------------------
 
 export function WelcomePage() {
+  const { t } = useTranslation();
   // Welcome page uses light theme (white-paper style per G1 mockup).
   // The analysis page (graph view) remains dark.
   const isDark = false;
@@ -361,11 +411,14 @@ export function WelcomePage() {
 
   return (
     <div style={pageStyle}>
+      {/* Language toggle — top-right corner */}
+      <LanguageToggle isDark={isDark} />
+
       {/* Logo */}
       <div style={logoAreaStyle}>
         <LogoMark />
         <h1 style={logoNameStyle}>CodeAtlas</h1>
-        <p style={logoSubStyle}>讓任何人在 5 分鐘內看懂一個專案</p>
+        <p style={logoSubStyle}>{t('welcome.tagline')}</p>
       </div>
 
       {/* Path input */}
@@ -378,7 +431,7 @@ export function WelcomePage() {
       {showAiSetup && <AiSetupBlock isDark={isDark} onDismiss={() => setShowAiSetup(false)} />}
 
       {/* Version */}
-      <p style={versionStyle}>CodeAtlas v20.0.0</p>
+      <p style={versionStyle}>{t('welcome.version')}</p>
     </div>
   );
 }

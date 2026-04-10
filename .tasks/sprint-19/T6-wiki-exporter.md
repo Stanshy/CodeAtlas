@@ -7,12 +7,12 @@
 | Sprint | Sprint 19 |
 | 指派給 | backend-architect |
 | 優先級 | P0 |
-| 狀態 | assigned |
+| 狀態 | done |
 | 依賴 | T2,T3,T4,T5 |
 | 預估 | 2h |
 | 建立時間 | 2026-04-08T07:25:25.000Z |
 | 開始時間 | — |
-| 完工時間 | — |
+| 完工時間 | 2026-04-09T09:30:00.000Z |
 
 ---
 
@@ -34,11 +34,11 @@
 
 ## 驗收標準
 
-- [ ] `codeatlas wiki` 端到端產出 .md 檔案群
-- [ ] wiki-manifest.json 正確產出
-- [ ] dead links = 0
-- [ ] coverage ≥ 80%
-- [ ] 統計報告正確
+- [x] `codeatlas wiki` 端到端產出 .md 檔案群
+- [x] wiki-manifest.json 正確產出
+- [x] dead links = 0
+- [x] coverage ≥ 80%
+- [x] 統計報告正確
 
 ---
 
@@ -46,3 +46,6 @@
 
 ### 2026-04-08T07:25:25.000Z — 建立任務（assigned）
 由 L1 透過 /task-delegation 建立
+
+### 2026-04-09T09:30:00.000Z — 狀態變更 → done（補登）
+Sprint 19 已完成（G3 附條件通過）。L1 補登任務完成狀態。

@@ -61,12 +61,12 @@ function renderGroup(
 describe('LOCategoryGroup — empty state', () => {
   it('shows empty state message when no function nodes are provided', () => {
     renderGroup([]);
-    expect(screen.getByText('未偵測到方法節點')).toBeTruthy();
+    expect(screen.getByText('No method nodes detected')).toBeTruthy();
   });
 
   it('shows hint text in empty state', () => {
     renderGroup([]);
-    expect(screen.getByText('請確保專案包含函式或方法定義')).toBeTruthy();
+    expect(screen.getByText('Ensure the project contains function or method definitions')).toBeTruthy();
   });
 
   it('does not show category cards in empty state', () => {
@@ -91,12 +91,12 @@ describe('LOCategoryGroup — category rendering', () => {
       makeNode('n5', 'formatDate', 'src/utils/date.ts'),
     ];
     const { container } = renderGroup(nodes);
-    // All 5 category labels should appear (localized to Chinese in Sprint 13+)
-    expect(container.textContent).toContain('路線 / API');
-    expect(container.textContent).toContain('中間層');
-    expect(container.textContent).toContain('服務');
-    expect(container.textContent).toContain('模型 / 資料庫');
-    expect(container.textContent).toContain('工具 / 任務');
+    // All 5 category labels should appear (localized via i18n)
+    expect(container.textContent).toContain('Routes / API');
+    expect(container.textContent).toContain('Middleware');
+    expect(container.textContent).toContain('Services');
+    expect(container.textContent).toContain('Models / Database');
+    expect(container.textContent).toContain('Utils / Tasks');
   });
 
   it('shows method count badge in category header', () => {
@@ -184,8 +184,8 @@ describe('LOCategoryGroup — collapse behavior', () => {
       makeNode(`n${i}`, `method${i}`, 'src/routes/api.ts'),
     );
     const { container } = renderGroup(nodes);
-    // Expect "展開更多" text to appear
-    expect(container.textContent).toContain('展開更多');
+    // Expect "Expand more" text to appear
+    expect(container.textContent).toContain('Expand more');
   });
 
   it('does not show expand toggle when group has 5 or fewer methods', () => {
@@ -193,7 +193,7 @@ describe('LOCategoryGroup — collapse behavior', () => {
       makeNode(`n${i}`, `method${i}`, 'src/routes/api.ts'),
     );
     const { container } = renderGroup(nodes);
-    expect(container.textContent).not.toContain('展開更多');
+    expect(container.textContent).not.toContain('Expand more');
   });
 
   it('expands group to show all methods when toggle is clicked', () => {
@@ -203,9 +203,9 @@ describe('LOCategoryGroup — collapse behavior', () => {
     const { container } = renderGroup(nodes);
     // Find the innermost div whose textContent contains "展開更多" (the direct toggle row)
     const allDivs = Array.from(container.querySelectorAll('div'));
-    // Get the div with the smallest textContent length that includes "展開更多"
+    // Get the div with the smallest textContent length that includes "Expand more"
     const toggleEl = allDivs
-      .filter((el) => el.textContent?.includes('展開更多'))
+      .filter((el) => el.textContent?.includes('Expand more'))
       .sort((a, b) => (a.textContent?.length ?? 0) - (b.textContent?.length ?? 0))[0];
     expect(toggleEl).toBeTruthy();
     fireEvent.click(toggleEl!);
@@ -222,10 +222,10 @@ describe('LOCategoryGroup — collapse behavior', () => {
     const { container } = renderGroup(nodes);
     const allDivs = Array.from(container.querySelectorAll('div'));
     const toggleEl = allDivs
-      .filter((el) => el.textContent?.includes('展開更多'))
+      .filter((el) => el.textContent?.includes('Expand more'))
       .sort((a, b) => (a.textContent?.length ?? 0) - (b.textContent?.length ?? 0))[0];
     fireEvent.click(toggleEl!);
-    expect(container.textContent).toContain('收起');
+    expect(container.textContent).toContain('Collapse');
   });
 });
 

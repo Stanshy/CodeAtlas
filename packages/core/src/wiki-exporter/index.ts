@@ -60,6 +60,8 @@ export interface WikiExportOptions {
   coreMethodsOnly?: boolean;
   /** ISO timestamp override for testing. Default: new Date().toISOString() */
   generatedAt?: string;
+  /** Output locale for wiki content. Default: 'en' */
+  locale?: import('../types.js').Locale;
 }
 
 export interface WikiExporterInput {
@@ -174,7 +176,7 @@ export async function exportWiki(
     // resolveLinks guarantees every node has an entry, but guard defensively.
     if (nodeLinks === undefined) continue;
 
-    const content = renderMarkdown(node, nodeLinks, { generatedAt });
+    const content = renderMarkdown(node, nodeLinks, { generatedAt, locale: options?.locale ?? 'en' });
     mdFiles.push({ path: node.mdPath, content });
   }
 

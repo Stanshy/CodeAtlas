@@ -15,6 +15,9 @@ export type NodeRole = 'business-logic' | 'cross-cutting' | 'infrastructure' | '
 // Sprint 18: Multi-language support
 export type SupportedLanguage = 'javascript' | 'typescript' | 'python' | 'java';
 
+// Sprint 21: i18n locale support
+export type Locale = 'en' | 'zh-TW';
+
 // Sprint 7: function parameter descriptor
 export interface FunctionParam {
   name: string;

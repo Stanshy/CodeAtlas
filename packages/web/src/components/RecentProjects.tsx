@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppState } from '../contexts/AppStateContext';
 
 // ---------------------------------------------------------------------------
@@ -27,16 +28,16 @@ interface RecentProject {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function relativeTime(iso: string): string {
+function relativeTime(iso: string, t: (key: string, opts?: Record<string, unknown>) => string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const minutes = Math.floor(diff / 60_000);
-  if (minutes < 1)  return '剛才';
-  if (minutes < 60) return `${minutes} 分鐘前`;
+  if (minutes < 1)  return t('recentProjects.justNow');
+  if (minutes < 60) return t('recentProjects.minutesAgo', { count: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24)   return `${hours} 小時前`;
+  if (hours < 24)   return t('recentProjects.hoursAgo', { count: hours });
   const days = Math.floor(hours / 24);
-  if (days === 1)   return '昨天';
-  return `${days} 天前`;
+  if (days === 1)   return t('recentProjects.yesterday');
+  return t('recentProjects.daysAgo', { count: days });
 }
 
 const LANG_MAP: Record<string, { label: string; bg: string; color: string; border: string }> = {
@@ -79,6 +80,7 @@ interface RecentProjectsProps {
 // ---------------------------------------------------------------------------
 
 export function RecentProjects({ isDark = true }: RecentProjectsProps) {
+  const { t } = useTranslation();
   const { startAnalysis, setPage } = useAppState();
   const [projects, setProjects] = useState<RecentProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -162,8 +164,8 @@ export function RecentProjects({ isDark = true }: RecentProjectsProps) {
   if (isLoading) {
     return (
       <div style={sectionStyle}>
-        <p style={headerStyle}>最近開啟的專案</p>
-        <div style={emptyStyle}>載入中...</div>
+        <p style={headerStyle}>{t('recentProjects.title')}</p>
+        <div style={emptyStyle}>{t('recentProjects.loading')}</div>
       </div>
     );
   }
@@ -173,9 +175,9 @@ export function RecentProjects({ isDark = true }: RecentProjectsProps) {
   if (projects.length === 0) {
     return (
       <div style={sectionStyle}>
-        <p style={headerStyle}>最近開啟的專案</p>
+        <p style={headerStyle}>{t('recentProjects.title')}</p>
         <div style={emptyStyle}>
-          尚無最近開啟的專案，輸入路徑開始你的第一個分析
+          {t('recentProjects.empty')}
         </div>
       </div>
     );
@@ -185,7 +187,7 @@ export function RecentProjects({ isDark = true }: RecentProjectsProps) {
 
   return (
     <div style={sectionStyle}>
-      <p style={headerStyle}>最近開啟的專案</p>
+      <p style={headerStyle}>{t('recentProjects.title')}</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {projects.map((project, index) => (
           <RecentItem
@@ -217,6 +219,7 @@ interface RecentItemProps {
 }
 
 function RecentItem({ project, isDark, isOpening, onOpen, onDelete }: RecentItemProps) {
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
 
   const itemStyle: React.CSSProperties = {
@@ -319,7 +322,7 @@ function RecentItem({ project, isDark, isOpening, onOpen, onDelete }: RecentItem
       onKeyDown={(e) => { if (e.key === 'Enter') onOpen(); }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      aria-label={`開啟 ${project.name}`}
+      aria-label={t('recentProjects.openAriaLabel', { name: project.name })}
     >
       {/* Folder icon */}
       <span style={{ fontSize: 18, flexShrink: 0 }}>📁</span>
@@ -340,9 +343,9 @@ function RecentItem({ project, isDark, isOpening, onOpen, onDelete }: RecentItem
           </div>
         )}
         {project.stats && (
-          <span style={fileCountStyle}>{project.stats.fileCount} 檔案</span>
+          <span style={fileCountStyle}>{t('recentProjects.fileCount', { count: project.stats.fileCount })}</span>
         )}
-        <span style={timeStyle}>{relativeTime(project.lastOpened)}</span>
+        <span style={timeStyle}>{relativeTime(project.lastOpened, t)}</span>
 
         {/* Open button */}
         <button
@@ -350,7 +353,7 @@ function RecentItem({ project, isDark, isOpening, onOpen, onDelete }: RecentItem
           style={openBtnStyle}
           onClick={(e) => { e.stopPropagation(); onOpen(); }}
           disabled={isOpening}
-          aria-label={`開啟 ${project.name}`}
+          aria-label={t('recentProjects.openAriaLabel', { name: project.name })}
           onMouseEnter={(e) => {
             if (!isOpening) {
               (e.currentTarget as HTMLButtonElement).style.background =
@@ -365,7 +368,7 @@ function RecentItem({ project, isDark, isOpening, onOpen, onDelete }: RecentItem
               isDark ? '#3a3a5a' : '#d0d0d8';
           }}
         >
-          {isOpening ? '開啟中...' : '開啟'}
+          {isOpening ? t('recentProjects.opening') : t('recentProjects.open')}
         </button>
 
         {/* Delete button */}
@@ -373,8 +376,8 @@ function RecentItem({ project, isDark, isOpening, onOpen, onDelete }: RecentItem
           type="button"
           style={deleteBtnStyle}
           onClick={onDelete}
-          aria-label={`移除 ${project.name}`}
-          title="從清單移除"
+          aria-label={t('recentProjects.removeAriaLabel', { name: project.name })}
+          title={t('recentProjects.removeFromList')}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLButtonElement).style.color = '#ef4444';
             (e.currentTarget as HTMLButtonElement).style.background =

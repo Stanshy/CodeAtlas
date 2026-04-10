@@ -1,7 +1,7 @@
 /**
  * CodeAtlas — DJ Description Utilities
  *
- * Heuristic functions for generating meaningful Chinese descriptions
+ * Heuristic functions for generating meaningful descriptions
  * for Data Journey endpoint cards (DJ-4) and step nodes (DJ-2/DJ-3).
  *
  * Used by:
@@ -10,7 +10,14 @@
  *   - DJStepNode.tsx (step desc rendering)
  *
  * Sprint 13 — DJ-2, DJ-3, DJ-4 bug fixes
+ * Sprint 21 — i18n: labels kept as Chinese data constants (server-side heuristics),
+ *   UI display strings in deriveStepDetail() use i18n.t()
  */
+
+// Note: ENDPOINT_LABEL_RULES and STEP_DESC_RULES contain domain-specific
+// heuristic labels (e.g. route-matched descriptions). These are content data,
+// not UI chrome, and are intentionally kept as-is per the data-model spec.
+// Only deriveStepDetail() transform strings are i18n-wrapped below.
 
 // ---------------------------------------------------------------------------
 // Endpoint-level: Chinese label for selector cards (DJ-4)

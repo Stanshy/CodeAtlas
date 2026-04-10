@@ -9,6 +9,7 @@
  */
 
 import { memo, type CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -23,16 +24,16 @@ export interface RoleBadgeProps {
 // Role → display label (Chinese)
 // ---------------------------------------------------------------------------
 
-const ROLE_LABELS: Record<string, string> = {
-  entrypoint:     '入口點',
-  business_core:  '業務核心',
-  domain_rule:    '領域規則',
-  orchestration:  '服務編排',
-  io_adapter:     '資料存取',
-  validation:     '資料驗證',
-  infra:          '基礎設施',
-  utility:        '工具函式',
-  framework_glue: '框架膠水',
+const ROLE_I18N_KEYS: Record<string, string> = {
+  entrypoint:     'role.entrypoint',
+  business_core:  'role.businessCore',
+  domain_rule:    'role.domainRule',
+  orchestration:  'role.orchestration',
+  io_adapter:     'role.dataAccess',
+  validation:     'role.validation',
+  infra:          'role.infrastructure',
+  utility:        'role.utility',
+  framework_glue: 'role.frameworkGlue',
 };
 
 // ---------------------------------------------------------------------------
@@ -63,8 +64,10 @@ const DEFAULT_COLORS: RoleColors = { background: '#eceff1', color: '#546e7a' };
 // ---------------------------------------------------------------------------
 
 export const RoleBadge = memo(function RoleBadge({ role, size = 'sm' }: RoleBadgeProps) {
+  const { t } = useTranslation();
   const colors = ROLE_COLORS[role] ?? DEFAULT_COLORS;
-  const label = ROLE_LABELS[role] ?? role;
+  const i18nKey = ROLE_I18N_KEYS[role];
+  const label = i18nKey ? t(i18nKey) : role;
 
   const badgeStyle: CSSProperties = {
     display: 'inline-block',

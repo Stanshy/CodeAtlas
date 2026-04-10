@@ -8,6 +8,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { THEME } from '../styles/theme';
 
 export interface PerspectiveHintProps {
@@ -16,6 +17,7 @@ export interface PerspectiveHintProps {
 }
 
 export function PerspectiveHint({ type, visible }: PerspectiveHintProps) {
+  const { t } = useTranslation();
   if (type === 'data-journey') {
     return (
       <div
@@ -52,7 +54,7 @@ export function PerspectiveHint({ type, visible }: PerspectiveHintProps) {
               fontFamily: THEME.fontUi,
             }}
           >
-            選擇資料入口開始追蹤
+            {t('dj.selectEntry')}
           </div>
           <div
             style={{
@@ -62,9 +64,9 @@ export function PerspectiveHint({ type, visible }: PerspectiveHintProps) {
               lineHeight: 1.6,
             }}
           >
-            點擊綠色框入口節點
+            {t('dj.clickEntryNode')}
             <br />
-            觀察資料如何逐步流動
+            {t('dj.observeFlow')}
           </div>
         </div>
       </div>
@@ -110,7 +112,7 @@ export function PerspectiveHint({ type, visible }: PerspectiveHintProps) {
           fontFamily: THEME.fontUi,
         }}
       >
-        點擊任一方法查看呼叫鏈
+        {t('hint.clickMethod')}
       </div>
       {/* Sub text */}
       <div
@@ -121,7 +123,7 @@ export function PerspectiveHint({ type, visible }: PerspectiveHintProps) {
           fontFamily: THEME.fontUi,
         }}
       >
-        ★ 為推薦入口
+        {t('hint.entryMarker')}
       </div>
     </div>
   );

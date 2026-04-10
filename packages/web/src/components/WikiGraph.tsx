@@ -12,6 +12,7 @@
  */
 
 import { useRef, useEffect, useState, useCallback, type PointerEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { WikiNodeCircle } from './WikiNodeCircle';
 import { WikiPreviewPanel } from './WikiPreviewPanel';
 import { useWikiGraph } from '../hooks/useWikiGraph';
@@ -35,19 +36,20 @@ const NODE_COLORS: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 function NotGeneratedState() {
+  const { t } = useTranslation();
   return (
     <div style={styles.emptyWrap}>
       <div style={styles.emptyCard}>
         <div style={styles.emptyIcon} aria-hidden="true">
           &#x1F4DA;
         </div>
-        <p style={styles.emptyTitle}>尚未產生知識文件</p>
+        <p style={styles.emptyTitle}>{t('wiki.notGenerated')}</p>
         <p style={styles.emptyBody}>
-          請先在終端機執行：
+          {t('wiki.notGeneratedHint')}
         </p>
         <code style={styles.emptyCmd}>$ codeatlas wiki</code>
         <p style={styles.emptyBody}>
-          加入 --ai 可產生深度分析：
+          {t('wiki.notGeneratedAiHint')}
         </p>
         <code style={styles.emptyCmd}>$ codeatlas wiki --ai</code>
       </div>
@@ -60,11 +62,12 @@ function NotGeneratedState() {
 // ---------------------------------------------------------------------------
 
 function ErrorState() {
+  const { t } = useTranslation();
   return (
     <div style={styles.emptyWrap}>
       <div style={styles.emptyCard}>
-        <p style={styles.emptyTitle}>無法載入知識圖</p>
-        <p style={styles.emptyBody}>無法連線到本地伺服器，請確認 CodeAtlas 正在執行中。</p>
+        <p style={styles.emptyTitle}>{t('wiki.loadGraphError')}</p>
+        <p style={styles.emptyBody}>{t('wiki.loadGraphErrorHint')}</p>
       </div>
     </div>
   );
@@ -75,11 +78,12 @@ function ErrorState() {
 // ---------------------------------------------------------------------------
 
 function LoadingState() {
+  const { t } = useTranslation();
   return (
     <div style={styles.emptyWrap}>
       <div style={styles.emptyCard}>
         <div className="codeatlas-spinner" style={{ marginBottom: 16 }} />
-        <p style={styles.emptyBody}>載入知識圖中...</p>
+        <p style={styles.emptyBody}>{t('wiki.loadingGraph')}</p>
       </div>
     </div>
   );
@@ -90,17 +94,18 @@ function LoadingState() {
 // ---------------------------------------------------------------------------
 
 const LEGEND_ITEMS = [
-  { type: 'architecture', label: '架構', size: 12 },
-  { type: 'pattern',      label: '模式', size: 10 },
-  { type: 'feature',      label: '功能', size: 11 },
-  { type: 'integration',  label: '整合', size: 9  },
-  { type: 'concept',      label: '概念', size: 8  },
+  { type: 'architecture', labelKey: 'wiki.legendArchitecture', size: 12 },
+  { type: 'pattern',      labelKey: 'wiki.legendPattern',      size: 10 },
+  { type: 'feature',      labelKey: 'wiki.legendFeature',      size: 11 },
+  { type: 'integration',  labelKey: 'wiki.legendIntegration',  size: 9  },
+  { type: 'concept',      labelKey: 'wiki.legendConcept',      size: 8  },
 ];
 
 function GraphLegend() {
+  const { t } = useTranslation();
   return (
     <div style={styles.legend}>
-      {LEGEND_ITEMS.map(({ type, label, size }) => (
+      {LEGEND_ITEMS.map(({ type, labelKey, size }) => (
         <div key={type} style={styles.legendItem}>
           <svg width={size * 2} height={size * 2} style={{ flexShrink: 0 }}>
             <circle
@@ -110,7 +115,7 @@ function GraphLegend() {
               fill={NODE_COLORS[type] ?? '#888'}
             />
           </svg>
-          <span style={styles.legendLabel}>{label}</span>
+          <span style={styles.legendLabel}>{t(labelKey)}</span>
         </div>
       ))}
     </div>

@@ -10,6 +10,8 @@
  */
 
 import { memo, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../locales';
 import { useViewState } from '../contexts/ViewStateContext';
 
 import { FilterPanel } from './FilterPanel';
@@ -156,6 +158,7 @@ export const SettingsPopover = memo(function SettingsPopover({
   onClose,
   onShowToast,
 }: SettingsPopoverProps) {
+  const { t } = useTranslation();
   const { dispatch } = useViewState();
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -177,11 +180,19 @@ export const SettingsPopover = memo(function SettingsPopover({
   // Render
   // -----------------------------------------------------------------------
 
+  // Language switcher handler
+  const handleLanguageChange = (locale: string) => {
+    void i18n.changeLanguage(locale);
+    localStorage.setItem('codeatlas-locale', locale);
+  };
+
+  const currentLocale = i18n.language;
+
   return (
     <div
       ref={popoverRef}
       role="dialog"
-      aria-label="設定面板"
+      aria-label={t('settings.panelAriaLabel')}
       style={{
         position: 'fixed',
         top: 48,
@@ -213,8 +224,8 @@ export const SettingsPopover = memo(function SettingsPopover({
         </span>
         <button
           onClick={onClose}
-          title="關閉設定"
-          aria-label="關閉設定"
+          title={t('settings.closeSettings')}
+          aria-label={t('settings.closeSettings')}
           style={{
             background: 'none',
             border: 'none',
@@ -236,9 +247,38 @@ export const SettingsPopover = memo(function SettingsPopover({
         </button>
       </div>
 
+      {/* T7: Language switcher — top of settings, before AI Provider */}
+      <div style={{ padding: '10px 14px', borderBottom: `1px solid ${THEME.borderDefault}` }}>
+        <label
+          style={{ fontSize: 11, fontWeight: 500, color: THEME.inkMuted, marginBottom: 6, display: 'block' }}
+        >
+          {t('settings.languageLabel')}
+        </label>
+        <select
+          value={currentLocale}
+          onChange={(e) => handleLanguageChange(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '6px 8px',
+            fontSize: 12,
+            border: `1px solid ${THEME.borderDefault}`,
+            borderRadius: 6,
+            background: '#fff',
+            color: THEME.inkPrimary,
+            fontFamily: THEME.fontUi,
+            outline: 'none',
+            cursor: 'pointer',
+          }}
+          aria-label={t('settings.languageLabel')}
+        >
+          <option value="en">{t('settings.english')}</option>
+          <option value="zh-TW">{t('settings.traditionalChinese')}</option>
+        </select>
+      </div>
+
       {/* Sections — 分析工具 & 過濾器 hidden per boss directive (Sprint 20) */}
 
-      <Section title="AI 設定" icon={<SparklesIcon />} defaultOpen>
+      <Section title={t('settings.aiSettings')} icon={<SparklesIcon />} defaultOpen>
         <AISettingsSection onShowToast={onShowToast} />
       </Section>
     </div>

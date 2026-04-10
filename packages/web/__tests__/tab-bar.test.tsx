@@ -2,7 +2,7 @@
  * TabBar component unit tests
  *
  * Coverage:
- *   - Renders four tabs with correct Chinese labels (SF, LO, DJ, Wiki added Sprint 19 T13)
+ *   - Renders four tabs with correct English labels (SF, LO, DJ, Wiki added Sprint 19 T13)
  *   - Active tab has fontWeight 600 in its inline style
  *   - Inactive tabs have fontWeight 500 in their inline style
  *   - Clicking a tab calls onPerspectiveChange with the correct perspective name
@@ -48,19 +48,19 @@ describe('TabBar — tab rendering', () => {
     expect(tabs).toHaveLength(4);
   });
 
-  it('renders the 系統框架 label', () => {
+  it('renders the System Framework label', () => {
     renderTabBar();
-    expect(screen.getByText('系統框架')).toBeTruthy();
+    expect(screen.getByText('System Framework')).toBeTruthy();
   });
 
-  it('renders the 邏輯運作 label', () => {
+  it('renders the Logic Operation label', () => {
     renderTabBar();
-    expect(screen.getByText('邏輯運作')).toBeTruthy();
+    expect(screen.getByText('Logic Operation')).toBeTruthy();
   });
 
-  it('renders the 資料旅程 label', () => {
+  it('renders the Data Journey label', () => {
     renderTabBar();
-    expect(screen.getByText('資料旅程')).toBeTruthy();
+    expect(screen.getByText('Data Journey')).toBeTruthy();
   });
 
   it('renders a tablist with the correct aria-label', () => {
@@ -119,7 +119,7 @@ describe('TabBar — active tab styling', () => {
     const activeTab = tabs.find(
       (tab) => tab.getAttribute('aria-selected') === 'true',
     )!;
-    expect(activeTab.textContent).toContain('邏輯運作');
+    expect(activeTab.textContent).toContain('Logic Operation');
   });
 });
 
@@ -128,7 +128,7 @@ describe('TabBar — active tab styling', () => {
 // ---------------------------------------------------------------------------
 
 describe('TabBar — click interaction', () => {
-  it('clicking 系統框架 tab calls onPerspectiveChange with "system-framework"', () => {
+  it('clicking System Framework tab calls onPerspectiveChange with "system-framework"', () => {
     const onPerspectiveChange = vi.fn();
     render(
       React.createElement(TabBar, {
@@ -137,11 +137,11 @@ describe('TabBar — click interaction', () => {
         counts: { sf: 0, lo: 0, dj: 0, wiki: 0 },
       }),
     );
-    fireEvent.click(screen.getByText('系統框架'));
+    fireEvent.click(screen.getByText('System Framework'));
     expect(onPerspectiveChange).toHaveBeenCalledWith('system-framework');
   });
 
-  it('clicking 邏輯運作 tab calls onPerspectiveChange with "logic-operation"', () => {
+  it('clicking Logic Operation tab calls onPerspectiveChange with "logic-operation"', () => {
     const onPerspectiveChange = vi.fn();
     render(
       React.createElement(TabBar, {
@@ -150,11 +150,11 @@ describe('TabBar — click interaction', () => {
         counts: { sf: 0, lo: 0, dj: 0, wiki: 0 },
       }),
     );
-    fireEvent.click(screen.getByText('邏輯運作'));
+    fireEvent.click(screen.getByText('Logic Operation'));
     expect(onPerspectiveChange).toHaveBeenCalledWith('logic-operation');
   });
 
-  it('clicking 資料旅程 tab calls onPerspectiveChange with "data-journey"', () => {
+  it('clicking Data Journey tab calls onPerspectiveChange with "data-journey"', () => {
     const onPerspectiveChange = vi.fn();
     render(
       React.createElement(TabBar, {
@@ -163,7 +163,7 @@ describe('TabBar — click interaction', () => {
         counts: { sf: 0, lo: 0, dj: 0, wiki: 0 },
       }),
     );
-    fireEvent.click(screen.getByText('資料旅程'));
+    fireEvent.click(screen.getByText('Data Journey'));
     expect(onPerspectiveChange).toHaveBeenCalledWith('data-journey');
   });
 
@@ -176,7 +176,7 @@ describe('TabBar — click interaction', () => {
         counts: { sf: 0, lo: 0, dj: 0, wiki: 0 },
       }),
     );
-    fireEvent.click(screen.getByText('邏輯運作'));
+    fireEvent.click(screen.getByText('Logic Operation'));
     expect(onPerspectiveChange).toHaveBeenCalledTimes(1);
   });
 });

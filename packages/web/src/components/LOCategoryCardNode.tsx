@@ -14,6 +14,7 @@
  */
 
 import { memo, useState, type CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { THEME } from '../styles/theme';
 import type { LoCategory } from './LOCategoryGroup';
@@ -57,14 +58,14 @@ const HEADER_H = 36;
 const SUMMARY_H = 20;
 const PAD_Y = 8;
 
-// Category one-line summaries — help users understand what each group does
-const CATEGORY_SUMMARIES: Record<string, string> = {
-  routes: '處理 HTTP 請求路由與 API 端點',
-  middleware: '請求攔截處理（認證、日誌等）',
-  services: '核心業務邏輯與外部服務整合',
-  models: '資料模型定義與資料庫操作',
-  utils: '共用工具函式與背景任務',
-  controllers: '控制器層，協調請求與回應',
+// Category summary i18n keys — resolved at render time via t()
+const CATEGORY_SUMMARY_KEYS: Record<string, string> = {
+  routes:      'lo.summary.routes',
+  middleware:  'lo.summary.middleware',
+  services:    'lo.summary.services',
+  models:      'lo.summary.models',
+  utils:       'lo.summary.utils',
+  controllers: 'lo.summary.controllers',
 };
 const COLLAPSE_AT = 5;
 
@@ -82,6 +83,7 @@ function extractFilename(filePath: string): string {
 // ---------------------------------------------------------------------------
 
 export const LOCategoryCardNode = memo(function LOCategoryCardNode({ data }: NodeProps) {
+  const { t } = useTranslation();
   const d = data as LOCategoryCardData;
   const [expanded, setExpanded] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
@@ -96,7 +98,8 @@ export const LOCategoryCardNode = memo(function LOCategoryCardNode({ data }: Nod
   const hiddenCount = hiddenMethods.length;
 
   const totalMethods = visibleBusinessMethods.length;
-  const categorySummary = CATEGORY_SUMMARIES[d.category.toLowerCase()] ?? '';
+  const summaryKey = CATEGORY_SUMMARY_KEYS[d.category.toLowerCase()];
+  const categorySummary = summaryKey ? t(summaryKey) : '';
   const hasToggle = totalMethods > COLLAPSE_AT;
   const visibleMethods = expanded ? visibleBusinessMethods : visibleBusinessMethods.slice(0, COLLAPSE_AT);
   const visibleCount = visibleMethods.length;
@@ -206,7 +209,7 @@ export const LOCategoryCardNode = memo(function LOCategoryCardNode({ data }: Nod
             {m.isEntry && (
               <span
                 style={{ color: '#f59e0b', fontSize: 10, flexShrink: 0, lineHeight: 1 }}
-                title="推薦入口"
+                title={t('lo.entryMarker')}
               >
                 ★
               </span>
@@ -254,7 +257,7 @@ export const LOCategoryCardNode = memo(function LOCategoryCardNode({ data }: Nod
         {hasToggle && (
           <div style={toggleStyle} onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}>
             <span style={{ fontSize: 10 }}>{expanded ? '▲' : '▼'}</span>
-            <span>{expanded ? '收起' : `展開更多 (${totalMethods - COLLAPSE_AT})`}</span>
+            <span>{expanded ? t('lo.collapse') : t('lo.expandMore', { count: totalMethods - COLLAPSE_AT })}</span>
           </div>
         )}
 
@@ -277,7 +280,7 @@ export const LOCategoryCardNode = memo(function LOCategoryCardNode({ data }: Nod
               onClick={(e) => { e.stopPropagation(); setShowHidden(!showHidden); }}
             >
               <span style={{ fontSize: 9 }}>{showHidden ? '▲' : '▼'}</span>
-              <span>{showHidden ? '隱藏工具方法' : `+${hiddenCount} 個工具方法`}</span>
+              <span>{showHidden ? t('lo.hideUtility') : t('lo.showUtility', { count: hiddenCount })}</span>
             </div>
             {showHidden && hiddenMethods.map((m) => (
               <div
@@ -292,7 +295,7 @@ export const LOCategoryCardNode = memo(function LOCategoryCardNode({ data }: Nod
                 onClick={(e) => handleMethodClick(m, e)}
               >
                 {m.isEntry && (
-                  <span style={{ color: '#f59e0b', fontSize: 10, flexShrink: 0, lineHeight: 1 }} title="推薦入口">★</span>
+                  <span style={{ color: '#f59e0b', fontSize: 10, flexShrink: 0, lineHeight: 1 }} title={t('lo.entryMarker')}>★</span>
                 )}
                 <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {m.name.endsWith('()') ? m.name : `${m.name}()`}

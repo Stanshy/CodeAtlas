@@ -10,6 +10,7 @@
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect, type CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { GraphNode, GraphEdge, EndpointGraph, LoCategory } from '../types/graph';
 import { THEME, canvas as canvasTheme } from '../styles/theme';
 
@@ -56,11 +57,11 @@ const COL_GAP = 50;
 // ---------------------------------------------------------------------------
 
 export const CATEGORY_CONFIG: Record<LoCategory, { label: string; color: string; bgColor: string; icon: string }> = {
-  routes:     { label: '路線 / API',    color: '#1565c0', bgColor: '#e3f2fd', icon: '🔵' },
-  middleware: { label: '中間層',        color: '#00838f', bgColor: '#e0f7fa', icon: '🟢' },
-  services:   { label: '服務',          color: '#7b1fa2', bgColor: '#f3e5f5', icon: '🟣' },
-  models:     { label: '模型 / 資料庫', color: '#4e342e', bgColor: '#efebe9', icon: '🟤' },
-  utils:      { label: '工具 / 任務',   color: '#546e7a', bgColor: '#eceff1', icon: '⚫' },
+  routes:     { label: 'lo.category.routes',      color: '#1565c0', bgColor: '#e3f2fd', icon: '🔵' },
+  middleware: { label: 'lo.category.middleware',   color: '#00838f', bgColor: '#e0f7fa', icon: '🟢' },
+  services:   { label: 'lo.category.services',     color: '#7b1fa2', bgColor: '#f3e5f5', icon: '🟣' },
+  models:     { label: 'lo.category.models',       color: '#4e342e', bgColor: '#efebe9', icon: '🟤' },
+  utils:      { label: 'lo.category.utils',        color: '#546e7a', bgColor: '#eceff1', icon: '⚫' },
 };
 
 // Group dependency arrows (source → target)
@@ -187,7 +188,9 @@ interface CategoryCardProps {
 const COLLAPSE_AT = 5;
 
 function CategoryCard({ group, position, expanded, onToggle, onMethodClick }: CategoryCardProps) {
+  const { t } = useTranslation();
   const { category, label, color, bgColor, icon, methods } = group;
+  const resolvedLabel = t(label, { defaultValue: label });
   const totalMethods = methods.length;
   const hasToggle = totalMethods > COLLAPSE_AT;
   const visibleMethods = expanded ? methods : methods.slice(0, COLLAPSE_AT);
@@ -281,7 +284,7 @@ function CategoryCard({ group, position, expanded, onToggle, onMethodClick }: Ca
       {/* Header */}
       <div style={headerStyle}>
         <span style={dotStyle} />
-        <span style={labelStyle}>{label}</span>
+        <span style={labelStyle}>{resolvedLabel}</span>
         <span style={countStyle}>{totalMethods}</span>
         <span style={{ fontSize: 12, flexShrink: 0 }}>{icon}</span>
       </div>
@@ -303,7 +306,7 @@ function CategoryCard({ group, position, expanded, onToggle, onMethodClick }: Ca
             }}
             title={m.hasChain
               ? `${m.name} — ${m.filePath}`
-              : `${m.name} — ${m.filePath}（無呼叫鏈）`}
+              : `${m.name} — ${m.filePath} (${t('lo.noChain')})`}
           >
             {m.hasChain && <span style={{ marginRight: 4, fontSize: 10 }}>★</span>}
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -316,7 +319,7 @@ function CategoryCard({ group, position, expanded, onToggle, onMethodClick }: Ca
           <div style={toggleRowStyle} onClick={onToggle}>
             <span style={{ fontSize: 10 }}>{expanded ? '▲' : '▼'}</span>
             <span>
-              {expanded ? '收起' : `展開更多 (${totalMethods - COLLAPSE_AT})`}
+              {expanded ? t('lo.collapse') : t('lo.expandMore', { count: totalMethods - COLLAPSE_AT })}
             </span>
           </div>
         )}
@@ -429,6 +432,7 @@ function GroupArrows({ arrows, positions, expandedState, groups, totalW, totalH,
 // ---------------------------------------------------------------------------
 
 export function LOCategoryGroup({ graphNodes, graphEdges, endpointGraph, onMethodClick }: LOCategoryGroupProps) {
+  const { t } = useTranslation();
   // Suppress unused
   void graphEdges;
 
@@ -584,8 +588,8 @@ export function LOCategoryGroup({ graphNodes, graphEdges, endpointGraph, onMetho
         }}
       >
         <span style={{ fontSize: 28 }}>🔍</span>
-        <span>未偵測到方法節點</span>
-        <span style={{ fontSize: 11, color: '#bdbdbd' }}>請確保專案包含函式或方法定義</span>
+        <span>{t('lo.emptyTitle')}</span>
+        <span style={{ fontSize: 11, color: '#bdbdbd' }}>{t('lo.emptyHint')}</span>
       </div>
     );
   }

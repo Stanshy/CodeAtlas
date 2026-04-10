@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAnalysisProgress } from '../hooks/useAnalysisProgress';
 import { ProgressStages } from '../components/ProgressStages';
@@ -33,6 +34,7 @@ interface ProgressPageProps {
 // ---------------------------------------------------------------------------
 
 export function ProgressPage({ jobId, projectPath, projectName }: ProgressPageProps) {
+  const { t } = useTranslation();
   const { setPage, returnToWelcome, startAnalysis } = useAppState();
   const { progress, error: hookError } = useAnalysisProgress(jobId);
   const isDark = true;
@@ -163,18 +165,18 @@ export function ProgressPage({ jobId, projectPath, projectName }: ProgressPagePr
   const CompletedFooter = () => (
     <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
       <div style={{ fontSize: 18, fontWeight: 600, color: '#22c55e', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span>✅</span> 分析完成！
+        <span>✅</span> {t('progress.analysisComplete')}
       </div>
       {(scanTotal || parseTotal) && (
         <p style={{ fontSize: 13, color: isDark ? '#a0a0c0' : '#4a4a6a', margin: 0 }}>
-          {scanTotal && `${scanTotal} 個檔案`}
-          {parseTotal && scanTotal ? `・${parseTotal} 個模組` : parseTotal ? `${parseTotal} 個模組` : ''}
-          {buildTotal ? `・${buildTotal} 個端點` : ''}
+          {scanTotal && t('progress.fileCount', { count: scanTotal })}
+          {parseTotal && scanTotal ? `・${t('progress.moduleCount', { count: parseTotal })}` : parseTotal ? t('progress.moduleCount', { count: parseTotal }) : ''}
+          {buildTotal ? `・${t('progress.endpointCount', { count: buildTotal })}` : ''}
         </p>
       )}
       {countdown !== null && (
         <p style={{ fontSize: 12, color: isDark ? '#6868aa' : '#8888aa', margin: 0 }}>
-          即將自動跳轉…（{countdown} 秒）
+          {t('progress.autoRedirect', { count: countdown })}
         </p>
       )}
       <button
@@ -197,7 +199,7 @@ export function ProgressPage({ jobId, projectPath, projectName }: ProgressPagePr
         onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#16a34a'; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#22c55e'; }}
       >
-        立即查看
+        {t('progress.viewNow')}
       </button>
     </div>
   );
@@ -207,7 +209,7 @@ export function ProgressPage({ jobId, projectPath, projectName }: ProgressPagePr
   const FailedBlock = () => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
       <div style={{ fontSize: 16, fontWeight: 600, color: '#ef4444', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span>✕</span> 分析失敗
+        <span>✕</span> {t('progress.analysisFailed')}
       </div>
 
       {(progress?.error || hookError) && (
@@ -254,7 +256,7 @@ export function ProgressPage({ jobId, projectPath, projectName }: ProgressPagePr
           onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#1565c0'; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#1976d2'; }}
         >
-          重試
+          {t('progress.retry')}
         </button>
 
         <button
@@ -280,7 +282,7 @@ export function ProgressPage({ jobId, projectPath, projectName }: ProgressPagePr
             (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
           }}
         >
-          返回歡迎頁
+          {t('progress.backToWelcome')}
         </button>
       </div>
     </div>
@@ -318,7 +320,7 @@ export function ProgressPage({ jobId, projectPath, projectName }: ProgressPagePr
             (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
           }}
         >
-          取消分析
+          {t('progress.cancelAnalysis')}
         </button>
       )}
     </div>

@@ -9,7 +9,7 @@
  *   - Metrics are updated atomically after each job completes or hits cache.
  */
 
-import type { AnalysisResult } from '@codeatlas/core';
+import type { AnalysisResult, Locale } from '@codeatlas/core';
 import type { AIAnalysisProvider } from '@codeatlas/core';
 import type { PersistentAICache } from './ai-cache.js';
 import {
@@ -70,12 +70,19 @@ export class AIJobManager {
   private runningJobId: string | null = null;
   /** Cached reference to last analysis result for storeGroupSummary */
   private lastAnalysis: AnalysisResult | null = null;
+  /** Current locale for AI prompt output language. Set via setLocale(). */
+  private locale: Locale = 'en';
 
   constructor(
     private cache: PersistentAICache,
     private providerGetter: () => AIAnalysisProvider | null,
     private analysisGetter: () => Promise<AnalysisResult>,
   ) {}
+
+  /** Update the locale used for AI prompts in subsequent jobs. */
+  setLocale(locale: Locale): void {
+    this.locale = locale;
+  }
 
   // --------------------------------------------------------------------------
   // Public API
@@ -295,10 +302,12 @@ export class AIJobManager {
     analysis: AnalysisResult,
     provider: AIAnalysisProvider,
   ): Promise<void> {
+    const locale = this.locale;
+
     switch (job.scope) {
       case 'directory': {
         // Run Phase 2 for a single directory only
-        await runPhase2DirectorySummaries(analysis, provider, this.cache, job.target);
+        await runPhase2DirectorySummaries(analysis, provider, this.cache, job.target, locale);
 
         // Sprint 18: If Phase 2 didn't produce a cache entry (AI call failed
         // silently or directory wasn't found in aggregated graph), store a
@@ -346,7 +355,7 @@ export class AIJobManager {
           }
         }
         if (methodNodes.length > 0) {
-          await runPhase1MethodBatch(methodFiltered, provider, this.cache);
+          await runPhase1MethodBatch(methodFiltered, provider, this.cache, locale);
         } else {
           // No matching function node in analysis (e.g. Python files not parsed by tree-sitter).
           // Store a placeholder so frontend gets a non-null result.
@@ -376,7 +385,7 @@ export class AIJobManager {
       case 'method-group': {
         // Run Phase 1 with analysis filtered to methods matching the category target
         const filtered = this.filterAnalysisForMethodGroup(analysis, job.target);
-        await runPhase1MethodBatch(filtered, provider, this.cache);
+        await runPhase1MethodBatch(filtered, provider, this.cache, locale);
 
         // Store a synthetic group-level cache entry for frontend retrieval.
         // Phase 1 caches per-method results (key: method:{nodeId}:...), but
@@ -390,14 +399,14 @@ export class AIJobManager {
 
       case 'endpoint': {
         // Run Phase 3 for a single endpoint only
-        await runPhase3EndpointAnalysis(analysis, provider, this.cache, job.target);
+        await runPhase3EndpointAnalysis(analysis, provider, this.cache, job.target, locale);
         break;
       }
 
       case 'all': {
-        await runPhase1MethodBatch(analysis, provider, this.cache);
-        await runPhase2DirectorySummaries(analysis, provider, this.cache);
-        await runPhase3EndpointAnalysis(analysis, provider, this.cache);
+        await runPhase1MethodBatch(analysis, provider, this.cache, locale);
+        await runPhase2DirectorySummaries(analysis, provider, this.cache, undefined, locale);
+        await runPhase3EndpointAnalysis(analysis, provider, this.cache, undefined, locale);
         break;
       }
 
@@ -407,7 +416,7 @@ export class AIJobManager {
         // pass the full analysis and rely on the cache-staleness logic — the
         // distinction is signaled via target label. For true role-filtering
         // we pass a shallow copy with a role hint attached.
-        await runPhase2DirectorySummaries(analysis, provider, this.cache);
+        await runPhase2DirectorySummaries(analysis, provider, this.cache, undefined, locale);
         break;
       }
 

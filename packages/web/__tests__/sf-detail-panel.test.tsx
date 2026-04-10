@@ -81,8 +81,7 @@ describe('SFDetailPanel — empty state', () => {
         graphEdges: [],
       }),
     );
-    // UI localized to Chinese in Sprint 13+
-    expect(screen.getByText('點擊目錄卡片查看詳情')).toBeTruthy();
+    expect(screen.getByText('Click a directory card to view details')).toBeTruthy();
   });
 
   it('shows empty state when selectedNodeId is set but directoryGraph is null', () => {
@@ -94,7 +93,7 @@ describe('SFDetailPanel — empty state', () => {
         graphEdges: [],
       }),
     );
-    expect(screen.getByText('點擊目錄卡片查看詳情')).toBeTruthy();
+    expect(screen.getByText('Click a directory card to view details')).toBeTruthy();
   });
 
   it('shows empty state when node id not found in directoryGraph', () => {
@@ -107,7 +106,7 @@ describe('SFDetailPanel — empty state', () => {
         graphEdges: [],
       }),
     );
-    expect(screen.getByText('點擊目錄卡片查看詳情')).toBeTruthy();
+    expect(screen.getByText('Click a directory card to view details')).toBeTruthy();
   });
 });
 
@@ -158,8 +157,7 @@ describe('SFDetailPanel — statistics section', () => {
         graphEdges: [],
       }),
     );
-    // Section heading is "統計" (Chinese) in Sprint 13+
-    expect(screen.getByText('統計')).toBeTruthy();
+    expect(screen.getByText('Statistics')).toBeTruthy();
   });
 
   it('shows Files row in statistics', () => {
@@ -172,8 +170,7 @@ describe('SFDetailPanel — statistics section', () => {
         graphEdges: [],
       }),
     );
-    // "檔案" = Files in Chinese
-    expect(screen.getByText('檔案')).toBeTruthy();
+    expect(screen.getByText('Files')).toBeTruthy();
   });
 
   it('shows Lines row in statistics', () => {
@@ -186,8 +183,7 @@ describe('SFDetailPanel — statistics section', () => {
         graphEdges: [],
       }),
     );
-    // "行數" = Lines in Chinese
-    expect(screen.getByText('行數')).toBeTruthy();
+    expect(screen.getByText('Lines')).toBeTruthy();
   });
 
   it('shows function count in statistics when functions exist', () => {
@@ -202,11 +198,10 @@ describe('SFDetailPanel — statistics section', () => {
         graphEdges: [],
       }),
     );
-    // "函式" = Functions in Chinese
-    expect(screen.getByText('函式')).toBeTruthy();
+    expect(screen.getByText('Functions')).toBeTruthy();
   });
 
-  it('does not show Functions row when no functions exist', () => {
+  it('shows Functions row with dash when no functions exist', () => {
     const graph = makeDirectoryGraph([{ id: 'src/routes', label: 'routes' }]);
     render(
       React.createElement(SFDetailPanel, {
@@ -216,7 +211,8 @@ describe('SFDetailPanel — statistics section', () => {
         graphEdges: [],
       }),
     );
-    expect(screen.queryByText('Functions')).toBeNull();
+    // Functions stat row is always rendered; value shows '—' when count is 0
+    expect(screen.getByText('Functions')).toBeTruthy();
   });
 });
 
@@ -236,8 +232,7 @@ describe('SFDetailPanel — files section', () => {
         graphEdges: [],
       }),
     );
-    // "檔案" appears in statistics row and "檔案列表" as section heading (Chinese)
-    expect(screen.getByText('檔案列表')).toBeTruthy();
+    expect(screen.getByText('File list')).toBeTruthy();
   });
 
   it('shows file names in the files list', () => {
@@ -335,8 +330,7 @@ describe('SFDetailPanel — upstream section', () => {
         graphEdges: [],
       }),
     );
-    // "上游依賴" = Upstream dependencies in Chinese (text is split across spans)
-    expect(container.textContent).toContain('上游依賴');
+    expect(container.textContent).toContain('Upstream dependencies');
   });
 
   it('shows "No upstream dependencies" when no upstream edges', () => {
@@ -349,8 +343,7 @@ describe('SFDetailPanel — upstream section', () => {
         graphEdges: [],
       }),
     );
-    // "無上游依賴" = No upstream dependencies in Chinese
-    expect(screen.getByText('無上游依賴')).toBeTruthy();
+    expect(screen.getByText('No upstream dependencies')).toBeTruthy();
   });
 
   it('shows upstream directory when edge targets the selected node', () => {
@@ -384,8 +377,7 @@ describe('SFDetailPanel — downstream section', () => {
         graphEdges: [],
       }),
     );
-    // "下游依賴" = Downstream dependencies in Chinese (text is split across spans)
-    expect(container.textContent).toContain('下游依賴');
+    expect(container.textContent).toContain('Downstream dependencies');
   });
 
   it('shows "No downstream dependencies" when no downstream edges', () => {
@@ -398,8 +390,7 @@ describe('SFDetailPanel — downstream section', () => {
         graphEdges: [],
       }),
     );
-    // "無下游依賴" = No downstream dependencies in Chinese
-    expect(screen.getByText('無下游依賴')).toBeTruthy();
+    expect(screen.getByText('No downstream dependencies')).toBeTruthy();
   });
 
   it('shows downstream directory when edge originates from selected node', () => {

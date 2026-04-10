@@ -7,12 +7,12 @@
 | Sprint | Sprint 19 |
 | 指派給 | backend-architect |
 | 優先級 | P0 |
-| 狀態 | in_review |
+| 狀態 | done |
 | 依賴 | — |
 | 預估 | 1h |
 | 建立時間 | 2026-04-08T07:25:25.000Z |
 | 開始時間 | 2026-04-08T07:50:34.645Z |
-| 完工時間 | 2026-04-08T07:53:29.793Z |
+| 完工時間 | 2026-04-09T09:30:00.000Z |
 
 ---
 
@@ -48,3 +48,6 @@
 
 ### 2026-04-08T07:53:29.793Z — 狀態變更 → in_review
 Wiki 型別定義完成。packages/core/src/wiki-exporter/types.ts 已建立，含所有 11 個型別；packages/core/src/types.ts 已加入 re-exports。pnpm build 零錯誤通過（ESM + CJS + DTS）。
+
+### 2026-04-09T09:30:00.000Z — 狀態變更 → done（補登）
+Sprint 19 已完成（G3 附條件通過）。L1 補登任務完成狀態。

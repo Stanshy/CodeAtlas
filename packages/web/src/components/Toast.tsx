@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 import { THEME } from '../styles/theme';
 
 // ---------------------------------------------------------------------------
@@ -48,6 +49,7 @@ const TOAST_CONFIG = {
 // ---------------------------------------------------------------------------
 
 export function Toast({ type, title, description, onDismiss, duration = 3000 }: ToastProps) {
+  const { t } = useTranslation();
   const [timerWidth, setTimerWidth] = useState(100);
   const startTimeRef = useRef<number>(Date.now());
   const rafRef = useRef<number | null>(null);
@@ -113,7 +115,7 @@ export function Toast({ type, title, description, onDismiss, duration = 3000 }: 
       </div>
       <button
         onClick={onDismiss}
-        aria-label="關閉通知"
+        aria-label={t('toast.closeAriaLabel')}
         style={{
           background: 'none',
           border: 'none',
@@ -151,6 +153,7 @@ interface ToastStackProps {
 }
 
 export function ToastStack({ toasts, onDismiss }: ToastStackProps) {
+  const { t } = useTranslation();
   if (toasts.length === 0) return null;
 
   const stackStyle: CSSProperties = {
@@ -165,7 +168,7 @@ export function ToastStack({ toasts, onDismiss }: ToastStackProps) {
   };
 
   return (
-    <div style={stackStyle} aria-label="通知區域">
+    <div style={stackStyle} aria-label={t('toast.regionAriaLabel')}>
       {toasts.map((t) => (
         <div key={t.id} style={{ pointerEvents: 'auto' }}>
           <Toast

@@ -11,6 +11,7 @@
  * Sprint 20 — T9: AppState routing (welcome / progress / analysis)
  */
 
+import './locales';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ReactFlowProvider, useReactFlow } from '@xyflow/react';
 import { useGraphData } from './hooks/useGraphData';

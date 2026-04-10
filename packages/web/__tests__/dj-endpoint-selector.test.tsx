@@ -59,7 +59,7 @@ describe('DJEndpointSelector — empty state', () => {
         onEndpointClick: vi.fn(),
       }),
     );
-    expect(screen.getByText(/未偵測到 API 端點/)).toBeTruthy();
+    expect(screen.getByText(/No API endpoints detected/)).toBeTruthy();
   });
 
   it('does not render category groups when graph has no endpoint-kind nodes', () => {
@@ -72,7 +72,7 @@ describe('DJEndpointSelector — empty state', () => {
         onEndpointClick: vi.fn(),
       }),
     );
-    expect(container.textContent).toContain('未偵測到 API 端點');
+    expect(container.textContent).toContain('No API endpoints detected');
   });
 });
 
@@ -117,7 +117,7 @@ describe('DJEndpointSelector — endpoint rendering', () => {
         onEndpointClick: vi.fn(),
       }),
     );
-    expect(screen.getByText('選擇 API 端點 — 資料旅程')).toBeTruthy();
+    expect(screen.getByText('Select API Endpoint — Data Journey')).toBeTruthy();
   });
 
   it('renders the subtitle text', () => {
@@ -130,7 +130,7 @@ describe('DJEndpointSelector — endpoint rendering', () => {
         onEndpointClick: vi.fn(),
       }),
     );
-    expect(screen.getByText(/stagger 動畫/)).toBeTruthy();
+    expect(screen.getByText(/Click an endpoint card below/)).toBeTruthy();
   });
 });
 
@@ -243,7 +243,7 @@ describe('DJEndpointSelector — click interaction', () => {
       }),
     );
     // Click the card via its role="button"
-    const button = screen.getByRole('button', { name: /選擇端點/ });
+    const button = screen.getByRole('button', { name: /Select endpoint/ });
     fireEvent.click(button);
     expect(onEndpointClick).toHaveBeenCalledTimes(1);
   });
@@ -259,7 +259,7 @@ describe('DJEndpointSelector — click interaction', () => {
         onEndpointClick,
       }),
     );
-    const button = screen.getByRole('button', { name: /選擇端點/ });
+    const button = screen.getByRole('button', { name: /Select endpoint/ });
     fireEvent.click(button);
     expect(onEndpointClick).toHaveBeenCalledWith('ep-test-123', expect.any(Object));
   });
@@ -275,7 +275,7 @@ describe('DJEndpointSelector — click interaction', () => {
         onEndpointClick,
       }),
     );
-    fireEvent.click(screen.getByRole('button', { name: /選擇端點/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Select endpoint/ }));
     const [, chain] = onEndpointClick.mock.calls[0];
     expect(chain).toHaveProperty('id');
     expect(chain).toHaveProperty('steps');
@@ -293,7 +293,7 @@ describe('DJEndpointSelector — click interaction', () => {
         onEndpointClick,
       }),
     );
-    // The card shows "N 個步驟" badge (localized to Chinese)
-    expect(screen.getByText(/個步驟/)).toBeTruthy();
+    // The card shows "N steps" badge (localized via i18n)
+    expect(screen.getByText(/steps/)).toBeTruthy();
   });
 });

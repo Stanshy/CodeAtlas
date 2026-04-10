@@ -8,6 +8,7 @@
 
 import { memo, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useViewState } from '../contexts/ViewStateContext';
 import { colors } from '../styles/theme';
 import type { GraphNode, NodeType, EdgeType, NodeRole } from '../types/graph';
@@ -32,18 +33,18 @@ interface FilterPanelProps {
 const NODE_TYPES: NodeType[] = ['file', 'directory', 'function', 'class'];
 const EDGE_TYPES: EdgeType[] = ['import', 'export', 'data-flow', 'call'];
 
-const NODE_TYPE_LABELS: Record<NodeType, string> = {
-  file: '檔案',
-  directory: '目錄',
-  function: '函式',
-  class: '類別',
+const NODE_TYPE_LABEL_KEYS: Record<NodeType, string> = {
+  file: 'filter.nodeTypeFile',
+  directory: 'filter.nodeTypeDirectory',
+  function: 'filter.nodeTypeFunction',
+  class: 'filter.nodeTypeClass',
 };
 
-const EDGE_TYPE_LABELS: Record<EdgeType, string> = {
-  import: 'Import',
-  export: 'Export',
-  'data-flow': '資料流',
-  call: '函式呼叫',
+const EDGE_TYPE_LABEL_KEYS: Record<EdgeType, string> = {
+  import: 'filter.edgeTypeImport',
+  export: 'filter.edgeTypeExport',
+  'data-flow': 'filter.edgeTypeDataFlow',
+  call: 'filter.edgeTypeCall',
 };
 
 // ---------------------------------------------------------------------------
@@ -275,6 +276,7 @@ export const FilterPanel = memo(function FilterPanel({
   allNodes,
   embedded = false,
 }: FilterPanelProps) {
+  const { t } = useTranslation();
   const { state, dispatch } = useViewState();
   const filter = state.filter;
 
@@ -431,7 +433,7 @@ export const FilterPanel = memo(function FilterPanel({
         {/* Directory section */}
         {directoryNodes.length > 0 && (
           <>
-            <p style={{ ...sectionTitleStyles, marginTop: 4 }}>目錄</p>
+            <p style={{ ...sectionTitleStyles, marginTop: 4 }}>{t('filter.directory')}</p>
             {directoryNodes.map((dirNode) => {
               const depth = dirNode.filePath.split('/').length - 1;
               return (
@@ -448,22 +450,22 @@ export const FilterPanel = memo(function FilterPanel({
         )}
 
         {/* Node type section */}
-        <p style={{ ...sectionTitleStyles, marginTop: directoryNodes.length > 0 ? 12 : 4 }}>節點類型</p>
+        <p style={{ ...sectionTitleStyles, marginTop: directoryNodes.length > 0 ? 12 : 4 }}>{t('filter.nodeType')}</p>
         {NODE_TYPES.map((nodeType) => (
           <CheckboxItem
             key={nodeType}
-            label={NODE_TYPE_LABELS[nodeType]}
+            label={t(NODE_TYPE_LABEL_KEYS[nodeType])}
             checked={isNodeTypeChecked(nodeType)}
             onChange={(checked) => handleNodeTypeChange(nodeType, checked)}
           />
         ))}
 
         {/* Edge type section */}
-        <p style={{ ...sectionTitleStyles, marginTop: 12 }}>邊類型</p>
+        <p style={{ ...sectionTitleStyles, marginTop: 12 }}>{t('filter.edgeType')}</p>
         {EDGE_TYPES.map((edgeType) => (
           <CheckboxItem
             key={edgeType}
-            label={EDGE_TYPE_LABELS[edgeType]}
+            label={t(EDGE_TYPE_LABEL_KEYS[edgeType])}
             checked={isEdgeTypeChecked(edgeType)}
             onChange={(checked) => handleEdgeTypeChange(edgeType, checked)}
           />
@@ -472,7 +474,7 @@ export const FilterPanel = memo(function FilterPanel({
         {/* Sprint 10: Hidden nodes section (pinned) */}
         {pinnedHiddenNodes.length > 0 && (
           <>
-            <p style={{ ...sectionTitleStyles, marginTop: 12 }}>已釘選的隱藏節點</p>
+            <p style={{ ...sectionTitleStyles, marginTop: 12 }}>{t('filter.pinnedHiddenNodes')}</p>
             {pinnedHiddenNodes.map((node) => (
               <div key={node.id} style={hiddenNodeItemStyles}>
                 <span style={hiddenNodeLabelStyles} title={node.filePath}>
@@ -482,7 +484,7 @@ export const FilterPanel = memo(function FilterPanel({
                 <button
                   style={pinButtonStyles}
                   onClick={() => handleUnpinNode(node.id)}
-                  title="取消釘選"
+                  title={t('filter.unpin')}
                 >
                   ✕
                 </button>
@@ -494,7 +496,7 @@ export const FilterPanel = memo(function FilterPanel({
         {/* Sprint 10: Hidden nodes section (available to pin) */}
         {unpinnedHiddenNodes.length > 0 && (
           <>
-            <p style={{ ...sectionTitleStyles, marginTop: 12 }}>已隱藏節點</p>
+            <p style={{ ...sectionTitleStyles, marginTop: 12 }}>{t('filter.hiddenNodes')}</p>
             <div style={{ maxHeight: 200, overflowY: 'auto' }}>
               {unpinnedHiddenNodes.map((node) => (
                 <div key={node.id} style={hiddenNodeItemStyles}>
@@ -505,7 +507,7 @@ export const FilterPanel = memo(function FilterPanel({
                   <button
                     style={pinButtonStyles}
                     onClick={() => handlePinNode(node.id)}
-                    title="釘選到畫面"
+                    title={t('filter.pinToCanvas')}
                   >
                     +
                   </button>
@@ -526,9 +528,9 @@ export const FilterPanel = memo(function FilterPanel({
                 borderRadius: 4,
               }}
               onClick={handleReset}
-              title="重設所有過濾條件"
+              title={t('filter.resetFilters')}
             >
-              重設過濾
+              {t('filter.resetFilters')}
             </button>
           </div>
         )}
@@ -546,8 +548,8 @@ export const FilterPanel = memo(function FilterPanel({
         <button
           style={iconButtonStyles}
           onClick={onToggle}
-          title="展開過濾面板"
-          aria-label="展開過濾面板"
+          title={t('filter.expandPanel')}
+          aria-label={t('filter.expandPanel')}
         >
           <FilterIcon
             size={18}
@@ -573,7 +575,7 @@ export const FilterPanel = memo(function FilterPanel({
         exit={{ x: -260, opacity: 0 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
         role="complementary"
-        aria-label="圖譜過濾面板"
+        aria-label={t('filter.graphFilterPanel')}
       >
         {/* Header */}
         <div style={panelHeaderStyles}>
@@ -582,23 +584,23 @@ export const FilterPanel = memo(function FilterPanel({
               size={14}
               color={hasActiveFilters ? colors.primary.DEFAULT : colors.text.primary}
             />
-            {' '}過濾
+            {' '}{t('filter.filterHeader')}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             {hasActiveFilters && (
               <button
                 style={resetButtonStyles}
                 onClick={handleReset}
-                title="重設所有過濾條件"
+                title={t('filter.resetFilters')}
               >
-                重設過濾
+                {t('filter.resetFilters')}
               </button>
             )}
             <button
               style={iconButtonStyles}
               onClick={onToggle}
-              title="收合過濾面板"
-              aria-label="收合過濾面板"
+              title={t('filter.collapsePanel')}
+              aria-label={t('filter.collapsePanel')}
             >
               <CloseIcon size={14} color={colors.text.muted} />
             </button>
@@ -606,9 +608,9 @@ export const FilterPanel = memo(function FilterPanel({
         </div>
 
         {/* ---- Directory filter ---- */}
-        <p style={sectionTitleStyles}>目錄</p>
+        <p style={sectionTitleStyles}>{t('filter.directory')}</p>
         {directoryNodes.length === 0 ? (
-          <p style={emptyStateStyles}>無目錄節點</p>
+          <p style={emptyStateStyles}>{t('filter.noDirectoryNodes')}</p>
         ) : (
           directoryNodes.map((dirNode) => {
             // Calculate indent based on path depth
@@ -626,22 +628,22 @@ export const FilterPanel = memo(function FilterPanel({
         )}
 
         {/* ---- Node type filter ---- */}
-        <p style={sectionTitleStyles}>節點類型</p>
+        <p style={sectionTitleStyles}>{t('filter.nodeType')}</p>
         {NODE_TYPES.map((nodeType) => (
           <CheckboxItem
             key={nodeType}
-            label={NODE_TYPE_LABELS[nodeType]}
+            label={t(NODE_TYPE_LABEL_KEYS[nodeType])}
             checked={isNodeTypeChecked(nodeType)}
             onChange={(checked) => handleNodeTypeChange(nodeType, checked)}
           />
         ))}
 
         {/* ---- Edge type filter ---- */}
-        <p style={sectionTitleStyles}>邊類型</p>
+        <p style={sectionTitleStyles}>{t('filter.edgeType')}</p>
         {EDGE_TYPES.map((edgeType) => (
           <CheckboxItem
             key={edgeType}
-            label={EDGE_TYPE_LABELS[edgeType]}
+            label={t(EDGE_TYPE_LABEL_KEYS[edgeType])}
             checked={isEdgeTypeChecked(edgeType)}
             onChange={(checked) => handleEdgeTypeChange(edgeType, checked)}
           />
@@ -650,7 +652,7 @@ export const FilterPanel = memo(function FilterPanel({
         {/* ---- Sprint 10: Pinned hidden nodes ---- */}
         {pinnedHiddenNodes.length > 0 && (
           <>
-            <p style={sectionTitleStyles}>已釘選的隱藏節點</p>
+            <p style={sectionTitleStyles}>{t('filter.pinnedHiddenNodes')}</p>
             {pinnedHiddenNodes.map((node) => (
               <div key={node.id} style={hiddenNodeItemStyles}>
                 <span style={hiddenNodeLabelStyles} title={node.filePath}>
@@ -660,7 +662,7 @@ export const FilterPanel = memo(function FilterPanel({
                 <button
                   style={pinButtonStyles}
                   onClick={() => handleUnpinNode(node.id)}
-                  title="取消釘選"
+                  title={t('filter.unpin')}
                 >
                   ✕
                 </button>
@@ -672,7 +674,7 @@ export const FilterPanel = memo(function FilterPanel({
         {/* ---- Sprint 10: Available hidden nodes to pin ---- */}
         {unpinnedHiddenNodes.length > 0 && (
           <>
-            <p style={sectionTitleStyles}>已隱藏節點</p>
+            <p style={sectionTitleStyles}>{t('filter.hiddenNodes')}</p>
             <div style={{ maxHeight: 200, overflowY: 'auto' }}>
               {unpinnedHiddenNodes.map((node) => (
                 <div key={node.id} style={hiddenNodeItemStyles}>
@@ -683,7 +685,7 @@ export const FilterPanel = memo(function FilterPanel({
                   <button
                     style={pinButtonStyles}
                     onClick={() => handlePinNode(node.id)}
-                    title="釘選到畫面"
+                    title={t('filter.pinToCanvas')}
                   >
                     +
                   </button>

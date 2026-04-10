@@ -958,8 +958,14 @@ Response format: ["keyword1", "keyword2", ...]`;
 
   // ---- POST /api/ai/analyze --------------------------------------------------
   // Sprint 16 T1: Create and fire-and-forget an AI analysis job.
+  // Sprint 21 T8: Accept optional locale field for AI prompt i18n.
   fastify.post('/api/ai/analyze', async (request, reply) => {
-    const body = request.body as { scope?: string; target?: string; force?: boolean } | null;
+    const body = request.body as {
+      scope?: string;
+      target?: string;
+      force?: boolean;
+      locale?: string;
+    } | null;
 
     if (!body?.scope) {
       return reply.status(400).send({ ok: false, message: 'Missing scope field' });
@@ -969,6 +975,10 @@ Response format: ["keyword1", "keyword2", ...]`;
     if (!validScopes.includes(body.scope)) {
       return reply.status(400).send({ ok: false, message: `Invalid scope: ${body.scope}` });
     }
+
+    // Sprint 21 T8: i18n — update job manager locale before dispatching the job
+    const locale = (body.locale === 'zh-TW' ? 'zh-TW' : 'en') as import('@codeatlas/core').Locale;
+    aiJobManager.setLocale(locale);
 
     const job = aiJobManager.createJob(
       body.scope as import('./ai-job-manager.js').AIJobScope,
