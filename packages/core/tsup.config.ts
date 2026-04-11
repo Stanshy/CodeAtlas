@@ -17,4 +17,15 @@ export default defineConfig({
   splitting: false,
   treeshake: true,
   target: 'es2022',
+  // Native C++ addons (tree-sitter) cannot be bundled — they must be loaded
+  // at runtime via require().  Externalising them ensures the dynamic
+  // createRequire() calls in NativeTreeSitterProvider work correctly.
+  external: [
+    'tree-sitter',
+    'tree-sitter-javascript',
+    'tree-sitter-typescript',
+    'tree-sitter-python',
+    'tree-sitter-java',
+    'web-tree-sitter',
+  ],
 });

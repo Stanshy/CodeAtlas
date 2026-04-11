@@ -596,6 +596,8 @@ function findPythonFiles(dir: string, maxDepth = 8, depth = 0): string[] {
   const SKIP = new Set([
     'node_modules', '.venv', 'venv', '__pycache__', '.git', 'dist',
     'build', '.next', 'coverage', '.cache', '.tox', '.eggs', 'egg-info',
+    // Test directories — prevent noise from test fixtures
+    'test', 'tests', 'e2e', '__tests__', 'fixtures', '.pytest_cache', 'test-results',
   ]);
 
   let entries: fs.Dirent[];

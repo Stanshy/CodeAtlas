@@ -32,6 +32,14 @@ const DEFAULT_IGNORE_DIRS = new Set([
   'target',
   '.gradle',
   '.idea',
+  // Test directories — prevent noise from test fixtures/mocks
+  'test',
+  'tests',
+  'e2e',
+  '__tests__',
+  'fixtures',
+  '.pytest_cache',
+  'test-results',
 ]);
 
 const DEFAULT_EXTENSIONS = new Set([

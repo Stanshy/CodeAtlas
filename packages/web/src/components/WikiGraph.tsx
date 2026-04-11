@@ -70,6 +70,46 @@ export interface WikiGraphProps {
 
 function NotGeneratedState() {
   const { t } = useTranslation();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    setGenError(null);
+    try {
+      const locale = localStorage.getItem('codeatlas-locale') || 'en';
+      const res = await fetch('/api/wiki/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locale }),
+      });
+      const data = await res.json() as { status?: string; message?: string };
+      if (data.status === 'completed' || data.status === 'generating') {
+        window.location.reload();
+      } else {
+        setGenError(data.message || t('wiki.generateError'));
+      }
+    } catch {
+      setGenError(t('wiki.generateError'));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generateBtnStyle: React.CSSProperties = {
+    marginTop: 16,
+    padding: '10px 28px',
+    background: isGenerating ? '#1565c0' : '#1976d2',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: isGenerating ? 'not-allowed' : 'pointer',
+    opacity: isGenerating ? 0.75 : 1,
+    transition: 'background 0.15s',
+  };
+
   return (
     <div style={styles.emptyWrap}>
       <div style={styles.emptyCard}>
@@ -77,10 +117,18 @@ function NotGeneratedState() {
           &#x1F4DA;
         </div>
         <p style={styles.emptyTitle}>{t('wiki.notGenerated')}</p>
-        <p style={styles.emptyBody}>{t('wiki.notGeneratedHint')}</p>
-        <code style={styles.emptyCmd}>$ codeatlas wiki</code>
-        <p style={styles.emptyBody}>{t('wiki.notGeneratedAiHint')}</p>
-        <code style={styles.emptyCmd}>$ codeatlas wiki --ai</code>
+        <p style={styles.emptyBody}>{t('wiki.notGeneratedWebHint')}</p>
+        <button
+          type="button"
+          style={generateBtnStyle}
+          onClick={handleGenerate}
+          disabled={isGenerating}
+        >
+          {isGenerating ? t('wiki.generating') : t('wiki.generateButton')}
+        </button>
+        {genError && (
+          <p style={{ ...styles.emptyBody, color: '#ef4444', marginTop: 8 }}>{genError}</p>
+        )}
       </div>
     </div>
   );

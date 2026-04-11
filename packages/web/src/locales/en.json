@@ -77,7 +77,8 @@
     "errorInvalidResponse": "Invalid server response, please try again",
     "errorCannotStartAnalysis": "Cannot start analysis, please try again",
     "errorNoJobId": "Cannot retrieve analysis job ID, please try again",
-    "errorCannotConnect": "Cannot connect to the server, please ensure the service is running"
+    "errorCannotConnect": "Cannot connect to the server, please ensure the service is running",
+    "browseAriaLabel": "Browse folder"
   },
   "recentProjects": {
     "title": "Recent projects",
@@ -313,6 +314,10 @@
     "aiError": "AI analysis failed, please try again later.",
     "justNow": "Just now",
     "cannotConnect": "Cannot connect to local server, please ensure CodeAtlas is running.",
+    "notGeneratedWebHint": "Click the button below to generate wiki documentation from your analysis results.",
+    "generateButton": "Generate Wiki",
+    "generating": "Generating...",
+    "generateError": "Failed to generate wiki. Please ensure AI provider is configured.",
     "knowledgeNodes": "Knowledge Nodes",
     "openPageTab": "Open {{name}}",
     "closePageTab": "Close {{name}}",

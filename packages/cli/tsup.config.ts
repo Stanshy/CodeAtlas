@@ -32,6 +32,17 @@ export default defineConfig({
   // to install it separately. Core is a workspace dependency that would
   // otherwise be treated as external by tsup.
   noExternal: ['@codeatlas/core'],
+  // Native C++ addons (tree-sitter) cannot be bundled — they must be
+  // resolved at runtime via require(). Keep them external even when
+  // inlining @codeatlas/core.
+  external: [
+    'tree-sitter',
+    'tree-sitter-javascript',
+    'tree-sitter-typescript',
+    'tree-sitter-python',
+    'tree-sitter-java',
+    'web-tree-sitter',
+  ],
   sourcemap: false,
   clean: true,
   splitting: false,

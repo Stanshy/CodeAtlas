@@ -77,7 +77,8 @@
     "errorInvalidResponse": "伺服器回應無效，請再試一次",
     "errorCannotStartAnalysis": "無法啟動分析，請再試一次",
     "errorNoJobId": "無法取得分析工作 ID，請再試一次",
-    "errorCannotConnect": "無法連線至伺服器，請確認服務已啟動"
+    "errorCannotConnect": "無法連線至伺服器，請確認服務已啟動",
+    "browseAriaLabel": "瀏覽資料夾"
   },
   "recentProjects": {
     "title": "最近開啟的專案",
@@ -313,6 +314,10 @@
     "aiError": "AI 分析失敗，請稍後再試。",
     "justNow": "剛剛",
     "cannotConnect": "無法連線到本地伺服器，請確認 CodeAtlas 正在執行中。",
+    "notGeneratedWebHint": "點擊下方按鈕，從分析結果產生 Wiki 知識文件。",
+    "generateButton": "產生 Wiki",
+    "generating": "產生中...",
+    "generateError": "Wiki 產生失敗，請確認已設定 AI 提供者。",
     "knowledgeNodes": "知識節點",
     "openPageTab": "開啟 {{name}}",
     "closePageTab": "關閉 {{name}}",
