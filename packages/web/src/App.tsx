@@ -99,6 +99,10 @@ function AppInner() {
   const handlePerspectiveChange = useCallback(
     (perspective: PerspectiveName) => {
       dispatch({ type: 'SET_PERSPECTIVE', perspective });
+      // When clicking the "知識圖" tab, clear the active wiki page so the graph shows
+      if (perspective === 'wiki') {
+        setActiveWikiSlug(null);
+      }
     },
     [dispatch],
   );

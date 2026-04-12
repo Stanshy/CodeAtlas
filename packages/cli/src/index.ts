@@ -15,7 +15,7 @@ const program = new Command();
 program
   .name('codeatlas')
   .description('CodeAtlas — codebase analysis and navigation tool')
-  .version('1.0.0')
+  .version('0.1.0')
   .option('-l, --lang <locale>', 'Output language (en, zh-TW)', 'en');
 
 program

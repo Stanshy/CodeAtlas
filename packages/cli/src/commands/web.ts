@@ -62,15 +62,10 @@ function openBrowser(url: string): void {
  *   web dir   → packages/web
  */
 function resolveWebDir(): string {
-  // 1. Bundled mode (npm install -g): web dist is copied into cli dist/web/
-  //    during the tsup build. This path takes priority for npm distribution.
-  const bundledWebDir = path.join(__dirname, 'web');
-  if (existsSync(path.join(bundledWebDir, 'index.html'))) {
-    return bundledWebDir;
-  }
-
-  // 2. Monorepo mode (development): walk up to find pnpm-workspace.yaml,
-  //    then resolve packages/web/dist.
+  // Walk up from __dirname to find the monorepo root, then resolve packages/web/dist.
+  //   Development (tsx):  __dirname = packages/cli/src/commands → 4 levels up
+  //   Production (tsup):  __dirname = packages/cli/dist         → 3 levels up
+  // Strategy: walk up until we find pnpm-workspace.yaml (monorepo root marker).
   let dir = __dirname;
   for (let i = 0; i < 10; i++) {
     if (existsSync(path.join(dir, 'pnpm-workspace.yaml'))) {
@@ -170,7 +165,7 @@ async function webCommandIdle(options: WebCommandOptions): Promise<void> {
 
   const url = `http://localhost:${port}`;
 
-  console.log('CodeAtlas v1.0.0');
+  console.log('CodeAtlas v0.1.0');
   console.log('');
   console.log(`Server  : ${url}`);
   console.log('');
@@ -268,7 +263,7 @@ async function webCommandWithPath(
 
   const url = `http://localhost:${port}`;
 
-  console.log('CodeAtlas v1.0.0');
+  console.log('CodeAtlas v0.1.0');
   console.log('');
   console.log(`Project : ${resolvedPath}`);
   console.log(`Server  : ${url}`);

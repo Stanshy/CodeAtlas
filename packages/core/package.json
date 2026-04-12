@@ -1,13 +1,7 @@
 {
   "name": "@codeatlas/core",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "CodeAtlas core library — parsing, analysis, graph construction",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Stanshy/CodeAtlas.git",
-    "directory": "packages/core"
-  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

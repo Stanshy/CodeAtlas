@@ -1,15 +1,8 @@
 {
   "name": "codeatlas",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "private": true,
-  "description": "Visualize any codebase in 5 minutes. Local-first, privacy-focused.",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Stanshy/CodeAtlas.git"
-  },
-  "homepage": "https://github.com/Stanshy/CodeAtlas",
-  "keywords": ["codebase", "visualization", "architecture", "analysis", "code-analysis", "dependency-graph"],
+  "description": "CodeAtlas monorepo",
   "scripts": {
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",

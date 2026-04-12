@@ -24,9 +24,10 @@ import {
   scanDirectory,
   exportWiki,
 } from '@codeatlas/core';
+import type { WikiExporterInput, WikiExportOptions } from '@codeatlas/core';
 import type { ServerMode, ServerStatus, AnalysisProgress } from '@codeatlas/core';
 import type { DirectorySummary, StepDetail } from '@codeatlas/core';
-import type { WikiManifest, WikiNode, WikiPageMeta, WikiExporterInput, WikiExportOptions } from '@codeatlas/core';
+import type { WikiManifest, WikiNode, WikiPageMeta } from '@codeatlas/core';
 import {
   buildConceptDeepAnalysisPrompt,
   parseConceptDeepAnalysisResponse,
@@ -310,7 +311,7 @@ export async function startServer(options: ServerOptions): Promise<void> {
 
   // ---- GET /api/health -------------------------------------------------------
   fastify.get('/api/health', async (_req, reply) => {
-    await reply.send({ status: 'ok', version: '1.0.0' });
+    await reply.send({ status: 'ok', version: '0.1.0' });
   });
 
   // ---- GET /api/graph --------------------------------------------------------
@@ -1341,76 +1342,6 @@ Response format: ["keyword1", "keyword2", ...]`;
     return reply.send({ jobId });
   });
 
-  // ---- POST /api/wiki/generate ------------------------------------------------
-  // Generate wiki from existing analysis via Web UI.
-  fastify.post<{ Body: { locale?: string } }>('/api/wiki/generate', async (request, reply) => {
-    if (serverMode !== 'ready' || !currentProjectPath) {
-      return reply.code(400).send({
-        status: 'error',
-        message: 'No project is currently loaded. Please analyze a project first.',
-      });
-    }
-
-    let analysis: AnalysisResult;
-    try {
-      const raw = await fs.readFile(currentAnalysisPath, 'utf-8');
-      analysis = JSON.parse(raw) as AnalysisResult;
-    } catch {
-      return reply.code(400).send({
-        status: 'error',
-        message: 'Cannot read analysis.json. Please re-analyze the project first.',
-      });
-    }
-
-    const fileNodes = analysis.graph.nodes.filter((n) => n.type === 'file');
-    const allEdges = analysis.graph.edges;
-    const directoryGraph = aggregateByDirectory(fileNodes, allEdges);
-    const endpointGraph = detectEndpoints(analysis);
-
-    const wikiProvider = createProvider(
-      currentAiProvider,
-      currentAiKey,
-      currentAiProvider === 'ollama' ? { ollamaModel: currentOllamaModel } : undefined,
-    );
-
-    if (!wikiProvider.isConfigured()) {
-      return reply.code(400).send({
-        status: 'error',
-        message: 'AI provider is not configured. Please set up an AI provider in settings first.',
-      });
-    }
-
-    const wikiDir = path.join(path.dirname(currentAnalysisPath), 'wiki');
-    const exporterInput: WikiExporterInput = {
-      analysisResult: analysis,
-      directoryGraph,
-      endpointGraph,
-    };
-    const exportOptions: WikiExportOptions = {
-      outputDir: wikiDir,
-      locale: (request.body?.locale as 'en' | 'zh-TW') || 'en',
-    };
-
-    try {
-      const { manifest, mdFiles } = await exportWiki(exporterInput, wikiProvider, exportOptions);
-
-      await fs.mkdir(wikiDir, { recursive: true });
-      for (const mdFile of mdFiles) {
-        const absPath = path.join(wikiDir, mdFile.path);
-        await fs.mkdir(path.dirname(absPath), { recursive: true });
-        await fs.writeFile(absPath, mdFile.content, 'utf-8');
-      }
-
-      const manifestPath = path.join(wikiDir, 'wiki-manifest.json');
-      await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
-
-      return reply.send({ status: 'completed', pages: manifest.pages?.length ?? 0 });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      return reply.code(500).send({ status: 'error', message: `Wiki generation failed: ${message}` });
-    }
-  });
-
   // ==========================================================================
   // Sprint 20 T5: /api/project/* routes
   // ==========================================================================
@@ -1718,91 +1649,141 @@ Response format: ["keyword1", "keyword2", ...]`;
     },
   );
 
-  // ---- POST /api/system/browse-folder ----------------------------------------
-  // Open native Windows folder picker via compiled C# exe (IFileOpenDialog COM).
-  let browseDialogOpen = false;
+  // ---- POST /api/wiki/generate ------------------------------------------------
+  // Generate wiki from existing analysis via Web UI.
+  fastify.post<{ Body: { locale?: string } }>('/api/wiki/generate', async (request, reply) => {
+    if (!currentProjectPath) {
+      return reply.code(400).send({
+        status: 'error',
+        message: 'No project is currently loaded. Please analyze a project first.',
+      });
+    }
 
+    let analysis: AnalysisResult;
+    try {
+      const raw = await fs.readFile(currentAnalysisPath, 'utf-8');
+      analysis = JSON.parse(raw) as AnalysisResult;
+    } catch {
+      return reply.code(400).send({
+        status: 'error',
+        message: 'Cannot read analysis.json. Please re-analyze the project first.',
+      });
+    }
+
+    const fileNodes = analysis.graph.nodes.filter((n) => n.type === 'file');
+    const allEdges = analysis.graph.edges;
+    const directoryGraph = aggregateByDirectory(fileNodes, allEdges);
+    const endpointGraph = detectEndpoints(analysis);
+
+    const wikiProvider = createProvider(
+      currentAiProvider,
+      currentAiKey,
+      currentAiProvider === 'ollama' ? { ollamaModel: currentOllamaModel } : undefined,
+    );
+
+    if (!wikiProvider.isConfigured()) {
+      return reply.code(400).send({
+        status: 'error',
+        message: 'AI provider is not configured. Please set up an AI provider in settings first.',
+      });
+    }
+
+    const wikiDir = path.join(path.dirname(currentAnalysisPath), 'wiki');
+    const exporterInput: WikiExporterInput = {
+      analysisResult: analysis,
+      directoryGraph,
+      endpointGraph,
+    };
+    const exportOptions: WikiExportOptions = {
+      outputDir: wikiDir,
+      locale: (request.body?.locale as 'en' | 'zh-TW') || 'en',
+    };
+
+    try {
+      const { manifest, mdFiles } = await exportWiki(exporterInput, wikiProvider, exportOptions);
+
+      await fs.mkdir(wikiDir, { recursive: true });
+      for (const mdFile of mdFiles) {
+        const absPath = path.join(wikiDir, mdFile.path);
+        await fs.mkdir(path.dirname(absPath), { recursive: true });
+        await fs.writeFile(absPath, mdFile.content, 'utf-8');
+      }
+
+      const manifestPath = path.join(wikiDir, 'wiki-manifest.json');
+      await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
+
+      return reply.send({ status: 'completed', pages: manifest.pages?.length ?? 0 });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return reply.code(500).send({ status: 'error', message: `Wiki generation failed: ${message}` });
+    }
+  });
+
+  // ---- Browse Folder ---------------------------------------------------------
+  let browseDialogOpen = false;
   fastify.post('/api/system/browse-folder', async (_req, reply) => {
+    if (process.platform !== 'win32') {
+      return reply.code(501).send({ error: 'not_supported', message: 'Folder picker is only supported on Windows.' });
+    }
     if (browseDialogOpen) {
-      return reply.code(429).send({ path: null, message: 'A folder dialog is already open.' });
+      return reply.code(409).send({ error: 'dialog_open', message: 'A browse dialog is already open.' });
     }
     browseDialogOpen = true;
 
     try {
-      const { execSync } = await import('node:child_process');
-      const fwDir = 'C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319';
-      const cscPath = path.join(fwDir, 'csc.exe');
+      const { execSync } = await import('child_process');
 
-      const csSource = `
+      // Compile and run a C# script that uses IFileOpenDialog COM for native folder picker
+      const csCode = `
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 
-class FolderPicker {
+class P {
+  [DllImport("ole32.dll")] static extern int CoInitializeEx(IntPtr r, uint f);
+  [DllImport("ole32.dll")] static extern void CoUninitialize();
   [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
-  [DllImport("ole32.dll")] static extern int CoInitializeEx(IntPtr pvReserved, uint dwCoInit);
-
-  [ComImport, Guid("DC1C5A9C-E88A-4DDE-A5A1-60F82A20AEF7")]
-  class FileOpenDialog {}
-
+  [ComImport, Guid("DC1C5A9C-E88A-4DDE-A5A1-60F82A20AEF7")] class FD {}
   [ComImport, Guid("42F85136-DB7E-439C-85F1-E4075D135FC8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-  interface IFileOpenDialog {
-    [PreserveSig] int Show(IntPtr parent);
+  interface IFileDialog {
+    int Show(IntPtr w);
     void SetFileTypes(); void SetFileTypeIndex(); void GetFileTypeIndex();
-    void Advise(); void Unadvise(); void SetOptions(uint fos);
-    void GetOptions(); void SetDefaultFolder(); void SetFolder();
-    void GetFolder(); void GetCurrentSelection();
-    void SetFileName(); void GetFileName(); void SetTitle();
-    void SetOkButtonLabel(); void SetFileNameLabel();
-    void GetResult(out IShellItem ppsi);
+    void Advise(); void Unadvise(); void SetOptions();
+    void GetOptions([MarshalAs(UnmanagedType.U4)] out uint o);
+    void SetDefaultFolder(); void SetFolder(); void GetFolder();
+    void GetCurrentSelection(); void SetFileName(); void GetFileName();
+    void SetTitle(); void SetOkButtonLabel(); void SetFileNameLabel();
+    void GetResult([MarshalAs(UnmanagedType.Interface)] out IShellItem i);
   }
-
   [ComImport, Guid("43826D1E-E718-42EE-BC55-A1E261C37BFE"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-  interface IShellItem {
-    void BindToHandler(); void GetParent();
-    void GetDisplayName(uint sigdnName, [MarshalAs(UnmanagedType.LPWStr)] out string ppszName);
+  interface IShellItem { void a(); void b();
+    void GetDisplayName(uint t, [MarshalAs(UnmanagedType.LPWStr)] out string n);
   }
-
-  [STAThread]
   static void Main() {
     CoInitializeEx(IntPtr.Zero, 2);
-    var d = (IFileOpenDialog)new FileOpenDialog();
-    d.SetOptions(0x20);
-    var fg = GetForegroundWindow();
-    int hr = d.Show(fg);
-    if (hr != 0) { Console.WriteLine("CANCELLED"); return; }
-    IShellItem item; d.GetResult(out item);
-    string folderPath; item.GetDisplayName(0x80058000, out folderPath);
-    Console.WriteLine(folderPath);
+    try {
+      var d=(IFileDialog)new FD(); uint o; d.GetOptions(out o); d.SetOptions();
+      // FOS_PICKFOLDERS=0x20 | FOS_FORCEFILESYSTEM=0x40 | FOS_PATHMUSTEXIST=0x800
+      typeof(IFileDialog).GetMethod("SetOptions").Invoke(d,new object[]{o|0x20u|0x40u|0x800u});
+      var w = GetForegroundWindow();
+      if(d.Show(w)==0){IShellItem i;d.GetResult(out i);string p;i.GetDisplayName(0x80058000,out p);Console.Write(p);}
+    } finally { CoUninitialize(); }
   }
 }`;
-
-      const tmpDir = path.join(process.env.TEMP || 'C:\\Temp', 'codeatlas-browse');
+      const tmpDir = path.join(process.env.TEMP || 'C:\\\\Temp', 'codeatlas-browse');
       await fs.mkdir(tmpDir, { recursive: true });
-      const csPath = path.join(tmpDir, 'FolderPicker.cs');
-      const exePath = path.join(tmpDir, 'FolderPicker.exe');
-      await fs.writeFile(csPath, csSource, 'utf-8');
+      const csFile = path.join(tmpDir, 'browse.cs');
+      const exeFile = path.join(tmpDir, 'browse.exe');
+      await fs.writeFile(csFile, csCode, 'utf8');
 
-      try {
-        execSync(`"${cscPath}" /nologo /out:"${exePath}" "${csPath}"`, { stdio: 'pipe', timeout: 10000 });
-      } catch {
-        browseDialogOpen = false;
-        return reply.send({ path: null, message: 'Failed to compile folder picker.' });
-      }
+      execSync(`C:\\\\Windows\\\\Microsoft.NET\\\\Framework64\\\\v4.0.30319\\\\csc.exe /nologo /out:"${exeFile}" "${csFile}"`, { stdio: 'pipe' });
+      const result = execSync(`"${exeFile}"`, { encoding: 'utf8', timeout: 60_000 }).trim();
 
-      try {
-        const output = execSync(`"${exePath}"`, { encoding: 'utf-8', timeout: 120000, stdio: ['pipe', 'pipe', 'pipe'] }).trim();
-        browseDialogOpen = false;
-        if (output === 'CANCELLED' || !output) {
-          return reply.send({ path: null, message: 'No folder selected.' });
-        }
-        return reply.send({ path: output });
-      } catch {
-        browseDialogOpen = false;
-        return reply.send({ path: null, message: 'Folder dialog was closed or timed out.' });
-      }
+      return reply.send({ path: result || null });
     } catch {
+      return reply.send({ path: null });
+    } finally {
       browseDialogOpen = false;
-      return reply.send({ path: null, message: 'Folder dialog not supported on this platform.' });
     }
   });
 

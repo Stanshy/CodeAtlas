@@ -1,5 +1,5 @@
 {
-  "cli.version": "CodeAtlas v1.0.0",
+  "cli.version": "CodeAtlas v0.1.0",
   "cli.analyze.scanning": "掃描中：",
   "cli.analyze.filesFound": "找到檔案：",
   "cli.analyze.analyzed": "已分析：",

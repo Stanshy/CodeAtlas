@@ -124,7 +124,6 @@ export async function postAIAnalyze(
   target?: string,
   force = false,
 ): Promise<AIAnalyzeResponse> {
-  // Pass current UI locale so AI responses match user's language preference
   const locale = localStorage.getItem('codeatlas-locale') || 'en';
   const res = await fetch('/api/ai/analyze', {
     method: 'POST',

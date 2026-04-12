@@ -55,11 +55,3 @@ Thumbs.db
 # Claude Code harness runtime
 .claude/hook-execution.jsonl
 .claude/settings.local.json
-
-# Internal files — excluded from GitHub (orphan branch)
-# These are kept in local git history but not pushed to public repo
-CLAUDE.md
-.claude/
-.knowledge/
-proposal/
-.tasks/

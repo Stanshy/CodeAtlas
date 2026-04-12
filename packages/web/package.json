@@ -1,13 +1,7 @@
 {
   "name": "@codeatlas/web",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "CodeAtlas Web UI — browser-based codebase visualisation",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Stanshy/CodeAtlas.git",
-    "directory": "packages/web"
-  },
   "private": true,
   "type": "module",
   "scripts": {

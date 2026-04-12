@@ -44,7 +44,7 @@ export async function analyzeCommand(
 
   const startTime = Date.now();
 
-  console.log('CodeAtlas v1.0.0');
+  console.log('CodeAtlas v0.1.0');
   console.log('');
   console.log(`Scanning: ${resolvedPath}`);
 

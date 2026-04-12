@@ -2,22 +2,6 @@ import { defineConfig } from 'tsup';
 import fs from 'node:fs';
 import path from 'node:path';
 
-/**
- * Recursively copy a directory.
- */
-function copyDirSync(src: string, dest: string): void {
-  fs.mkdirSync(dest, { recursive: true });
-  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-    const srcPath = path.join(src, entry.name);
-    const destPath = path.join(dest, entry.name);
-    if (entry.isDirectory()) {
-      copyDirSync(srcPath, destPath);
-    } else {
-      fs.copyFileSync(srcPath, destPath);
-    }
-  }
-}
-
 export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm', 'cjs'],
@@ -28,22 +12,7 @@ export default defineConfig({
       declarationMap: true,
     },
   },
-  // Bundle @codeatlas/core into the CLI output so npm users don't need
-  // to install it separately. Core is a workspace dependency that would
-  // otherwise be treated as external by tsup.
-  noExternal: ['@codeatlas/core'],
-  // Native C++ addons (tree-sitter) cannot be bundled — they must be
-  // resolved at runtime via require(). Keep them external even when
-  // inlining @codeatlas/core.
-  external: [
-    'tree-sitter',
-    'tree-sitter-javascript',
-    'tree-sitter-typescript',
-    'tree-sitter-python',
-    'tree-sitter-java',
-    'web-tree-sitter',
-  ],
-  sourcemap: false,
+  sourcemap: true,
   clean: true,
   splitting: false,
   treeshake: true,
@@ -53,26 +22,15 @@ export default defineConfig({
     js: '#!/usr/bin/env node',
   },
   async onSuccess() {
-    // 1. Copy locale JSON files to dist/locales/
-    const localeSrc = path.resolve('src/locales');
-    const localeDest = path.resolve('dist/locales');
-    fs.mkdirSync(localeDest, { recursive: true });
-    for (const file of fs.readdirSync(localeSrc)) {
+    // Copy locale JSON files to dist/locales/ so readFileSync can find them
+    // when running from the built dist/ directory.
+    const srcDir = path.resolve('src/locales');
+    const destDir = path.resolve('dist/locales');
+    fs.mkdirSync(destDir, { recursive: true });
+    for (const file of fs.readdirSync(srcDir)) {
       if (file.endsWith('.json')) {
-        fs.copyFileSync(path.join(localeSrc, file), path.join(localeDest, file));
+        fs.copyFileSync(path.join(srcDir, file), path.join(destDir, file));
       }
-    }
-
-    // 2. Bundle web dist into cli dist/web/ for npm distribution.
-    //    This allows `npm install -g codeatlas` to work without the monorepo.
-    const webDistSrc = path.resolve('..', 'web', 'dist');
-    const webDistDest = path.resolve('dist', 'web');
-    if (fs.existsSync(webDistSrc)) {
-      copyDirSync(webDistSrc, webDistDest);
-      const fileCount = fs.readdirSync(webDistDest).length;
-      console.log(`  Bundled web dist (${fileCount} entries) → dist/web/`);
-    } else {
-      console.warn('  ⚠ packages/web/dist not found — run web build first');
     }
   },
 });

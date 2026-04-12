@@ -32,7 +32,7 @@ const DEFAULT_IGNORE_DIRS = new Set([
   'target',
   '.gradle',
   '.idea',
-  // Test directories — prevent noise from test fixtures/mocks
+  // Test directories — excluded to reduce noise in analysis graphs
   'test',
   'tests',
   'e2e',

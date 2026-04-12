@@ -1,5 +1,5 @@
 {
-  "cli.version": "CodeAtlas v1.0.0",
+  "cli.version": "CodeAtlas v0.1.0",
   "cli.analyze.scanning": "Scanning:",
   "cli.analyze.filesFound": "Files found:",
   "cli.analyze.analyzed": "Analyzed:",

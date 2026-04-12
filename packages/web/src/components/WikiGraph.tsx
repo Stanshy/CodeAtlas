@@ -83,31 +83,15 @@ function NotGeneratedState() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ locale }),
       });
-      const data = await res.json() as { status?: string; message?: string };
-      if (data.status === 'completed' || data.status === 'generating') {
-        window.location.reload();
-      } else {
-        setGenError(data.message || t('wiki.generateError'));
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || `HTTP ${res.status}`);
       }
-    } catch {
-      setGenError(t('wiki.generateError'));
-    } finally {
+      window.location.reload();
+    } catch (err) {
+      setGenError(err instanceof Error ? err.message : String(err));
       setIsGenerating(false);
     }
-  };
-
-  const generateBtnStyle: React.CSSProperties = {
-    marginTop: 16,
-    padding: '10px 28px',
-    background: isGenerating ? '#1565c0' : '#1976d2',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: isGenerating ? 'not-allowed' : 'pointer',
-    opacity: isGenerating ? 0.75 : 1,
-    transition: 'background 0.15s',
   };
 
   return (
@@ -117,17 +101,32 @@ function NotGeneratedState() {
           &#x1F4DA;
         </div>
         <p style={styles.emptyTitle}>{t('wiki.notGenerated')}</p>
-        <p style={styles.emptyBody}>{t('wiki.notGeneratedWebHint')}</p>
+        <p style={styles.emptyBody}>
+          {t('wiki.notGeneratedWebHint')}
+        </p>
         <button
           type="button"
-          style={generateBtnStyle}
           onClick={handleGenerate}
           disabled={isGenerating}
+          style={{
+            marginTop: 12,
+            padding: '10px 24px',
+            background: isGenerating ? '#1565c0' : '#1976d2',
+            color: 'white',
+            border: 'none',
+            borderRadius: 8,
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: isGenerating ? 'not-allowed' : 'pointer',
+            opacity: isGenerating ? 0.75 : 1,
+          }}
         >
           {isGenerating ? t('wiki.generating') : t('wiki.generateButton')}
         </button>
         {genError && (
-          <p style={{ ...styles.emptyBody, color: '#ef4444', marginTop: 8 }}>{genError}</p>
+          <p style={{ ...styles.emptyBody, color: '#ef4444', marginTop: 8 }}>
+            {t('wiki.generateError')}: {genError}
+          </p>
         )}
       </div>
     </div>
