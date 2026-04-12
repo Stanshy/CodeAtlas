@@ -30,6 +30,7 @@ import { Toolbar } from './components/Toolbar';
 import { E2EPanel } from './components/E2EPanel';
 import { TabBar } from './components/TabBar';
 import { WikiGraph } from './components/WikiGraph';
+import type { WikiPageTab } from './components/WikiGraph';
 import { ToastStack } from './components/Toast';
 import { ViewStateProvider, useViewState } from './contexts/ViewStateContext';
 import { AppStateProvider, useAppState } from './contexts/AppStateContext';
@@ -98,6 +99,10 @@ function AppInner() {
   const handlePerspectiveChange = useCallback(
     (perspective: PerspectiveName) => {
       dispatch({ type: 'SET_PERSPECTIVE', perspective });
+      // When clicking the "知識圖" tab, clear the active wiki page so the graph shows
+      if (perspective === 'wiki') {
+        setActiveWikiSlug(null);
+      }
     },
     [dispatch],
   );
@@ -152,6 +157,40 @@ function AppInner() {
     const timer = setTimeout(poll, 1000);
     return () => { cancelled = true; clearTimeout(timer); };
   }, [aiDone, refetch]);
+
+  // Wiki page tab state — lifted from WikiGraph so TabBar can render the tabs
+  const [openWikiPages, setOpenWikiPages] = useState<WikiPageTab[]>([]);
+  const [activeWikiSlug, setActiveWikiSlug] = useState<string | null>(null);
+
+  /** Open a wiki page tab (from TabBar or WikiGraph node click) */
+  const handleOpenWikiPage = useCallback((slug: string, displayName: string) => {
+    setOpenWikiPages((prev) => {
+      if (prev.some((p) => p.slug === slug)) return prev;
+      return [...prev, { slug, displayName }];
+    });
+    setActiveWikiSlug(slug);
+    dispatch({ type: 'SET_PERSPECTIVE', perspective: 'wiki' });
+  }, [dispatch]);
+
+  /** Select an already-open wiki page tab (from TabBar click) */
+  const handleSelectWikiPage = useCallback((slug: string) => {
+    setActiveWikiSlug(slug);
+    dispatch({ type: 'SET_PERSPECTIVE', perspective: 'wiki' });
+  }, [dispatch]);
+
+  const handleCloseWikiPage = useCallback((slug: string) => {
+    setOpenWikiPages((prev) => {
+      const idx = prev.findIndex((p) => p.slug === slug);
+      const next = prev.filter((p) => p.slug !== slug);
+      setActiveWikiSlug((current) => {
+        if (current !== slug) return current;
+        if (next.length === 0) return null;
+        const newIdx = Math.max(0, idx - 1);
+        return next[newIdx]?.slug ?? null;
+      });
+      return next;
+    });
+  }, []);
 
   // Wiki page count — fetch manifest on mount
   const [wikiPageCount, setWikiPageCount] = useState(0);
@@ -241,11 +280,15 @@ function AppInner() {
       {/* Camera Presets — renders null in 2D mode (kept for future use) */}
       <CameraPresets />
 
-      {/* Tab Bar — perspective switcher, positioned below Toolbar */}
+      {/* Tab Bar — perspective switcher + dynamic wiki page tabs */}
       <TabBar
         activePerspective={activePerspective}
         onPerspectiveChange={handlePerspectiveChange}
         counts={tabCounts}
+        openWikiPages={openWikiPages}
+        activeWikiSlug={activeWikiSlug}
+        onSelectWikiPage={handleSelectWikiPage}
+        onCloseWikiPage={handleCloseWikiPage}
       />
 
       {/* Sprint 15.1: AI analysis progress indicator */}
@@ -278,7 +321,13 @@ function AppInner() {
 
       {/* Graph renderer — Wiki tab gets its own D3 canvas; all other tabs use GraphContainer */}
       {activePerspective === 'wiki' ? (
-        <WikiGraph />
+        <WikiGraph
+          openPages={openWikiPages}
+          activePageSlug={activeWikiSlug}
+          onOpenPage={handleOpenWikiPage}
+          onClosePage={handleCloseWikiPage}
+          onSelectPage={handleSelectWikiPage}
+        />
       ) : (
         <GraphContainer
           rfNodes={nodes}

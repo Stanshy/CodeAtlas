@@ -22,7 +22,9 @@ import {
   aggregateByDirectory,
   detectEndpoints,
   scanDirectory,
+  exportWiki,
 } from '@codeatlas/core';
+import type { WikiExporterInput, WikiExportOptions } from '@codeatlas/core';
 import type { ServerMode, ServerStatus, AnalysisProgress } from '@codeatlas/core';
 import type { DirectorySummary, StepDetail } from '@codeatlas/core';
 import type { WikiManifest, WikiNode, WikiPageMeta } from '@codeatlas/core';
@@ -1646,6 +1648,144 @@ Response format: ["keyword1", "keyword2", ...]`;
       return reply.send({ success: true });
     },
   );
+
+  // ---- POST /api/wiki/generate ------------------------------------------------
+  // Generate wiki from existing analysis via Web UI.
+  fastify.post<{ Body: { locale?: string } }>('/api/wiki/generate', async (request, reply) => {
+    if (!currentProjectPath) {
+      return reply.code(400).send({
+        status: 'error',
+        message: 'No project is currently loaded. Please analyze a project first.',
+      });
+    }
+
+    let analysis: AnalysisResult;
+    try {
+      const raw = await fs.readFile(currentAnalysisPath, 'utf-8');
+      analysis = JSON.parse(raw) as AnalysisResult;
+    } catch {
+      return reply.code(400).send({
+        status: 'error',
+        message: 'Cannot read analysis.json. Please re-analyze the project first.',
+      });
+    }
+
+    const fileNodes = analysis.graph.nodes.filter((n) => n.type === 'file');
+    const allEdges = analysis.graph.edges;
+    const directoryGraph = aggregateByDirectory(fileNodes, allEdges);
+    const endpointGraph = detectEndpoints(analysis);
+
+    const wikiProvider = createProvider(
+      currentAiProvider,
+      currentAiKey,
+      currentAiProvider === 'ollama' ? { ollamaModel: currentOllamaModel } : undefined,
+    );
+
+    if (!wikiProvider.isConfigured()) {
+      return reply.code(400).send({
+        status: 'error',
+        message: 'AI provider is not configured. Please set up an AI provider in settings first.',
+      });
+    }
+
+    const wikiDir = path.join(path.dirname(currentAnalysisPath), 'wiki');
+    const exporterInput: WikiExporterInput = {
+      analysisResult: analysis,
+      directoryGraph,
+      endpointGraph,
+    };
+    const exportOptions: WikiExportOptions = {
+      outputDir: wikiDir,
+      locale: (request.body?.locale as 'en' | 'zh-TW') || 'en',
+    };
+
+    try {
+      const { manifest, mdFiles } = await exportWiki(exporterInput, wikiProvider, exportOptions);
+
+      await fs.mkdir(wikiDir, { recursive: true });
+      for (const mdFile of mdFiles) {
+        const absPath = path.join(wikiDir, mdFile.path);
+        await fs.mkdir(path.dirname(absPath), { recursive: true });
+        await fs.writeFile(absPath, mdFile.content, 'utf-8');
+      }
+
+      const manifestPath = path.join(wikiDir, 'wiki-manifest.json');
+      await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
+
+      return reply.send({ status: 'completed', pages: manifest.pages?.length ?? 0 });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return reply.code(500).send({ status: 'error', message: `Wiki generation failed: ${message}` });
+    }
+  });
+
+  // ---- Browse Folder ---------------------------------------------------------
+  let browseDialogOpen = false;
+  fastify.post('/api/system/browse-folder', async (_req, reply) => {
+    if (process.platform !== 'win32') {
+      return reply.code(501).send({ error: 'not_supported', message: 'Folder picker is only supported on Windows.' });
+    }
+    if (browseDialogOpen) {
+      return reply.code(409).send({ error: 'dialog_open', message: 'A browse dialog is already open.' });
+    }
+    browseDialogOpen = true;
+
+    try {
+      const { execSync } = await import('child_process');
+
+      // Compile and run a C# script that uses IFileOpenDialog COM for native folder picker
+      const csCode = `
+using System;
+using System.Runtime.InteropServices;
+using System.Threading;
+
+class P {
+  [DllImport("ole32.dll")] static extern int CoInitializeEx(IntPtr r, uint f);
+  [DllImport("ole32.dll")] static extern void CoUninitialize();
+  [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+  [ComImport, Guid("DC1C5A9C-E88A-4DDE-A5A1-60F82A20AEF7")] class FD {}
+  [ComImport, Guid("42F85136-DB7E-439C-85F1-E4075D135FC8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+  interface IFileDialog {
+    int Show(IntPtr w);
+    void SetFileTypes(); void SetFileTypeIndex(); void GetFileTypeIndex();
+    void Advise(); void Unadvise(); void SetOptions();
+    void GetOptions([MarshalAs(UnmanagedType.U4)] out uint o);
+    void SetDefaultFolder(); void SetFolder(); void GetFolder();
+    void GetCurrentSelection(); void SetFileName(); void GetFileName();
+    void SetTitle(); void SetOkButtonLabel(); void SetFileNameLabel();
+    void GetResult([MarshalAs(UnmanagedType.Interface)] out IShellItem i);
+  }
+  [ComImport, Guid("43826D1E-E718-42EE-BC55-A1E261C37BFE"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+  interface IShellItem { void a(); void b();
+    void GetDisplayName(uint t, [MarshalAs(UnmanagedType.LPWStr)] out string n);
+  }
+  static void Main() {
+    CoInitializeEx(IntPtr.Zero, 2);
+    try {
+      var d=(IFileDialog)new FD(); uint o; d.GetOptions(out o); d.SetOptions();
+      // FOS_PICKFOLDERS=0x20 | FOS_FORCEFILESYSTEM=0x40 | FOS_PATHMUSTEXIST=0x800
+      typeof(IFileDialog).GetMethod("SetOptions").Invoke(d,new object[]{o|0x20u|0x40u|0x800u});
+      var w = GetForegroundWindow();
+      if(d.Show(w)==0){IShellItem i;d.GetResult(out i);string p;i.GetDisplayName(0x80058000,out p);Console.Write(p);}
+    } finally { CoUninitialize(); }
+  }
+}`;
+      const tmpDir = path.join(process.env.TEMP || 'C:\\\\Temp', 'codeatlas-browse');
+      await fs.mkdir(tmpDir, { recursive: true });
+      const csFile = path.join(tmpDir, 'browse.cs');
+      const exeFile = path.join(tmpDir, 'browse.exe');
+      await fs.writeFile(csFile, csCode, 'utf8');
+
+      execSync(`C:\\\\Windows\\\\Microsoft.NET\\\\Framework64\\\\v4.0.30319\\\\csc.exe /nologo /out:"${exeFile}" "${csFile}"`, { stdio: 'pipe' });
+      const result = execSync(`"${exeFile}"`, { encoding: 'utf8', timeout: 60_000 }).trim();
+
+      return reply.send({ path: result || null });
+    } catch {
+      return reply.send({ path: null });
+    } finally {
+      browseDialogOpen = false;
+    }
+  });
 
   // ---- SPA Fallback -----------------------------------------------------------
   // All non-API routes serve index.html for client-side routing

@@ -356,28 +356,49 @@ export class AIJobManager {
         }
         if (methodNodes.length > 0) {
           await runPhase1MethodBatch(methodFiltered, provider, this.cache, locale);
-        } else {
-          // No matching function node in analysis (e.g. Python files not parsed by tree-sitter).
-          // Store a placeholder so frontend gets a non-null result.
+
+          // When the target is an endpoint label (e.g. "POST /videos/url"),
+          // Phase 1 caches results under each function node's ID, but
+          // retrieveResult looks up by the original target. Store a synthetic
+          // entry so the frontend can retrieve the aggregated result.
           const cleanTarget = (job.target ?? '').replace(/\(\)$/, '');
-          const methodName = cleanTarget.includes('#')
+          const methodPart = cleanTarget.includes('#')
             ? cleanTarget.split('#').slice(1).join('#')
             : cleanTarget;
-          const placeholderKey = `method:${cleanTarget}:${provider.name}:placeholder`;
-          this.cache.set(placeholderKey, {
-            key: placeholderKey,
-            contentHash: 'no-source',
-            provider: provider.name,
-            promptVersion: 'placeholder',
-            result: {
-              id: cleanTarget,
-              role: '未分類',
-              summary: `${methodName} — 此方法的原始碼尚未被解析器支援，無法進行深度分析`,
-              confidence: 0,
+          const isEndpointLabel = /^(GET|POST|PUT|PATCH|DELETE)\s/.test(methodPart);
+          if (isEndpointLabel && methodNodes.length > 0) {
+            const summaries = methodNodes.map((n) => {
+              const key = `method:${n.id}:${provider.name}:`;
+              const entry = this.cache.getAllEntries().find((e) => e.key.startsWith(key));
+              if (entry?.result && typeof entry.result === 'object') {
+                return entry.result as Record<string, unknown>;
+              }
+              return { id: n.id, summary: n.label };
+            });
+            const syntheticKey = `method:${cleanTarget}:${provider.name}:endpoint-aggregate`;
+            this.cache.set(syntheticKey, {
+              key: syntheticKey,
+              contentHash: 'endpoint-aggregate',
               provider: provider.name,
-            },
-            createdAt: new Date().toISOString(),
-          });
+              promptVersion: 'endpoint-aggregate',
+              result: {
+                id: cleanTarget,
+                role: 'endpoint',
+                summary: summaries.map((s) => (s as Record<string, unknown>).summary ?? '').join('; '),
+                methods: summaries,
+                confidence: 0.8,
+                provider: provider.name,
+              },
+              createdAt: new Date().toISOString(),
+            });
+          }
+        } else {
+          // No matching function node — do NOT cache placeholder results.
+          // Let the job fail so it retries on next request instead of
+          // permanently caching a useless "未被解析器支援" response.
+          const cleanTarget = (job.target ?? '').replace(/\(\)$/, '');
+          console.warn(`[AI] method "${cleanTarget}": no matching function node found in graph, skipping (not cached)`);
+          throw new Error(`No matching function node for "${cleanTarget}" in analysis graph`);
         }
         break;
       }
@@ -500,25 +521,57 @@ export class AIJobManager {
       ? [cleanTarget.split('#')[0], cleanTarget.split('#').slice(1).join('#')]
       : [undefined, cleanTarget];
 
-    const filteredNodes = analysis.graph.nodes.filter((n) => {
+    const matchLabel = (n: { label: string; id: string }, method: string): boolean => {
+      if (n.label === method) return true;
+      // Sprint 18: Class method labels include class name (e.g. "MyClass.my_method")
+      if (n.label.endsWith(`.${method}`)) return true;
+      // Also check node ID suffix (e.g. "file.py#MyClass.my_method")
+      if (n.id.endsWith(`#${method}`) || n.id.endsWith(`.${method}`)) return true;
+      return false;
+    };
+
+    const matchFile = (nodePath: string, targetPath: string): boolean => {
+      if (nodePath === targetPath) return true;
+      // Bi-directional endsWith — handles prefix mismatch (e.g. "backend/app/..." vs "app/...")
+      if (nodePath.endsWith(targetPath) || targetPath.endsWith(nodePath)) return true;
+      return false;
+    };
+
+    let filteredNodes = analysis.graph.nodes.filter((n) => {
       if (n.type !== 'function') return false;
-      // Exact match: filePath#label (node id = "filePath#label")
       if (filePart && methodPart) {
-        const fileMatch = n.filePath === filePart || n.filePath.endsWith(filePart);
-        if (!fileMatch) return false;
-        // Direct label match
-        if (n.label === methodPart) return true;
-        // Sprint 18: Class method labels include class name (e.g. "MyClass.my_method")
-        // but target may only contain method name. Check suffix match.
-        if (n.label.endsWith(`.${methodPart}`)) return true;
-        // Also check node ID suffix (e.g. "file.py#MyClass.my_method")
-        if (n.id.endsWith(`#${methodPart}`) || n.id.endsWith(`.${methodPart}`)) return true;
-        return false;
+        return matchFile(n.filePath, filePart) && matchLabel(n, methodPart);
       }
       // Fallback: label match only
       return n.label === cleanTarget || n.id === cleanTarget ||
         n.label.endsWith(`.${cleanTarget}`);
     });
+
+    // Fallback: if filePath+label returned 0 results, try label-only match.
+    // This handles cases where the frontend sends a filePath that differs from
+    // where the function is actually defined (e.g. imported functions, or
+    // path prefix mismatch like "backend/app/..." vs "app/...").
+    if (filteredNodes.length === 0 && filePart && methodPart) {
+      filteredNodes = analysis.graph.nodes.filter((n) => {
+        if (n.type !== 'function') return false;
+        return matchLabel(n, methodPart);
+      });
+      if (filteredNodes.length > 0) {
+        console.log(`[AI] filterAnalysisForSingleMethod: filePath match failed for "${filePart}#${methodPart}", fell back to label-only match → ${filteredNodes.length} node(s)`);
+      }
+    }
+
+    // Fallback 3: if methodPart looks like an endpoint label (e.g. "POST /videos/url"),
+    // return ALL function nodes from that file so the AI gets useful context.
+    if (filteredNodes.length === 0 && filePart && methodPart && /^(GET|POST|PUT|PATCH|DELETE)\s/.test(methodPart)) {
+      filteredNodes = analysis.graph.nodes.filter((n) => {
+        if (n.type !== 'function') return false;
+        return matchFile(n.filePath, filePart);
+      });
+      if (filteredNodes.length > 0) {
+        console.log(`[AI] filterAnalysisForSingleMethod: "${methodPart}" is an endpoint label, returning all ${filteredNodes.length} function(s) from "${filePart}"`);
+      }
+    }
 
     return {
       ...analysis,

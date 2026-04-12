@@ -252,7 +252,7 @@ export function useDJMode({
   // Start stagger animation for endpoint steps
   const startDjEndpointPlayback = useCallback((chain: EndpointChain) => {
     const { rfNodes, rfEdges } = buildDjStepNodes(chain);
-    setNodes(rfNodes as Node<NeonNodeData>[]);
+    setNodes(rfNodes);
     setEdges(rfEdges);
     setDjCurrentStep(-1);
     setDjStepIsPlaying(true);

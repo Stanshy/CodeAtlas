@@ -113,7 +113,7 @@ function DirectoryCardInner({ data, selected = false }: NodeProps) {
   const icon = TYPE_ICONS[dirType] ?? '◈';
 
   // Sprint 13: category accent color (5px left border)
-  const category = nodeData.category as DirectoryCategory | undefined;
+  const category = nodeData.category;
 
   // Sprint 15: enhance category from AI directoryRole if no category set
   const resolvedCategory: DirectoryCategory | undefined = category ?? (
@@ -125,7 +125,7 @@ function DirectoryCardInner({ data, selected = false }: NodeProps) {
   const categoryAccentColor = resolvedCategory ? CATEGORY_ACCENT_COLOR[resolvedCategory] : undefined;
 
   // Sprint 13: sublabel (full path)
-  const sublabel = nodeData.sublabel as string | undefined;
+  const sublabel = nodeData.sublabel;
 
   // fileSize field in metadata holds fileCount (see adaptDirectoryGraph / applyPerspective)
   const fileCount = nodeData.metadata?.fileSize ?? 0;

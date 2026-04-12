@@ -66,6 +66,7 @@ export function ProjectInput({ isDark = true }: ProjectInputProps) {
   const [error, setError] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const [isBrowsing, setIsBrowsing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const hasError = error !== null;
@@ -121,6 +122,23 @@ export function ProjectInput({ isDark = true }: ProjectInputProps) {
           ? '0 0 0 3px rgba(74,144,217,0.12)'
           : '0 0 0 3px rgba(25,118,210,0.08)'
         : 'none',
+  };
+
+  const browseBtnStyle: React.CSSProperties = {
+    height: 44,
+    width: 44,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: isDark ? '#2a2a4a' : '#f0f0f4',
+    color: isDark ? '#e8e8f0' : '#1a1a2e',
+    border: `1px solid ${isDark ? '#3a3a5a' : '#d0d0d8'}`,
+    borderRadius: 8,
+    fontSize: 18,
+    cursor: isBrowsing ? 'not-allowed' : 'pointer',
+    transition: 'background 0.15s, border-color 0.15s',
+    opacity: isBrowsing ? 0.6 : 1,
+    flexShrink: 0,
   };
 
   const btnStyle: React.CSSProperties = {
@@ -217,6 +235,23 @@ export function ProjectInput({ isDark = true }: ProjectInputProps) {
     }
   };
 
+  const handleBrowse = async () => {
+    if (isBrowsing || isValidating) return;
+    setIsBrowsing(true);
+    try {
+      const res = await fetch('/api/system/browse-folder', { method: 'POST' });
+      const data = await res.json() as { path?: string | null };
+      if (data.path) {
+        setPath(data.path);
+        if (error) setError(null);
+      }
+    } catch {
+      // Dialog closed or not supported — ignore silently
+    } finally {
+      setIsBrowsing(false);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSubmit();
@@ -255,7 +290,26 @@ export function ProjectInput({ isDark = true }: ProjectInputProps) {
           />
         </div>
 
-        {/* Button */}
+        {/* Browse folder button */}
+        <button
+          type="button"
+          style={browseBtnStyle}
+          onClick={handleBrowse}
+          disabled={isBrowsing || isValidating}
+          aria-label={t('projectInput.browseAriaLabel')}
+          onMouseEnter={(e) => {
+            if (!isBrowsing && !isValidating) {
+              (e.currentTarget as HTMLButtonElement).style.borderColor = isDark ? '#4a90d9' : '#1976d2';
+            }
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = isDark ? '#3a3a5a' : '#d0d0d8';
+          }}
+        >
+          {isBrowsing ? '...' : '\uD83D\uDCC2'}
+        </button>
+
+        {/* Analyze button */}
         <button
           type="button"
           style={btnStyle}

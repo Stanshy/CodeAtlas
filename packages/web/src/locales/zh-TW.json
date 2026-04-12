@@ -77,7 +77,8 @@
     "errorInvalidResponse": "伺服器回應無效，請再試一次",
     "errorCannotStartAnalysis": "無法啟動分析，請再試一次",
     "errorNoJobId": "無法取得分析工作 ID，請再試一次",
-    "errorCannotConnect": "無法連線至伺服器，請確認服務已啟動"
+    "errorCannotConnect": "無法連線至伺服器，請確認服務已啟動",
+    "browseAriaLabel": "瀏覽資料夾"
   },
   "recentProjects": {
     "title": "最近開啟的專案",
@@ -276,7 +277,11 @@
     "notGenerated": "尚未產生知識文件",
     "notGeneratedDesc": "請先在終端機執行：",
     "notGeneratedHint": "請先在終端機執行：",
+    "notGeneratedWebHint": "點擊下方按鈕為此專案生成知識文件。",
     "notGeneratedAiHint": "加入 --ai 可產生深度分析：",
+    "generateButton": "生成 Wiki",
+    "generating": "生成中...",
+    "generateError": "生成失敗",
     "loadGraphError": "無法載入知識圖",
     "errorTitle": "無法載入知識圖",
     "loadGraphErrorHint": "無法連線到本地伺服器，請確認 CodeAtlas 正在執行中。",
@@ -312,7 +317,16 @@
     "reanalyze": "重新分析",
     "aiError": "AI 分析失敗，請稍後再試。",
     "justNow": "剛剛",
-    "cannotConnect": "無法連線到本地伺服器，請確認 CodeAtlas 正在執行中。"
+    "cannotConnect": "無法連線到本地伺服器，請確認 CodeAtlas 正在執行中。",
+    "knowledgeNodes": "知識節點",
+    "openPageTab": "開啟 {{name}}",
+    "closePageTab": "關閉 {{name}}",
+    "graphTab": "知識圖",
+    "backToGraph": "返回圖譜",
+    "overview": "概述",
+    "aiDescription": "使用 AI 深度分析此知識節點，產出架構洞見、設計模式識別與優化建議。",
+    "startAnalysis": "開始 AI 分析",
+    "relatedSources": "相關原始碼檔案"
   },
   "toast": {
     "closeNotification": "關閉通知",

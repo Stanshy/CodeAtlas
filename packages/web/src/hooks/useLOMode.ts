@@ -129,7 +129,7 @@ export function useLOMode({
   // Start stagger animation for LO chain steps (mirrors startDjEndpointPlayback)
   const startLoChainPlayback = useCallback((steps: ChainStep[]) => {
     const { rfNodes, rfEdges } = buildLoChainNodes(steps);
-    setNodes(rfNodes as Node<NeonNodeData>[]);
+    setNodes(rfNodes);
     setEdges(rfEdges);
     setLoCurrentStep(-1);
     setLoStepIsPlaying(true);

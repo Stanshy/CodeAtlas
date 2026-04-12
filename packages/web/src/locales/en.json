@@ -77,7 +77,8 @@
     "errorInvalidResponse": "Invalid server response, please try again",
     "errorCannotStartAnalysis": "Cannot start analysis, please try again",
     "errorNoJobId": "Cannot retrieve analysis job ID, please try again",
-    "errorCannotConnect": "Cannot connect to the server, please ensure the service is running"
+    "errorCannotConnect": "Cannot connect to the server, please ensure the service is running",
+    "browseAriaLabel": "Browse folder"
   },
   "recentProjects": {
     "title": "Recent projects",
@@ -276,7 +277,11 @@
     "notGenerated": "Knowledge documents not yet generated",
     "notGeneratedDesc": "Please run in terminal:",
     "notGeneratedHint": "Please run in terminal:",
+    "notGeneratedWebHint": "Click the button below to generate knowledge documents for this project.",
     "notGeneratedAiHint": "Add --ai for deep analysis:",
+    "generateButton": "Generate Wiki",
+    "generating": "Generating...",
+    "generateError": "Generation failed",
     "loadGraphError": "Cannot load knowledge graph",
     "errorTitle": "Cannot load knowledge graph",
     "loadGraphErrorHint": "Cannot connect to local server, please ensure CodeAtlas is running.",
@@ -312,7 +317,16 @@
     "reanalyze": "Re-analyze",
     "aiError": "AI analysis failed, please try again later.",
     "justNow": "Just now",
-    "cannotConnect": "Cannot connect to local server, please ensure CodeAtlas is running."
+    "cannotConnect": "Cannot connect to local server, please ensure CodeAtlas is running.",
+    "knowledgeNodes": "Knowledge Nodes",
+    "openPageTab": "Open {{name}}",
+    "closePageTab": "Close {{name}}",
+    "graphTab": "Knowledge Graph",
+    "backToGraph": "Back to graph",
+    "overview": "Overview",
+    "aiDescription": "Use AI to deeply analyze this knowledge node, generating architecture insights, design pattern identification, and optimization suggestions.",
+    "startAnalysis": "Start AI Analysis",
+    "relatedSources": "Related Source Files"
   },
   "toast": {
     "closeNotification": "Close notification",

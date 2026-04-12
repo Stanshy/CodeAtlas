@@ -382,7 +382,7 @@ export const FilterPanel = memo(function FilterPanel({
     () =>
       allNodes
         .filter((n) => {
-          const role = (n.metadata.role as NodeRole | undefined) ?? undefined;
+          const role = (n.metadata.role) ?? undefined;
           return role === 'utility' || role === 'noise';
         })
         .sort((a, b) => a.label.localeCompare(b.label)),

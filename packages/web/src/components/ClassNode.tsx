@@ -41,8 +41,8 @@ function getNodeStyle(selected: boolean): CSSProperties {
 function ClassNodeInner({ data, selected = false }: NodeProps) {
   const nodeData = data as unknown as NeonNodeData;
   const meta = nodeData.metadata;
-  const methodCount = meta?.methodCount as number | undefined;
-  const isExported = meta?.isExported as boolean | undefined;
+  const methodCount = meta?.methodCount;
+  const isExported = meta?.isExported;
 
   return (
     <div

@@ -297,7 +297,7 @@ function NeonNodeInner({ data, selected = false, dragging = false }: NodeProps) 
             position: 'absolute',
             top: -6,
             right: 6,
-            background: getRankBg(rank!),
+            background: getRankBg(rank),
             border: `1px solid ${THEME.sfBorder}`,
             borderRadius: 3,
             padding: '1px 5px',
@@ -308,7 +308,7 @@ function NeonNodeInner({ data, selected = false, dragging = false }: NodeProps) 
             pointerEvents: 'none',
           }}
         >
-          {getRankLabel(rank!)}
+          {getRankLabel(rank)}
         </span>
       )}
 
