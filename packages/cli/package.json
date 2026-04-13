@@ -1,13 +1,14 @@
 {
-  "name": "@codeatlas/cli",
+  "name": "code-atlas",
   "version": "0.0.1",
-  "description": "CodeAtlas CLI — command-line interface for codebase analysis",
+  "description": "Understand any codebase visually — architecture, data flow, and logic maps. Local-first, open source.",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "codeatlas": "./dist/index.js"
+    "code-atlas": "./dist/index.js"
   },
   "exports": {
     ".": {
@@ -19,6 +20,21 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Stanshy/CodeAtlas"
+  },
+  "homepage": "https://codeatlas.stanshy.com",
+  "keywords": [
+    "codebase",
+    "visualization",
+    "architecture",
+    "code-analysis",
+    "dependency-graph"
+  ],
   "scripts": {
     "build": "tsup",
     "build:watch": "tsup --watch",
@@ -28,9 +44,19 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@codeatlas/core": "workspace:*",
     "@fastify/static": "^9.0.0",
     "commander": "^12.1.0",
     "fastify": "^5.8.4"
+  },
+  "optionalDependencies": {
+    "tree-sitter": "^0.21.1",
+    "tree-sitter-javascript": "^0.21.4",
+    "tree-sitter-typescript": "^0.21.2",
+    "tree-sitter-python": "^0.21.0",
+    "tree-sitter-java": "^0.21.0",
+    "web-tree-sitter": "^0.22.6"
+  },
+  "devDependencies": {
+    "@codeatlas/core": "workspace:*"
   }
 }

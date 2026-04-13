@@ -98,7 +98,7 @@ export function useLOMode({
         filePath: step.filePath,
         state: 'unreached',
         label: step.methodName,
-        nodeType: 'file' as const,
+        nodeType: 'lo-chain' as const,
         metadata: {},
       } as unknown as NeonNodeData,
       style: { opacity: 0, transition: 'opacity 0.20s ease-out' },

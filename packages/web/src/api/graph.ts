@@ -8,6 +8,7 @@
 
 import type { AnalysisResult, AnalysisStats, NodeDetailResponse, FunctionNodesResponse } from '../types/graph';
 import type { AIAnalyzeResponse, AIJobResponse, AIConfigureResult, AIJobScope } from '../types/graph';
+import i18n from '../locales';
 
 /** Typed API error returned by fetch helpers */
 export interface ApiError {
@@ -124,7 +125,7 @@ export async function postAIAnalyze(
   target?: string,
   force = false,
 ): Promise<AIAnalyzeResponse> {
-  const locale = localStorage.getItem('codeatlas-locale') || 'en';
+  const locale = i18n.language || localStorage.getItem('codeatlas-locale') || 'en';
   const res = await fetch('/api/ai/analyze', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

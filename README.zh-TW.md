@@ -1,6 +1,6 @@
 # CodeAtlas
 
-> 5 分鐘看懂任何專案架構。本地優先、隱私至上。
+> 一鍵看懂你做出來的東西。本地優先、隱私至上。
 
 [English](README.md) | **繁體中文**
 
@@ -9,25 +9,38 @@
 
 ---
 
+## CodeAtlas 是什麼？
+
+你做出了一個 App，但不確定所有零件怎麼組在一起。CodeAtlas 把任何程式碼庫轉化為**互動式視覺地圖**，讓你不讀一行程式碼，就能理解專案的架構、資料流與邏輯。
+
+---
+
 ## 功能特色
 
-- 三視角分析：系統架構 (SF) / 邏輯操作 (LO) / 資料旅程 (DJ)
-- AI 智慧分析（Claude、Gemini、OpenAI、Ollama — 自由選擇，或完全關閉）
-- Wiki 知識輸出 + Obsidian 相容知識圖譜
-- 雙語介面：English + 繁體中文
-- 本地優先：程式碼不出站
-- 支援 JavaScript、TypeScript、Python、Java
+- **視覺化理解** — 把整個專案變成互動式地圖，不再面對一堆看不懂的程式碼
+- **AI 白話文解說** — 用人話告訴你每個部分在做什麼（支援 Claude、Gemini、OpenAI、Ollama，或完全離線）
+- **三種視角** — 結構流（檔案連結）、邏輯總覽（每個部分做什麼）、資料旅程（資料怎麼流動）
+- **Wiki 知識匯出** — 自動生成可讀的文件 + Obsidian 相容知識圖譜
+- **本地優先 & 隱私** — 程式碼不出站，不需要雲端帳號
+- **雙語介面** — English + 繁體中文
+- **多語言支援** — 支援 JavaScript、TypeScript、Python、Java 專案
 
 ---
 
 ## 快速開始
 
 ```bash
-npm install -g codeatlas
-codeatlas
+npx code-atlas
 ```
 
-就這樣。瀏覽器會自動開啟歡迎頁 — 選擇專案資料夾即可開始探索。
+就這樣。瀏覽器會自動開啟 — 選擇專案資料夾即可開始探索。
+
+### 全域安裝（選用）
+
+```bash
+npm install -g code-atlas
+code-atlas
+```
 
 ---
 
@@ -35,9 +48,9 @@ codeatlas
 
 | 指令 | 說明 |
 |------|------|
-| `codeatlas` | 零參數啟動 — 開啟瀏覽器，選擇專案 |
+| `code-atlas` | 零參數啟動 — 開啟瀏覽器，選擇專案 |
 | `codeatlas web [path]` | 分析指定路徑並開啟 Web UI |
-| `codeatlas wiki [path]` | 匯出知識 Wiki（Markdown，相容 Obsidian） |
+| `code-atlas wiki [path]` | 匯出知識 Wiki（Markdown，相容 Obsidian） |
 | `codeatlas analyze [path]` | 純 CLI 分析（不開瀏覽器） |
 
 ### 常用參數
@@ -85,7 +98,7 @@ CodeAtlas 支援多家 AI 供應商進行智慧程式碼分析：
 從程式碼庫產生 Obsidian 相容的 Markdown 檔案：
 
 ```bash
-codeatlas wiki ./my-project --lang zh-TW
+code-atlas wiki ./my-project --lang zh-TW
 ```
 
 產出包含 frontmatter、交叉引用的互連 `.md` 檔案，以及可在 Web UI 中瀏覽的互動式知識圖譜。將輸出資料夾直接匯入 Obsidian，即可將程式碼庫作為知識庫探索。
