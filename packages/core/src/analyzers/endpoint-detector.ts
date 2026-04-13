@@ -38,6 +38,8 @@ export interface ApiEndpoint {
   handlerFileId: string;
   middlewares?: string[];
   description?: string;
+  /** Source line number where this route is defined (1-based) */
+  line?: number;
 }
 
 export interface ChainStep {
@@ -168,6 +170,10 @@ function normaliseMethod(raw: string): HttpMethod | null {
  * are represented as `<anonymous>`.
  */
 function parseHandlerArgs(argList: string): { handler: string; middlewares: string[] } {
+  // If the arg list contains an arrow function or `function` keyword anywhere,
+  // the last handler is inline/anonymous. Extract only middleware names before it.
+  const hasInlineHandler = /=>|function\s*\(/.test(argList);
+
   // Split by comma, trim whitespace around each token
   const tokens = argList
     .split(',')
@@ -182,9 +188,15 @@ function parseHandlerArgs(argList: string): { handler: string; middlewares: stri
     if (/^[A-Za-z_$][\w$.]*$/.test(token)) {
       names.push(token);
     } else if (/function|=>/.test(token)) {
-      names.push('<anonymous>');
+      // Stop collecting names — everything from here is the inline handler
+      break;
     }
     // Skip object literals, options objects, etc.
+  }
+
+  if (hasInlineHandler) {
+    // All collected names are middleware; handler is anonymous
+    return { handler: '<anonymous>', middlewares: names };
   }
 
   if (names.length === 0) {
@@ -228,6 +240,7 @@ function extractEndpointsFromSource(
   let match: RegExpExecArray | null;
 
   while ((match = shorthandRe.exec(source)) !== null) {
+    const line = source.substring(0, match.index).split('\n').length;
     const rawMethod = match[1];
     const routePath = match[2];
     const argList = match[3] ?? '';
@@ -237,13 +250,22 @@ function extractEndpointsFromSource(
     const method = normaliseMethod(rawMethod);
     if (!method) continue;
 
-    const { handler, middlewares } = parseHandlerArgs(argList);
+    // The regex [^)]+ truncates at the first ')'. For inline arrow handlers
+    // like `async (request, reply) => { ... }`, the '=>' is beyond the capture.
+    // Peek ahead in source to detect inline handlers.
+    const afterMatch = source.substring(match.index + match[0].length, match.index + match[0].length + 20);
+    const isInlineHandler = /^\s*\)\s*=>/.test(afterMatch) || /=>\s*\{/.test(argList);
+
+    const { handler, middlewares } = isInlineHandler
+      ? { handler: '<anonymous>' as string, middlewares: parseHandlerArgs(argList).middlewares }
+      : parseHandlerArgs(argList);
 
     const partialEndpoint: Omit<ApiEndpoint, 'id'> = {
       method,
       path: routePath,
       handler,
       handlerFileId: fileNode.id,
+      line,
     };
     if (middlewares.length > 0) {
       partialEndpoint.middlewares = middlewares;
@@ -320,11 +342,13 @@ function extractEndpointsFromSource(
     const routePath = urlMatch[1] ?? '';
     const handler = handlerMatch ? (handlerMatch[1] ?? '<anonymous>') : '<anonymous>';
 
+    const line = source.substring(0, match.index).split('\n').length;
     results.push({
       method,
       path: routePath,
       handler,
       handlerFileId: fileNode.id,
+      line,
     });
   }
 
@@ -362,6 +386,37 @@ function nodeToChainStep(node: GraphNode): ChainStep {
  *   • All reachable nodes have been visited
  *   • Depth reaches MAX_CHAIN_DEPTH
  */
+/**
+ * Find the narrowest named function node that encloses the given line
+ * in the specified file. Used for anonymous inline handlers.
+ */
+function findEnclosingFunction(
+  fileId: string,
+  line: number | undefined,
+  fnNodes: GraphNode[],
+): GraphNode | null {
+  if (line === undefined) return null;
+
+  let best: GraphNode | null = null;
+  let bestRange = Infinity;
+
+  for (const fn of fnNodes) {
+    if (fn.metadata.parentFileId !== fileId) continue;
+    const startLine = fn.metadata.startLine as number | undefined;
+    const endLine = fn.metadata.endLine as number | undefined;
+    if (startLine === undefined || endLine === undefined) continue;
+    if (line < startLine || line > endLine) continue;
+
+    const range = endLine - startLine;
+    if (range < bestRange) {
+      bestRange = range;
+      best = fn;
+    }
+  }
+
+  return best;
+}
+
 function buildChainSteps(
   handlerNodeId: string,
   nodeMap: Map<string, GraphNode>,
@@ -956,7 +1011,19 @@ export function detectEndpoints(analysis: AnalysisResult): EndpointGraph | null 
   for (const endpoint of jsEndpoints) {
     const handlerName = endpoint.handler;
     if (handlerName === '<anonymous>') {
-      chains.push({ endpointId: endpoint.id, steps: [] });
+      // Inline handler: find the enclosing named function in the same file
+      // that contains this route definition line
+      const enclosingFn = findEnclosingFunction(
+        endpoint.handlerFileId,
+        endpoint.line,
+        functionNodes,
+      );
+      if (enclosingFn) {
+        const steps = buildChainSteps(enclosingFn.id, nodeMap, callAdjacency);
+        chains.push({ endpointId: endpoint.id, steps });
+      } else {
+        chains.push({ endpointId: endpoint.id, steps: [] });
+      }
       continue;
     }
 

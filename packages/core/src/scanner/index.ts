@@ -40,6 +40,22 @@ const DEFAULT_IGNORE_DIRS = new Set([
   'fixtures',
   '.pytest_cache',
   'test-results',
+  // AI / vibe-coder tool directories — worktrees & caches contaminate analysis
+  '.claude',
+  '.cursor',
+  '.bolt',
+  '.replit',
+  '.v0',
+  '.windsurf',
+  '.aider',
+  '.codex',
+  '.codeium',
+  '.continue',
+  '.tabnine',
+  '.copilot',
+  '.github',
+  '.vscode',
+  '.devcontainer',
 ]);
 
 const DEFAULT_EXTENSIONS = new Set([
