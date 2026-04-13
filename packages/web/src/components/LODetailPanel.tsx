@@ -18,11 +18,12 @@
  * Sprint 19 — T15: "查看知識文件" button for Wiki bidirectional jump.
  */
 
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useMemo, useState, useEffect, useCallback, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GraphNode, GraphEdge, ChainStep, LoCategory } from '../types/graph';
 import { useAIAnalysis } from '../hooks/useAIAnalysis';
 import { AIResultBlock } from './AIResultBlock';
+import { fetchNodeDetail } from '../api/node';
 
 // ---------------------------------------------------------------------------
 // Category color map
@@ -761,8 +762,171 @@ export function LODetailPanel({ selectedStep, graphNodes, graphEdges, chain }: L
         )}
       </div>
 
+      {/* Source code viewer — collapsible */}
+      <LOSourceSection methodNode={methodNode} selectedStep={selectedStep} />
+
       {/* Sprint 16: AI on-demand analysis — at bottom of panel */}
       <LOAISection selectedStep={selectedStep} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Source code viewer section
+// ---------------------------------------------------------------------------
+
+function LOSourceSection({
+  methodNode,
+  selectedStep,
+}: {
+  methodNode: GraphNode | null;
+  selectedStep: ChainStep;
+}) {
+  const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
+  const [sourceLines, setSourceLines] = useState<string[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const startLine = methodNode?.metadata?.startLine;
+  const endLine = methodNode?.metadata?.endLine;
+  const hasLineInfo = startLine !== undefined && endLine !== undefined;
+  const nodeId = methodNode?.id ?? null;
+
+  // Reset when method changes
+  useEffect(() => {
+    setExpanded(false);
+    setSourceLines(null);
+    setError(null);
+  }, [nodeId]);
+
+  const handleToggle = useCallback(async () => {
+    if (expanded) {
+      setExpanded(false);
+      return;
+    }
+    setExpanded(true);
+    if (sourceLines) return; // already fetched
+
+    if (!nodeId) {
+      setError(t('panel.lo.sourceNoNode', { defaultValue: 'Node not found' }));
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchNodeDetail(nodeId);
+      if (!result.ok) {
+        setError(result.error.message);
+        return;
+      }
+      const fullSource = result.data.sourceCode;
+      if (!fullSource) {
+        setError(t('panel.lo.sourceUnavailable', { defaultValue: 'Source code unavailable' }));
+        return;
+      }
+      const allLines = fullSource.split('\n');
+      if (hasLineInfo) {
+        // Extract method lines (startLine/endLine are 0-based)
+        setSourceLines(allLines.slice(startLine, endLine + 1));
+      } else {
+        // Show first 50 lines of file as fallback
+        setSourceLines(allLines.slice(0, 50));
+      }
+    } catch {
+      setError('Failed to fetch source');
+    } finally {
+      setLoading(false);
+    }
+  }, [expanded, sourceLines, nodeId, hasLineInfo, startLine, endLine, t]);
+
+  const lineOffset = hasLineInfo ? (startLine + 1) : 1; // display as 1-based
+
+  const sectionStyle: CSSProperties = {
+    padding: '10px 14px',
+    borderBottom: '1px solid #e8e8e8',
+  };
+
+  return (
+    <div style={sectionStyle}>
+      <div
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          color: '#757575',
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          cursor: 'pointer',
+          userSelect: 'none',
+        }}
+        onClick={handleToggle}
+      >
+        <span style={{ fontSize: 9 }}>{expanded ? '▼' : '▶'}</span>
+        <span>📄</span>
+        <span>{t('panel.lo.sourceTitle', { defaultValue: 'Source Code' })}</span>
+        {hasLineInfo && (
+          <span style={{ fontWeight: 400, color: '#9e9e9e', marginLeft: 'auto', textTransform: 'none' }}>
+            L{startLine + 1}–{endLine + 1}
+          </span>
+        )}
+      </div>
+      {expanded && (
+        <div style={{ marginTop: 8 }}>
+          {loading && (
+            <div style={{ fontSize: 11, color: '#9e9e9e', fontStyle: 'italic' }}>
+              {t('panel.lo.loading', { defaultValue: 'Loading...' })}
+            </div>
+          )}
+          {error && (
+            <div style={{ fontSize: 11, color: '#c62828' }}>{error}</div>
+          )}
+          {sourceLines && (
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 10,
+                lineHeight: 1.6,
+                background: '#1e1e2e',
+                color: '#cdd6f4',
+                borderRadius: 6,
+                padding: '8px 0',
+                maxHeight: 320,
+                overflowY: 'auto',
+                overflowX: 'auto',
+                whiteSpace: 'pre',
+              }}
+            >
+              {sourceLines.map((line, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    padding: '0 8px',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 32,
+                      flexShrink: 0,
+                      textAlign: 'right',
+                      color: '#585b70',
+                      paddingRight: 8,
+                      userSelect: 'none',
+                    }}
+                  >
+                    {lineOffset + i}
+                  </span>
+                  <span style={{ flex: 1 }}>{line || ' '}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -23,7 +23,7 @@ import {
   applyCuration,
 } from '../adapters/graph-adapter';
 import { PERSPECTIVE_PRESETS } from '../adapters/perspective-presets';
-import { classifyPath, CATEGORY_CONFIG } from '../components/LOCategoryGroup';
+import { classifyPath, classifyByRole, CATEGORY_CONFIG } from '../components/LOCategoryGroup';
 import { parseUrlPrefix, CATEGORY_META } from '../components/DJEndpointSelector';
 import { deriveEndpointLabel } from '../utils/dj-descriptions';
 import type { FilterState, PerspectiveName } from '../types/graph';
@@ -133,7 +133,7 @@ export function useGraphCanvasFiltering({
       rawGraphNodes
         .filter((n) => n.type === 'function' || n.metadata?.kind === 'method' || n.metadata?.kind === 'function')
         .forEach((n) => {
-          const cat = classifyPath(n.filePath);
+          const cat = classifyByRole(n.metadata?.methodRole) ?? classifyPath(n.filePath);
           const item: MethodItem = {
             name: n.label,
             filePath: n.filePath,
@@ -165,6 +165,11 @@ export function useGraphCanvasFiltering({
 
       const onMethodClick = (name: string, category: LoCategory) => onLOMethodClick(name, category);
 
+      // Hide empty categories (0 methods)
+      const nonEmpty = new Set<LoCategory>(
+        (Object.keys(CATEGORY_CONFIG) as LoCategory[]).filter((c) => (methodMap.get(c) ?? []).length > 0),
+      );
+
       const CARD_W = 240;
       const GAP_Y = 60;
       const layers: LoCategory[][] = [['middleware'], ['services'], ['routes', 'models', 'utils']];
@@ -173,10 +178,12 @@ export function useGraphCanvasFiltering({
       let curY = 0;
 
       for (const layer of layers) {
-        const layerW = layer.length * CARD_W + (layer.length - 1) * 60;
+        const activeCats = layer.filter((c) => nonEmpty.has(c));
+        if (activeCats.length === 0) continue;
+        const layerW = activeCats.length * CARD_W + (activeCats.length - 1) * 60;
         const startX = -layerW / 2;
-        for (let i = 0; i < layer.length; i++) {
-          const cat = layer[i];
+        for (let i = 0; i < activeCats.length; i++) {
+          const cat = activeCats[i];
           const cfg = CATEGORY_CONFIG[cat];
           const methods = methodMap.get(cat) ?? [];
           rfNodes.push({
@@ -186,7 +193,7 @@ export function useGraphCanvasFiltering({
             data: { category: cat, ...cfg, methods, onMethodClick } as LOCategoryCardData,
           });
         }
-        const maxH = Math.max(...layer.map((cat) => {
+        const maxH = Math.max(...activeCats.map((cat) => {
           const n = Math.min((methodMap.get(cat) ?? []).length, 5);
           return 36 + 8 + n * 24 + ((methodMap.get(cat) ?? []).length > 5 ? 24 : 0) + 8;
         }));
@@ -196,16 +203,18 @@ export function useGraphCanvasFiltering({
       const arrows: [LoCategory, LoCategory][] = [
         ['middleware', 'services'], ['services', 'routes'], ['services', 'models'], ['services', 'utils'],
       ];
-      arrows.forEach(([src, tgt], i) => {
-        rfEdges.push({
-          id: `lo-arrow-${i}`,
-          source: `lo-cat-${src}`,
-          target: `lo-cat-${tgt}`,
-          type: 'default',
-          animated: true,
-          style: { stroke: '#9e9e9e', strokeDasharray: '6 3', strokeWidth: 1.5 },
+      arrows
+        .filter(([src, tgt]) => nonEmpty.has(src) && nonEmpty.has(tgt))
+        .forEach(([src, tgt], i) => {
+          rfEdges.push({
+            id: `lo-arrow-${i}`,
+            source: `lo-cat-${src}`,
+            target: `lo-cat-${tgt}`,
+            type: 'default',
+            animated: true,
+            style: { stroke: '#9e9e9e', strokeDasharray: '6 3', strokeWidth: 1.5 },
+          });
         });
-      });
 
       return { curationFilteredNodes: rfNodes, curationFilteredEdges: rfEdges };
     }
@@ -339,6 +348,14 @@ export function useGraphCanvasFiltering({
         curationFilteredNodes: rfNodes,
         curationFilteredEdges: [],
       };
+    }
+
+    // DJ / SF without dedicated graph data → empty state (don't fall through to import graph)
+    if (activePerspective === 'data-journey' && (!endpointGraph || endpointGraph.nodes.length === 0)) {
+      return { curationFilteredNodes: [], curationFilteredEdges: [] };
+    }
+    if (activePerspective === 'system-framework' && (!directoryGraph || directoryGraph.nodes.length === 0)) {
+      return { curationFilteredNodes: [], curationFilteredEdges: [] };
     }
 
     // Stage 3: Smart curation (Sprint 10)

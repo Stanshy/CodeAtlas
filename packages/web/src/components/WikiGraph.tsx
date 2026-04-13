@@ -63,6 +63,10 @@ export interface WikiGraphProps {
   onClosePage: (slug: string) => void;
   /** Called when user selects an already-open tab */
   onSelectPage: (slug: string) => void;
+  /** Called after wiki generation succeeds — parent can refresh badge count */
+  onWikiGenerated?: () => void;
+  /** Navigate to a source file (switches to SF perspective) */
+  onNavigateToFile?: (filePath: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -335,6 +339,8 @@ export function WikiGraph({
   onOpenPage,
   onClosePage: _onClosePage,
   onSelectPage: _onSelectPage,
+  onWikiGenerated,
+  onNavigateToFile,
 }: WikiGraphProps) {
   // containerRef is always mounted (but hidden when content view is active)
   // so the ResizeObserver keeps valid dimensions for the D3 simulation.
@@ -521,7 +527,7 @@ export function WikiGraph({
   // ---------------------------------------------------------------------------
 
   if (graph.isLoading) return <LoadingState />;
-  if (graph.manifestStatus === 'not_generated') return <NotGeneratedState onGenerated={graph.refetch} />;
+  if (graph.manifestStatus === 'not_generated') return <NotGeneratedState onGenerated={() => { graph.refetch(); onWikiGenerated?.(); }} />;
   if (graph.manifestStatus === 'error') return <ErrorState />;
 
   const { width, height } = dimensions;
@@ -543,6 +549,7 @@ export function WikiGraph({
         <WikiContentView
           slug={activePageSlug}
           onOpenPage={onOpenPage}
+          onNavigateToFile={onNavigateToFile}
         />
       ) : null}
 

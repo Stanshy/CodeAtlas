@@ -32,6 +32,7 @@ import { TabBar } from './components/TabBar';
 import { WikiGraph } from './components/WikiGraph';
 import type { WikiPageTab } from './components/WikiGraph';
 import { ToastStack } from './components/Toast';
+import { SearchOverlay, type SearchResult } from './components/SearchOverlay';
 import { ViewStateProvider, useViewState } from './contexts/ViewStateContext';
 import { AppStateProvider, useAppState } from './contexts/AppStateContext';
 import { WelcomePage } from './pages/WelcomePage';
@@ -192,8 +193,10 @@ function AppInner() {
     });
   }, []);
 
-  // Wiki page count — fetch manifest on mount
+  // Wiki page count + pages list — fetch manifest on mount + after generation
   const [wikiPageCount, setWikiPageCount] = useState(0);
+  const [wikiPages, setWikiPages] = useState<Array<{ slug: string; title: string }>>([]);
+  const [wikiCountTrigger, setWikiCountTrigger] = useState(0);
   useEffect(() => {
     let cancelled = false;
     fetch('/api/wiki')
@@ -201,11 +204,15 @@ function AppInner() {
       .then((data) => {
         if (!cancelled && data && data.status === 'ready' && Array.isArray(data.pages)) {
           setWikiPageCount(data.pages.length);
+          setWikiPages(data.pages.map((p: { slug: string; title?: string }) => ({
+            slug: p.slug,
+            title: p.title ?? p.slug,
+          })));
         }
       })
       .catch(() => { /* wiki not generated yet */ });
     return () => { cancelled = true; };
-  }, []);
+  }, [wikiCountTrigger]);
 
   // Compute per-tab node counts for the badge
   const tabCounts = useMemo(() => {
@@ -219,6 +226,56 @@ function AppInner() {
     const wiki = wikiPageCount;
     return { sf, lo, dj, wiki };
   }, [rawNodes, directoryGraph, endpointGraph, wikiPageCount]);
+
+  // Global Ctrl+K handler for search
+  const isSearchOpen = state.isSearchOpen;
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        dispatch({ type: 'SET_SEARCH_OPEN', open: !isSearchOpen });
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isSearchOpen, dispatch]);
+
+  // Search result handler — navigate to the target perspective and trigger
+  // the same right-panel experience as clicking directly in that tab.
+  // Uses SEARCH_NAVIGATE dispatch so GraphCanvas picks it up and routes
+  // to the correct handler (handleLOMethodClick, sfSelectNode, etc.)
+  const handleSearchSelect = useCallback(
+    (result: SearchResult) => {
+      // Switch perspective first
+      if (result.targetPerspective !== activePerspective) {
+        dispatch({ type: 'SET_PERSPECTIVE', perspective: result.targetPerspective });
+      }
+
+      // Wiki — handled at App level (tab management)
+      if (result.type === 'wiki' && result.wikiSlug) {
+        handleOpenWikiPage(result.wikiSlug, result.label);
+        return;
+      }
+
+      // All other types — dispatch to GraphCanvas via pendingSearchNav
+      const methodName = result.type === 'method'
+        ? result.label.replace(/\(\)$/, '')
+        : undefined;
+
+      dispatch({
+        type: 'SEARCH_NAVIGATE',
+        nav: {
+          type: result.type,
+          methodName,
+          category: result.loCategory,
+          nodeId: result.nodeId,
+          endpointId: result.endpointId,
+          label: result.label,
+        },
+      });
+    },
+    [activePerspective, dispatch, handleOpenWikiPage],
+  );
 
   if (isLoading) {
     return (
@@ -263,6 +320,17 @@ function AppInner() {
     <>
       {/* Unified Toolbar — fixed top */}
       <Toolbar onSearchClick={() => dispatch({ type: 'SET_SEARCH_OPEN', open: true })} />
+
+      {/* Global search Command Palette */}
+      <SearchOverlay
+        open={isSearchOpen}
+        onClose={() => dispatch({ type: 'SET_SEARCH_OPEN', open: false })}
+        graphNodes={rawNodes}
+        directoryGraph={directoryGraph ?? null}
+        endpointGraph={endpointGraph ?? null}
+        wikiPages={wikiPages}
+        onSelect={handleSearchSelect}
+      />
 
       {/* Settings Popover — replaces ControlPanel */}
       {isSettingsPanelOpen && (
@@ -327,6 +395,11 @@ function AppInner() {
           onOpenPage={handleOpenWikiPage}
           onClosePage={handleCloseWikiPage}
           onSelectPage={handleSelectWikiPage}
+          onWikiGenerated={() => setWikiCountTrigger((c) => c + 1)}
+          onNavigateToFile={(filePath) => {
+            dispatch({ type: 'SET_PERSPECTIVE', perspective: 'system-framework' });
+            setTimeout(() => focusNode(filePath), 200);
+          }}
         />
       ) : (
         <GraphContainer

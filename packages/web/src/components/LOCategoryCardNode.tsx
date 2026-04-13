@@ -57,6 +57,7 @@ const ROW_H = 24;
 const HEADER_H = 36;
 const SUMMARY_H = 20;
 const PAD_Y = 8;
+const MAX_EXPANDED_ROWS = 15;
 
 // Category summary i18n keys — resolved at render time via t()
 const CATEGORY_SUMMARY_KEYS: Record<string, string> = {
@@ -104,19 +105,21 @@ export const LOCategoryCardNode = memo(function LOCategoryCardNode({ data }: Nod
   const visibleMethods = expanded ? visibleBusinessMethods : visibleBusinessMethods.slice(0, COLLAPSE_AT);
   const visibleCount = visibleMethods.length;
 
-  const hiddenSectionH = hiddenCount > 0 ? ROW_H + (showHidden ? hiddenCount * ROW_H : 0) : 0;
+  const hiddenSectionH = hiddenCount > 0 ? ROW_H + (showHidden ? Math.min(hiddenCount, MAX_EXPANDED_ROWS) * ROW_H : 0) : 0;
   const summaryH = categorySummary ? SUMMARY_H : 0;
-  const cardH = HEADER_H + summaryH + PAD_Y + visibleCount * ROW_H + (hasToggle ? ROW_H : 0) + hiddenSectionH + PAD_Y;
+  const cappedVisibleCount = Math.min(visibleCount, expanded ? MAX_EXPANDED_ROWS : COLLAPSE_AT);
+  const cardH = HEADER_H + summaryH + PAD_Y + cappedVisibleCount * ROW_H + (hasToggle ? ROW_H : 0) + hiddenSectionH + PAD_Y;
+  const needsScroll = expanded && visibleCount > MAX_EXPANDED_ROWS;
 
-  // Sprint 16: use minHeight instead of fixed height so AI result block can expand the card
   const cardStyle: CSSProperties = {
     width: CARD_W,
     minHeight: cardH,
+    maxHeight: cardH,
     background: '#ffffff',
     border: `1.5px solid ${d.color}`,
     borderRadius: 8,
     boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-    overflow: 'visible',
+    overflow: 'hidden',
     userSelect: 'none',
     fontFamily: "'Inter', sans-serif",
   };
@@ -168,7 +171,7 @@ export const LOCategoryCardNode = memo(function LOCategoryCardNode({ data }: Nod
       <div style={headerStyle}>
         <span style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
         <span style={{ flex: 1, fontWeight: 600, fontSize: 11, color: d.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {d.label}
+          {t(d.label, { defaultValue: d.label })}
         </span>
         <span style={{ fontSize: 10, color: '#757575', background: 'rgba(0,0,0,0.06)', borderRadius: 10, padding: '1px 5px', flexShrink: 0 }}>
           {totalMethods}
@@ -191,7 +194,10 @@ export const LOCategoryCardNode = memo(function LOCategoryCardNode({ data }: Nod
           {categorySummary}
         </div>
       )}
-      <div style={{ padding: `${PAD_Y / 2}px 0` }}>
+      <div style={{
+        padding: `${PAD_Y / 2}px 0`,
+        ...(needsScroll ? { maxHeight: MAX_EXPANDED_ROWS * ROW_H, overflowY: 'auto' as const } : {}),
+      }}>
         {visibleMethods.map((m) => (
           <div
             key={m.nodeId}

@@ -344,6 +344,12 @@ export function GraphCanvas({ initialNodes, initialEdges, onNodeClick, onStartE2
   // Keep loMethodClickRef in sync so node data callback is always fresh
   loMethodClickRef.current = handleLOMethodClick;
 
+  // Refs for search navigation — initialised with null to avoid TDZ;
+  // .current is updated after all hooks that produce the actual values.
+  const sfSelectNodeRef = useRef<((id: string, label: string) => void) | null>(null);
+  const djEndpointClickRef = useRef<((epId: string, chain: EndpointChain) => void) | null>(null);
+  const endpointGraphRef = useRef<EndpointGraph | null | undefined>(endpointGraph);
+
   // Expanded function nodes (from ViewStateContext)
   const expandedRFNodes = useMemo(
     () => toReactFlowNodes(expandedNodes),
@@ -447,15 +453,23 @@ export function GraphCanvas({ initialNodes, initialEdges, onNodeClick, onStartE2
       if (loMode === 'chain') return;
       setNodes(curationFilteredNodes);
       setEdges(curationFilteredEdges);
-      const { cx, cy } = centerOf(curationFilteredNodes);
-      scheduleVpCenter(cx, cy, { zoom: 0.85, duration: 500 }, 150);
+      // LO cards are laid out symmetrically around x=0 (startX = -layerW/2).
+      // Use x=0 instead of centerOf (which averages top-left corners → skewed).
+      const { cy } = centerOf(curationFilteredNodes);
+      scheduleVpCenter(0, cy, { zoom: 0.85, duration: 500 }, 150);
       return;
     }
     const layoutResult = computeLayout('dagre-hierarchical', { nodes: curationFilteredNodes, edges: curationFilteredEdges });
     setNodes(layoutResult.nodes);
     setEdges(layoutResult.edges);
     if (layoutResult.nodes.length > 0 && activePerspective === 'system-framework') {
-      const { cx, cy } = centerOf(layoutResult.nodes);
+      // Use bounding box center instead of average position (which skews for asymmetric layouts)
+      const xs = layoutResult.nodes.map((n) => n.position.x);
+      const ys = layoutResult.nodes.map((n) => n.position.y);
+      const ws = layoutResult.nodes.map((n) => (n.measured?.width ?? n.width ?? 200));
+      const hs = layoutResult.nodes.map((n) => (n.measured?.height ?? n.height ?? 100));
+      const cx = (Math.min(...xs) + Math.max(...layoutResult.nodes.map((n, i) => xs[i] + ws[i]))) / 2;
+      const cy = (Math.min(...ys) + Math.max(...layoutResult.nodes.map((n, i) => ys[i] + hs[i]))) / 2;
       scheduleVpCenter(cx, cy, { zoom: 0.85, duration: 500 }, 100);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -474,21 +488,30 @@ export function GraphCanvas({ initialNodes, initialEdges, onNodeClick, onStartE2
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDataJourney, hasEndpointGraph, curationFilteredNodes, djMode, setNodes, setEdges]);
 
-  // Fit viewport after perspective change
+  // Fit viewport after perspective change — account for 300px right panel.
+  // Also triggers on curationFilteredNodes changes so the initial load (when
+  // activePerspective is already 'logic-operation') also centers correctly.
+  const lastCenteredPerspectiveRef = useRef<string | null>(null);
   useEffect(() => {
+    // Skip if we already centered for this perspective + node set
+    const key = `${activePerspective}-${curationFilteredNodes.length}`;
+    if (lastCenteredPerspectiveRef.current === key) return;
+
     if (isDataJourney) {
       if (hasEndpointGraph && djMode === 'selector') return;
       return;
     }
+    // LO + SF: handled by the dagre layout effect above (scheduleVpCenter)
     if (isLogicOperation) return;
     if (activePerspective === 'system-framework') return;
+    lastCenteredPerspectiveRef.current = key;
     cancelVpAnim();
     const timer = setTimeout(() => {
       rfFitView({ padding: 0.2, maxZoom: 1.5, duration: 400 });
     }, 250);
     return () => { clearTimeout(timer); cancelVpAnim(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePerspective]);
+  }, [activePerspective, curationFilteredNodes]);
 
   // Hover + BFS highlight
   const { highlightState, onNodeMouseEnter, onNodeMouseLeave } = useHoverHighlight(edges);
@@ -521,6 +544,11 @@ export function GraphCanvas({ initialNodes, initialEdges, onNodeClick, onStartE2
     selectNode: sfSelectNode,
     resetSelection: sfResetSelection,
   } = useBfsClickFocus(bfsGraphEdges, 10);
+
+  // Keep search-navigation refs in sync (all source hooks are now declared)
+  sfSelectNodeRef.current = sfSelectNode;
+  djEndpointClickRef.current = handleDjEndpointClick;
+  endpointGraphRef.current = endpointGraph;
 
   // LO entry/exit node IDs
   const loEntryNodeIds = useMemo<Set<string>>(() => {
@@ -669,6 +697,45 @@ export function GraphCanvas({ initialNodes, initialEdges, onNodeClick, onStartE2
       sfResetSelection();
     }
   }, [isLogicOperation, loResetSelection, isDataJourney, djStarted, isSystemFramework, sfSelectedNodeId, sfResetSelection]);
+
+  // Sprint 23: Consume pendingSearchNav from search overlay — route to the
+  // correct perspective-specific handler so the native right panel opens.
+  //
+  // Strategy: store the nav request in a ref, then consume it once
+  // curationFilteredNodes has been rebuilt for the new perspective.
+  // This avoids the timing issue where setTimeout(0) fires before the
+  // perspective switch has finished rebuilding nodes/handlers.
+  const pendingSearchNav = state.pendingSearchNav;
+  const pendingNavRef = useRef<NonNullable<typeof pendingSearchNav>>(null);
+
+  // Effect 1: When search nav arrives → stash in ref + clear state
+  useEffect(() => {
+    if (!pendingSearchNav) return;
+    pendingNavRef.current = { ...pendingSearchNav };
+    dispatch({ type: 'CLEAR_SEARCH_NAV' });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingSearchNav]);
+
+  // Effect 2: When curationFilteredNodes updates → consume pending nav if any
+  useEffect(() => {
+    const nav = pendingNavRef.current;
+    if (!nav) return;
+    if (curationFilteredNodes.length === 0) return; // wait for nodes to be ready
+    pendingNavRef.current = null; // consume once
+
+    // Use requestAnimationFrame to ensure React Flow has committed the new nodes
+    requestAnimationFrame(() => {
+      if (nav.type === 'method' && nav.methodName) {
+        loMethodClickRef.current(nav.methodName, nav.category ?? 'utils');
+      } else if (nav.type === 'directory' && nav.nodeId && sfSelectNodeRef.current) {
+        sfSelectNodeRef.current(nav.nodeId, nav.label ?? nav.nodeId);
+      } else if (nav.type === 'endpoint' && nav.endpointId && endpointGraphRef.current && djEndpointClickRef.current) {
+        const chain = buildEndpointChainFromGraph(nav.endpointId, endpointGraphRef.current);
+        djEndpointClickRef.current(nav.endpointId, chain);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [curationFilteredNodes]);
 
   // Sprint 7 — double-click on file node → zoom into file
   const handleNodeDoubleClick = useCallback(
@@ -838,7 +905,7 @@ export function GraphCanvas({ initialNodes, initialEdges, onNodeClick, onStartE2
       {isLogicOperation && loMode === 'groups' && (
         <PerspectiveHint
           type="logic-operation"
-          visible={!loSelectedNodeId}
+          visible={!loSelectedNodeId && (!loSelectedChain || loSelectedChain.length === 0)}
         />
       )}
       {/* Sprint 12 T6: Logic Operation — chain info panel */}
@@ -872,33 +939,13 @@ export function GraphCanvas({ initialNodes, initialEdges, onNodeClick, onStartE2
       />
       {/* Sprint 13 T6: DJ selector now renders as canvas RF nodes (djSelectorCard), no overlay needed */}
       {/* Sprint 13 T7: DJ right panel is now rendered via <RightPanel> above */}
-      {/* Sprint 12 T7: Data Journey (file-level fallback) — center hint */}
+      {/* DJ empty state — no endpoint graph available */}
       {isDataJourney && !hasEndpointGraph && (
-        <PerspectiveHint
-          type="data-journey"
-          visible={!djStarted}
-        />
+        <PerspectiveHint type="dj-empty" visible />
       )}
-      {/* Sprint 12 T7: Data Journey (file-level fallback) — right side panel */}
-      {isDataJourney && !hasEndpointGraph && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 20,
-            display: 'flex',
-            pointerEvents: 'auto',
-          }}
-        >
-          <JourneyPanel
-            steps={djJourneySteps}
-            revealedSteps={djRevealedSteps}
-            isPlaying={djIsPlaying}
-            onReplay={handleDjReplay}
-          />
-        </div>
+      {/* SF empty state — no directory graph available */}
+      {isSystemFramework && (!directoryGraph || directoryGraph.nodes.length === 0) && (
+        <PerspectiveHint type="sf-empty" visible />
       )}
       {/* Footer bar for SF / DJ / LO perspectives */}
       <GraphCanvasFooter

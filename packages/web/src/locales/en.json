@@ -233,7 +233,10 @@
       "categoryMiddleware": "Middleware",
       "categoryServices": "Services",
       "categoryModels": "Models",
-      "categoryUtils": "Utils"
+      "categoryUtils": "Utils",
+      "sourceTitle": "Source Code",
+      "sourceNoNode": "Node not found",
+      "sourceUnavailable": "Source code unavailable"
     },
     "dj": {
       "selectEndpoint": "Select an endpoint to view data journey",
@@ -447,7 +450,11 @@
   },
   "hint": {
     "clickMethod": "Click any method to view call chain",
-    "entryMarker": "★ = Recommended entry point"
+    "entryMarker": "★ = Recommended entry point",
+    "djEmpty": "No API endpoints detected",
+    "djEmptySub": "This project does not contain recognizable HTTP route definitions",
+    "sfEmpty": "No directory structure data",
+    "sfEmptySub": "Run analysis first to generate the system framework view"
   },
   "role": {
     "entrypoint": "Entry Point",

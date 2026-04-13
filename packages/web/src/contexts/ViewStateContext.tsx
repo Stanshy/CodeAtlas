@@ -22,6 +22,7 @@ import {
   type Dispatch,
 } from 'react';
 import type { GraphNode, GraphEdge, NodeType, EdgeType, FilterState, ViewModeName, PerspectiveName, DisplayPrefs, E2EStep, E2ETracingState } from '../types/graph';
+import type { LoCategory } from '../components/LOCategoryGroup';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -117,6 +118,16 @@ export interface ViewState {
   // Sprint 19: Wiki tab
   /** Currently selected wiki node slug (null = nothing selected) */
   selectedWikiNode: string | null;
+
+  // Sprint 23: Search navigation — pending search result to be consumed by GraphCanvas
+  pendingSearchNav: {
+    type: 'method' | 'endpoint' | 'directory' | 'wiki' | 'file';
+    methodName?: string;
+    category?: LoCategory;
+    nodeId?: string;
+    endpointId?: string;
+    label?: string;
+  } | null;
 }
 
 export type ViewAction =
@@ -179,7 +190,10 @@ export type ViewAction =
   | { type: 'SET_HIDDEN_METHOD_ROLES'; roles: string[] }
   | { type: 'TOGGLE_HIDDEN_METHOD_ROLE'; role: string }
   // Sprint 19: Wiki tab
-  | { type: 'SET_WIKI_NODE'; slug: string | null };
+  | { type: 'SET_WIKI_NODE'; slug: string | null }
+  // Sprint 23: Search navigation
+  | { type: 'SEARCH_NAVIGATE'; nav: NonNullable<ViewState['pendingSearchNav']> }
+  | { type: 'CLEAR_SEARCH_NAV' };
 
 // ---------------------------------------------------------------------------
 // Initial state
@@ -235,6 +249,8 @@ const initialState: ViewState = {
   hiddenMethodRoles: ['utility', 'framework_glue'],
   // Sprint 19: Wiki tab
   selectedWikiNode: null,
+  // Sprint 23: Search navigation
+  pendingSearchNav: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -533,6 +549,14 @@ function viewStateReducer(state: ViewState, action: ViewAction): ViewState {
 
     case 'SET_WIKI_NODE':
       return { ...state, selectedWikiNode: action.slug };
+
+    // --- Sprint 23: Search navigation ---
+
+    case 'SEARCH_NAVIGATE':
+      return { ...state, pendingSearchNav: action.nav };
+
+    case 'CLEAR_SEARCH_NAV':
+      return { ...state, pendingSearchNav: null };
 
     default:
       return state;

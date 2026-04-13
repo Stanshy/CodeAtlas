@@ -74,7 +74,29 @@ const GROUP_ARROWS: Array<[LoCategory, LoCategory]> = [
 ];
 
 // ---------------------------------------------------------------------------
-// Classify a file path → category
+// Classify by AI / rule-engine methodRole → LoCategory
+// ---------------------------------------------------------------------------
+
+const ROLE_TO_CATEGORY: Record<string, LoCategory> = {
+  entrypoint: 'routes',
+  validation: 'middleware',
+  framework_glue: 'middleware',
+  business_core: 'services',
+  orchestration: 'services',
+  domain_rule: 'services',
+  io_adapter: 'models',
+  utility: 'utils',
+  infra: 'utils',
+};
+
+/** Map AI/rule-engine methodRole → LoCategory. Returns undefined if unmapped. */
+export function classifyByRole(methodRole: string | undefined): LoCategory | undefined {
+  if (!methodRole) return undefined;
+  return ROLE_TO_CATEGORY[methodRole];
+}
+
+// ---------------------------------------------------------------------------
+// Classify a file path → category (fallback when no AI role available)
 // ---------------------------------------------------------------------------
 
 export function classifyPath(filePath: string): LoCategory {

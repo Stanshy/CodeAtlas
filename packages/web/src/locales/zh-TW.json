@@ -233,7 +233,10 @@
       "categoryMiddleware": "中間層",
       "categoryServices": "服務",
       "categoryModels": "模型",
-      "categoryUtils": "工具"
+      "categoryUtils": "工具",
+      "sourceTitle": "源碼檢視",
+      "sourceNoNode": "找不到節點",
+      "sourceUnavailable": "無法讀取源碼"
     },
     "dj": {
       "selectEndpoint": "選擇端點查看資料旅程",
@@ -447,7 +450,11 @@
   },
   "hint": {
     "clickMethod": "點擊任一方法查看呼叫鏈",
-    "entryMarker": "★ 為推薦入口"
+    "entryMarker": "★ 為推薦入口",
+    "djEmpty": "未偵測到 API 端點",
+    "djEmptySub": "此專案不包含可辨識的 HTTP 路由定義",
+    "sfEmpty": "無目錄結構資料",
+    "sfEmptySub": "請先執行分析以產生系統框架視圖"
   },
   "role": {
     "entrypoint": "入口點",
