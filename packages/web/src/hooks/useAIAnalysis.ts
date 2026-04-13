@@ -132,10 +132,28 @@ export function useAIAnalysis(scope: AIJobScope, target?: string): UseAIAnalysis
     [cacheKey],
   );
 
-  // On mount: resume polling if status is 'analyzing' and we have a jobId
+  // On mount: check AI status + resume polling if needed
   useEffect(() => {
     cancelledRef.current = false;
     const current = getSnapshot(cacheKey);
+
+    // If idle, check AI provider status upfront so disabled state shows immediately
+    if (current.status === 'idle') {
+      void (async () => {
+        try {
+          const res = await fetch('/api/ai/status');
+          if (res.ok) {
+            const data = (await res.json()) as { enabled?: boolean; provider?: string };
+            if (!data.enabled || data.provider === 'disabled') {
+              updateStore(cacheKey, { status: 'failed', error: 'AI_DISABLED' });
+            }
+          }
+        } catch {
+          // Can't check — leave as idle, will check on analyze()
+        }
+      })();
+    }
+
     if (current.status === 'analyzing' && current.job?.jobId) {
       void pollJob(current.job.jobId);
     }

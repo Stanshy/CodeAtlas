@@ -61,6 +61,8 @@ export function useLOMode({
   const [loCurrentStep, setLoCurrentStep] = useState<number>(-1);
   const [loStepIsPlaying, setLoStepIsPlaying] = useState(false);
   const loStepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Ref to auto-select a method after chain playback finishes (for search navigation)
+  const pendingAutoSelectRef = useRef<string | null>(null);
 
   // Reset LO state when perspective changes away from logic-operation
   useEffect(() => {
@@ -216,6 +218,22 @@ export function useLOMode({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loCurrentStep, loMode, isLogicOperation, loStepIsPlaying]);
 
+  // Auto-select the searched method after chain playback finishes
+  useEffect(() => {
+    if (loStepIsPlaying) return; // still playing
+    const methodName = pendingAutoSelectRef.current;
+    if (!methodName || !loSelectedChain) return;
+    pendingAutoSelectRef.current = null; // consume once
+    // Find the step matching the searched method
+    const targetStep = loSelectedChain.find(
+      (s) => s.methodName === methodName || s.methodName === `${methodName}()`,
+    );
+    if (targetStep) {
+      setLoSelectedNode(targetStep);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loStepIsPlaying, loSelectedChain]);
+
   // LO chain: update `selected` flag on chain nodes when user clicks one
   useEffect(() => {
     if (!isLogicOperation || loMode !== 'chain') return;
@@ -233,33 +251,64 @@ export function useLOMode({
   }, [loSelectedNode, loMode, isLogicOperation]);
 
   // Sprint 13 T5: LO method click — mirrors DJ endpoint click pattern
+  // Helper: find a method's filePath + category from LO category card nodes
+  const findMethodInCards = useCallback(
+    (methodName: string): { filePath: string; category: LoCategory } | null => {
+      for (const node of curationFilteredNodes) {
+        const d = node.data as Record<string, unknown>;
+        if (!d || !Array.isArray(d.methods)) continue;
+        const method = (d.methods as Array<{ name: string; filePath: string }>).find(
+          (m) => m.name === methodName || m.name === `${methodName}()`,
+        );
+        if (method) {
+          return { filePath: method.filePath, category: (d.category as LoCategory) ?? 'utils' };
+        }
+      }
+      return null;
+    },
+    [curationFilteredNodes],
+  );
+
   const handleLOMethodClick = useCallback(
     (methodName: string, _category: LoCategory) => {
-      if (!endpointGraph) {
-        setLoSelectedChain(null);
-        setLoEndpointLabel('');
-        return;
-      }
-      const result = buildChainFromEndpointGraph(methodName, endpointGraph);
-      const steps = result.steps;
-      if (steps.length === 0) {
-        setLoSelectedChain(null);
-        setLoEndpointLabel('');
-        return;
-      }
-      setLoSelectedChain(steps);
-      setLoEndpointLabel(result.endpointLabel);
-      setLoSelectedNode(null);
-      setLoMode('chain');
-      startLoChainPlayback(steps);
+      // Try to build a full call chain from endpoint graph
+      if (endpointGraph) {
+        const result = buildChainFromEndpointGraph(methodName, endpointGraph);
+        const steps = result.steps;
+        if (steps.length > 0) {
+          setLoSelectedChain(steps);
+          setLoEndpointLabel(result.endpointLabel);
+          setLoSelectedNode(null);
+          setLoMode('chain');
+          pendingAutoSelectRef.current = methodName; // auto-select after playback
+          startLoChainPlayback(steps);
 
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          setCenterAdjusted(0, (steps.length * 88) / 2, { zoom: 0.9, duration: 400 });
-        }, 100);
-      });
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              setCenterAdjusted(0, (steps.length * 88) / 2, { zoom: 0.9, duration: 400 });
+            }, 100);
+          });
+          return;
+        }
+      }
+
+      // No chain found — still select the method so right panel shows its details
+      const found = findMethodInCards(methodName);
+      const filePath = found?.filePath ?? '';
+      const category = found?.category ?? _category;
+      const singleStep: ChainStep = {
+        id: `standalone-${methodName}`,
+        methodName,
+        category,
+        filePath,
+      };
+      setLoSelectedChain([singleStep]);
+      setLoEndpointLabel(methodName);
+      setLoSelectedNode(singleStep);
+      // Stay in groups mode — don't switch to chain view for a single method
+      setLoMode('groups');
     },
-    [endpointGraph, startLoChainPlayback, setCenterAdjusted],
+    [endpointGraph, startLoChainPlayback, setCenterAdjusted, findMethodInCards],
   );
 
   // Sprint 13 T5: LO chain node click — from LOCallChain node

@@ -12,18 +12,82 @@ import { useTranslation } from 'react-i18next';
 import { THEME } from '../styles/theme';
 
 export interface PerspectiveHintProps {
-  type: 'logic-operation' | 'data-journey';
+  type: 'logic-operation' | 'data-journey' | 'dj-empty' | 'sf-empty';
   visible: boolean;
 }
 
 export function PerspectiveHint({ type, visible }: PerspectiveHintProps) {
   const { t } = useTranslation();
+
+  // Empty state hints — no data available for this perspective
+  if (type === 'dj-empty' || type === 'sf-empty') {
+    const titleKey = type === 'dj-empty' ? 'hint.djEmpty' : 'hint.sfEmpty';
+    const subKey = type === 'dj-empty' ? 'hint.djEmptySub' : 'hint.sfEmptySub';
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          top: 0, left: 0, bottom: 0, right: 300,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+          opacity: visible ? 1 : 0,
+          transition: 'opacity 0.3s',
+          zIndex: 10,
+        }}
+        aria-hidden="true"
+      >
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            border: `2px dashed ${THEME.inkFaint}`,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 16,
+            fontSize: 20,
+            color: THEME.inkFaint,
+          }}
+        >
+          {type === 'dj-empty' ? '⛔' : '📂'}
+        </div>
+        <div
+          style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: THEME.inkSecondary,
+            fontFamily: THEME.fontUi,
+            marginBottom: 6,
+          }}
+        >
+          {t(titleKey)}
+        </div>
+        <div
+          style={{
+            fontSize: 13,
+            color: THEME.inkMuted,
+            fontFamily: THEME.fontUi,
+            lineHeight: 1.6,
+            textAlign: 'center',
+            maxWidth: 320,
+          }}
+        >
+          {t(subKey)}
+        </div>
+      </div>
+    );
+  }
+
   if (type === 'data-journey') {
     return (
       <div
         style={{
           position: 'absolute',
-          inset: 0,
+          top: 0, left: 0, bottom: 0, right: 300,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -78,7 +142,7 @@ export function PerspectiveHint({ type, visible }: PerspectiveHintProps) {
     <div
       style={{
         position: 'absolute',
-        inset: 0,
+        top: 0, left: 0, bottom: 0, right: 300,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

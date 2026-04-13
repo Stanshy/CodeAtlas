@@ -247,6 +247,8 @@ type AiStatus = 'idle' | 'analyzing' | 'succeeded' | 'failed';
 export interface WikiContentViewProps {
   slug: string;
   onOpenPage: (slug: string, displayName: string) => void;
+  /** Navigate to a source file in SF perspective */
+  onNavigateToFile?: (filePath: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -279,7 +281,7 @@ function Skeleton() {
 // Main component
 // ---------------------------------------------------------------------------
 
-export function WikiContentView({ slug, onOpenPage }: WikiContentViewProps) {
+export function WikiContentView({ slug, onOpenPage, onNavigateToFile }: WikiContentViewProps) {
   const { t } = useTranslation();
 
   const [page, setPage] = useState<WikiPageDetail | null>(null);
@@ -589,15 +591,23 @@ export function WikiContentView({ slug, onOpenPage }: WikiContentViewProps) {
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {page.sourceFiles.map((f) => (
-                  <div key={f} style={{
-                    fontSize: 13,
-                    color: THEME.inkSecondary,
-                    fontFamily: THEME.fontMono,
-                    padding: '6px 12px',
-                    background: 'rgba(0,0,0,0.02)',
-                    borderRadius: 6,
-                    border: `1px solid ${THEME.borderDefault}`,
-                  }}>
+                  <div
+                    key={f}
+                    onClick={() => onNavigateToFile?.(f)}
+                    style={{
+                      fontSize: 13,
+                      color: onNavigateToFile ? '#1565c0' : THEME.inkSecondary,
+                      fontFamily: THEME.fontMono,
+                      padding: '6px 12px',
+                      background: 'rgba(0,0,0,0.02)',
+                      borderRadius: 6,
+                      border: `1px solid ${THEME.borderDefault}`,
+                      cursor: onNavigateToFile ? 'pointer' : 'default',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={(e) => { if (onNavigateToFile) (e.currentTarget).style.background = 'rgba(21,101,192,0.06)'; }}
+                    onMouseLeave={(e) => { (e.currentTarget).style.background = 'rgba(0,0,0,0.02)'; }}
+                  >
                     📄 {f}
                   </div>
                 ))}
