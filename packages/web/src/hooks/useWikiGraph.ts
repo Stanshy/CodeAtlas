@@ -87,6 +87,8 @@ export interface WikiGraphState {
   dragNode: (slug: string, x: number, y: number) => void;
   /** Reheat the simulation */
   reheat: () => void;
+  /** Re-fetch manifest (e.g. after wiki generation) */
+  refetch: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -103,6 +105,7 @@ export function useWikiGraph(
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  const [fetchTrigger, setFetchTrigger] = useState(0);
 
   // Mutable node array that d3-force writes position into
   const simNodesRef = useRef<WikiSimNode[]>([]);
@@ -140,7 +143,7 @@ export function useWikiGraph(
 
     void load();
     return () => { cancelled = true; };
-  }, []);
+  }, [fetchTrigger]);
 
   // ---------------------------------------------------------------------------
   // Build simulation nodes + links when manifest arrives
@@ -287,5 +290,6 @@ export function useWikiGraph(
     releaseNode,
     dragNode,
     reheat,
+    refetch: useCallback(() => setFetchTrigger((n) => n + 1), []),
   };
 }

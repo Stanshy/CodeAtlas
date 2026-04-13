@@ -13,9 +13,9 @@ import { setLocale, resolveLocale } from './i18n.js';
 const program = new Command();
 
 program
-  .name('codeatlas')
+  .name('code-atlas')
   .description('CodeAtlas — codebase analysis and navigation tool')
-  .version('0.1.0')
+  .version('0.0.1')
   .option('-l, --lang <locale>', 'Output language (en, zh-TW)', 'en');
 
 program

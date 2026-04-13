@@ -116,7 +116,7 @@ export async function runPhase1MethodBatch(
   analysis: AnalysisResult,
   aiProvider: AIAnalysisProvider,
   cache: PersistentAICache,
-  _locale: Locale = 'en',
+  locale: Locale = 'en',
 ): Promise<void> {
   const functionNodes = analysis.graph.nodes.filter(
     (n) => n.type === 'function' && n.metadata?.parentFileId,
@@ -132,7 +132,7 @@ export async function runPhase1MethodBatch(
     try {
       // Check if all nodes in batch are already cached and fresh
       const needsAnalysis = batch.filter((n) => {
-        const cacheKey = `method:${n.id}:${aiProvider.constructor.name}:${PROMPT_VERSION_PHASE1}`;
+        const cacheKey = `method:${n.id}:${aiProvider.name}:${PROMPT_VERSION_PHASE1}:${locale}`;
         const existing = cache.get(cacheKey);
         if (!existing) return true;
         const nodeContent = JSON.stringify(n.metadata ?? {});
@@ -178,18 +178,29 @@ export async function runPhase1MethodBatch(
 
       const result = await aiProvider.analyzeMethodBatch(methodContexts, 'medium');
 
-      // Write summaries to cache
+      // Write summaries to cache — skip low-quality fallback results
       for (const method of result.methods) {
         if (method.oneLineSummary) {
+          const summary = method.oneLineSummary;
+          // Skip caching garbage results (AI couldn't analyze properly)
+          if (
+            summary.includes('尚未被') ||
+            summary.includes('無法進行') ||
+            summary.includes('not supported') ||
+            summary.includes('cannot be analyzed')
+          ) {
+            console.warn(`[AI Pipeline] Skipping cache for "${method.id}" — low quality result`);
+            continue;
+          }
           const node = needsAnalysis.find((n) => n.id === method.id);
           const nodeContent = JSON.stringify(node?.metadata ?? {});
-          const cacheKey = `method:${method.id}:${aiProvider.constructor.name}:${PROMPT_VERSION_PHASE1}`;
+          const cacheKey = `method:${method.id}:${aiProvider.name}:${PROMPT_VERSION_PHASE1}:${locale}`;
           cache.set(cacheKey, {
             key: cacheKey,
             contentHash: computeContentHash(nodeContent),
-            provider: aiProvider.constructor.name,
+            provider: aiProvider.name,
             promptVersion: PROMPT_VERSION_PHASE1,
-            result: method.oneLineSummary,
+            result: summary,
             createdAt: new Date().toISOString(),
           });
         }
@@ -243,7 +254,7 @@ export async function runPhase2DirectorySummaries(
 
       // Staleness check
       const dirContent = JSON.stringify(dirFiles.map((f) => ({ id: f.id, label: f.label })));
-      const cacheKey = `directory:${dirNode.id}:${aiProvider.constructor.name}:${PROMPT_VERSION_PHASE2}`;
+      const cacheKey = `directory:${dirNode.id}:${aiProvider.name}:${PROMPT_VERSION_PHASE2}:${locale}`;
       const existing = cache.get(cacheKey);
       if (existing && !cache.isStale(existing, computeContentHash(dirContent), PROMPT_VERSION_PHASE2)) {
         continue;
@@ -309,7 +320,7 @@ export async function runPhase2DirectorySummaries(
         cache.set(cacheKey, {
           key: cacheKey,
           contentHash: computeContentHash(dirContent),
-          provider: aiProvider.constructor.name,
+          provider: aiProvider.name,
           promptVersion: PROMPT_VERSION_PHASE2,
           result: dirResult,
           createdAt: new Date().toISOString(),
@@ -355,7 +366,7 @@ export async function runPhase3EndpointAnalysis(
 
       // Staleness check for endpoint description
       const endpointContent = JSON.stringify({ method: endpoint.method, path: endpoint.path });
-      const descCacheKey = `endpoint-desc:${endpoint.id}:${aiProvider.constructor.name}:${PROMPT_VERSION_PHASE3}`;
+      const descCacheKey = `endpoint-desc:${endpoint.id}:${aiProvider.name}:${PROMPT_VERSION_PHASE3}:${locale}`;
       const existingDesc = cache.get(descCacheKey);
       const descIsStale = !existingDesc || cache.isStale(
         existingDesc,
@@ -364,6 +375,7 @@ export async function runPhase3EndpointAnalysis(
       );
 
       if (descIsStale) {
+        console.log(`[AI Pipeline] Endpoint ${endpoint.id}: locale="${locale}", cacheKey="${descCacheKey}"`);
         const chainContext: ChainContext = {
           endpointId: endpoint.id,
           method: endpoint.method,
@@ -423,7 +435,7 @@ export async function runPhase3EndpointAnalysis(
           cache.set(descCacheKey, {
             key: descCacheKey,
             contentHash: computeContentHash(endpointContent),
-            provider: aiProvider.constructor.name,
+            provider: aiProvider.name,
             promptVersion: PROMPT_VERSION_PHASE3,
             result: {
               description: endpointDescription,
@@ -438,7 +450,7 @@ export async function runPhase3EndpointAnalysis(
 
       // Step details
       if (chain && chain.steps.length > 0) {
-        const stepsCacheKey = `endpoint-steps:${endpoint.id}:${aiProvider.constructor.name}:${PROMPT_VERSION_PHASE3}`;
+        const stepsCacheKey = `endpoint-steps:${endpoint.id}:${aiProvider.name}:${PROMPT_VERSION_PHASE3}:${locale}`;
         const stepsContent = JSON.stringify(chain.steps.map((s) => s.method));
         const existingSteps = cache.get(stepsCacheKey);
         const stepsIsStale = !existingSteps || cache.isStale(
@@ -499,7 +511,7 @@ export async function runPhase3EndpointAnalysis(
               cache.set(stepsCacheKey, {
                 key: stepsCacheKey,
                 contentHash: computeContentHash(stepsContent),
-                provider: aiProvider.constructor.name,
+                provider: aiProvider.name,
                 promptVersion: PROMPT_VERSION_PHASE3,
                 result: validatedSteps,
                 createdAt: new Date().toISOString(),

@@ -30,8 +30,12 @@ function detectLanguage(): string {
     // 2. navigator.language mapping
     const nav = navigator?.language ?? '';
     if (nav === 'zh-TW' || nav === 'zh') {
+      localStorage.setItem('codeatlas-locale', 'zh-TW');
       return 'zh-TW';
     }
+
+    // No stored value and not Chinese browser — set English explicitly
+    localStorage.setItem('codeatlas-locale', 'en');
   } catch {
     // SSR or test environment — localStorage may not be available
   }

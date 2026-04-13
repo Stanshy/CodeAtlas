@@ -267,7 +267,6 @@ function AiSetupBlock({ isDark, onDismiss }: AiSetupBlockProps) {
           aria-label={t('welcome.selectAiProvider')}
         >
           <option value="anthropic">Claude (Anthropic)</option>
-          <option value="claude-code">Claude Code CLI</option>
           <option value="gemini">Gemini (Google)</option>
           <option value="openai">OpenAI (GPT)</option>
           <option value="ollama">{t('welcome.ollamaLocal')}</option>
@@ -282,7 +281,7 @@ function AiSetupBlock({ isDark, onDismiss }: AiSetupBlockProps) {
       {needsApiKey && (
         <div style={{ marginBottom: 10 }}>
           <input
-            type="password"
+            type="text"
             value={apiKey}
             onChange={(e) => { setApiKey(e.target.value); setTestStatus('idle'); setTestError(null); setSaveStatus('idle'); }}
             placeholder={t('welcome.enterApiKey')}
@@ -293,8 +292,11 @@ function AiSetupBlock({ isDark, onDismiss }: AiSetupBlockProps) {
               width: '100%',
               fontFamily: "'Inter', monospace",
               letterSpacing: '0.05em',
-            }}
+              WebkitTextSecurity: 'disc',
+            } as React.CSSProperties}
             autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
           />
         </div>
       )}

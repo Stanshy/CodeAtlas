@@ -245,7 +245,16 @@ export class AIJobManager {
     if (!prefix) return false;
     if (scope === 'method') {
       const needle = prefix.replace(/^method:/, '').replace(/:$/, '');
-      return this.cache.getAllEntries().some((e) => e.key.startsWith('method:') && e.key.includes(needle));
+      const entries = this.cache.getAllEntries();
+      // Try full target match first
+      if (entries.some((e) => e.key.startsWith('method:') && e.key.includes(needle))) return true;
+      // Fallback: match by methodName only (handles cross-file calls where
+      // the calling file differs from the definition file)
+      if (needle.includes('#')) {
+        const methodName = needle.split('#').pop()!;
+        return entries.some((e) => e.key.startsWith('method:') && e.key.includes(`#${methodName}:`));
+      }
+      return false;
     }
     return this.cache.getAllEntries().some((e) => e.key.startsWith(prefix));
   }
@@ -303,6 +312,7 @@ export class AIJobManager {
     provider: AIAnalysisProvider,
   ): Promise<void> {
     const locale = this.locale;
+    console.log(`[AI JobManager] executePhases: scope="${job.scope}", target="${job.target}", locale="${locale}"`);
 
     switch (job.scope) {
       case 'directory': {
@@ -366,15 +376,23 @@ export class AIJobManager {
             ? cleanTarget.split('#').slice(1).join('#')
             : cleanTarget;
           const isEndpointLabel = /^(GET|POST|PUT|PATCH|DELETE)\s/.test(methodPart);
-          if (isEndpointLabel && methodNodes.length > 0) {
-            const summaries = methodNodes.map((n) => {
-              const key = `method:${n.id}:${provider.name}:`;
-              const entry = this.cache.getAllEntries().find((e) => e.key.startsWith(key));
-              if (entry?.result && typeof entry.result === 'object') {
+          // Build summaries from Phase 1 cached results for each node
+          const summaries = methodNodes.map((n) => {
+            const key = `method:${n.id}:${provider.name}:`;
+            const entry = this.cache.getAllEntries().find((e) => e.key.startsWith(key));
+            if (entry?.result) {
+              if (typeof entry.result === 'string') {
+                return { id: n.id, oneLineSummary: entry.result };
+              }
+              if (typeof entry.result === 'object') {
                 return entry.result as Record<string, unknown>;
               }
-              return { id: n.id, summary: n.label };
-            });
+            }
+            return { id: n.id, summary: n.label };
+          });
+
+          if (isEndpointLabel && methodNodes.length > 0) {
+            // Endpoint label: aggregate all file functions into a synthetic entry
             const syntheticKey = `method:${cleanTarget}:${provider.name}:endpoint-aggregate`;
             this.cache.set(syntheticKey, {
               key: syntheticKey,
@@ -384,9 +402,54 @@ export class AIJobManager {
               result: {
                 id: cleanTarget,
                 role: 'endpoint',
-                summary: summaries.map((s) => (s as Record<string, unknown>).summary ?? '').join('; '),
+                summary: summaries
+                  .map((s) => {
+                    const r = s as Record<string, unknown>;
+                    const name = typeof r.id === 'string' ? (r.id as string).split('#').pop() : '';
+                    const desc = typeof r.oneLineSummary === 'string'
+                      ? r.oneLineSummary
+                      : (typeof r.summary === 'string' ? r.summary : '');
+                    return desc || name;
+                  })
+                  .filter(Boolean)
+                  .join(' → '),
                 methods: summaries,
                 confidence: 0.8,
+                provider: provider.name,
+              },
+              createdAt: new Date().toISOString(),
+            });
+          }
+
+          // Check if retrieveResult would find nothing for the original target
+          // (e.g. external lib call like "google_id_token.verify_oauth2_token"
+          // where Fallback 4 analyzed same-file functions for context).
+          // Store a context-based synthetic entry so result is not null.
+          const existingResult = this.retrieveResultFromCache('method', job.target);
+          if (!existingResult && methodPart && !isEndpointLabel) {
+            const contextSummary = summaries
+              .map((s) => {
+                const r = s as Record<string, unknown>;
+                const name = typeof r.id === 'string' ? (r.id as string).split('#').pop() : '';
+                const desc = typeof r.oneLineSummary === 'string'
+                  ? r.oneLineSummary
+                  : (typeof r.summary === 'string' ? r.summary : '');
+                return `${name}: ${desc}`;
+              })
+              .filter((s) => s.length > 3)
+              .join('; ');
+            const filePart = cleanTarget.includes('#') ? cleanTarget.split('#')[0] : '';
+            const syntheticKey = `method:${cleanTarget}:${provider.name}:context-aggregate`;
+            this.cache.set(syntheticKey, {
+              key: syntheticKey,
+              contentHash: 'context-aggregate',
+              provider: provider.name,
+              promptVersion: 'context-aggregate',
+              result: {
+                id: cleanTarget,
+                role: 'external-call',
+                summary: `${methodPart} — 外部函式庫呼叫，使用於 ${filePart} 中。相關上下文：${contextSummary}`,
+                confidence: 0.5,
                 provider: provider.name,
               },
               createdAt: new Date().toISOString(),
@@ -480,9 +543,18 @@ export class AIJobManager {
     // For 'method' scope, filePath may be partial (e.g. "app/services/x.py#fn")
     // while cache key has full path ("backend/app/services/x.py#fn"). Use includes.
     const useIncludes = scope === 'method';
-    const entry = useIncludes
+    let entry = useIncludes
       ? allEntries.find((e) => e.key.startsWith('method:') && e.key.includes(prefix.replace(/^method:/, '').replace(/:$/, '')))
       : allEntries.find((e) => e.key.startsWith(prefix));
+    // Fallback: match by methodName only (handles cross-file calls where
+    // calling file differs from definition file)
+    if (!entry && useIncludes) {
+      const needle = prefix.replace(/^method:/, '').replace(/:$/, '');
+      if (needle.includes('#')) {
+        const methodName = needle.split('#').pop()!;
+        entry = allEntries.find((e) => e.key.startsWith('method:') && e.key.includes(`#${methodName}:`));
+      }
+    }
     if (entry && entry.result != null) {
       // Phase 3 historically stored string results — wrap in object for consistency
       if (typeof entry.result === 'string') {
@@ -570,6 +642,19 @@ export class AIJobManager {
       });
       if (filteredNodes.length > 0) {
         console.log(`[AI] filterAnalysisForSingleMethod: "${methodPart}" is an endpoint label, returning all ${filteredNodes.length} function(s) from "${filePart}"`);
+      }
+    }
+
+    // Fallback 4: method not found as a defined function (e.g. external library call
+    // like "google_id_token.verify_oauth2_token"). The call site is still in this file,
+    // so return ALL function nodes from the same file — AI can analyze the usage context.
+    if (filteredNodes.length === 0 && filePart && methodPart) {
+      filteredNodes = analysis.graph.nodes.filter((n) => {
+        if (n.type !== 'function') return false;
+        return matchFile(n.filePath, filePart);
+      });
+      if (filteredNodes.length > 0) {
+        console.log(`[AI] filterAnalysisForSingleMethod: "${methodPart}" not found as defined function, returning all ${filteredNodes.length} function(s) from "${filePart}" for context`);
       }
     }
 

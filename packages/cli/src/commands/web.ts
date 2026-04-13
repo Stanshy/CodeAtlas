@@ -62,10 +62,15 @@ function openBrowser(url: string): void {
  *   web dir   → packages/web
  */
 function resolveWebDir(): string {
-  // Walk up from __dirname to find the monorepo root, then resolve packages/web/dist.
+  // 1. npm-installed / standalone: web UI bundled as dist/web/ sibling to compiled CLI
+  const bundledWebDir = path.join(__dirname, 'web');
+  if (existsSync(path.join(bundledWebDir, 'index.html'))) {
+    return bundledWebDir;
+  }
+
+  // 2. Monorepo development: walk up to find pnpm-workspace.yaml
   //   Development (tsx):  __dirname = packages/cli/src/commands → 4 levels up
   //   Production (tsup):  __dirname = packages/cli/dist         → 3 levels up
-  // Strategy: walk up until we find pnpm-workspace.yaml (monorepo root marker).
   let dir = __dirname;
   for (let i = 0; i < 10; i++) {
     if (existsSync(path.join(dir, 'pnpm-workspace.yaml'))) {

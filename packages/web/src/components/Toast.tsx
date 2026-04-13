@@ -53,6 +53,8 @@ export function Toast({ type, title, description, onDismiss, duration = 3000 }: 
   const [timerWidth, setTimerWidth] = useState(100);
   const startTimeRef = useRef<number>(Date.now());
   const rafRef = useRef<number | null>(null);
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
   const config = TOAST_CONFIG[type];
 
   useEffect(() => {
@@ -66,13 +68,13 @@ export function Toast({ type, title, description, onDismiss, duration = 3000 }: 
     };
     rafRef.current = requestAnimationFrame(animate);
 
-    const timer = setTimeout(onDismiss, duration);
+    const timer = setTimeout(() => onDismissRef.current(), duration);
 
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       clearTimeout(timer);
     };
-  }, [duration, onDismiss]);
+  }, [duration]);
 
   const containerStyle: CSSProperties = {
     position: 'relative',

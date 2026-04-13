@@ -66,6 +66,20 @@ export class PersistentAICache {
     this.filePath = filePath;
   }
 
+  /**
+   * Switch to a new project's cache file.
+   * Saves current entries to old path, clears memory, loads from new path.
+   */
+  switchProject(newFilePath: string): void {
+    // Save current entries to old location before switching
+    if (this.entries.size > 0) {
+      this.saveToDisk();
+    }
+    this.filePath = newFilePath;
+    this.entries = new Map();
+    this.loadFromDisk();
+  }
+
   // --------------------------------------------------------------------------
   // Disk I/O
   // --------------------------------------------------------------------------

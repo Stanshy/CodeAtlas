@@ -17,6 +17,7 @@ export default defineConfig({
   splitting: false,
   treeshake: true,
   target: 'es2022',
+  noExternal: ['@codeatlas/core'],
   banner: {
     // Inject the Node.js shebang only into the ESM entry that is used as the bin target.
     js: '#!/usr/bin/env node',
@@ -32,5 +33,29 @@ export default defineConfig({
         fs.copyFileSync(path.join(srcDir, file), path.join(destDir, file));
       }
     }
+
+    // Copy web UI dist into dist/web/ so the CLI works when installed from npm
+    // (where the monorepo structure is not available).
+    const webDistSrc = path.resolve('..', 'web', 'dist');
+    const webDistDest = path.resolve('dist', 'web');
+    if (fs.existsSync(webDistSrc)) {
+      copyDirRecursive(webDistSrc, webDistDest);
+    }
   },
 });
+
+/**
+ * Recursively copy a directory and all its contents.
+ */
+function copyDirRecursive(src: string, dest: string): void {
+  fs.mkdirSync(dest, { recursive: true });
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDirRecursive(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}

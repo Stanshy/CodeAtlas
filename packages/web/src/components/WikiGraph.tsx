@@ -20,6 +20,7 @@
 
 import { useRef, useEffect, useState, useCallback, type PointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../locales';
 import { WikiNodeCircle } from './WikiNodeCircle';
 import { WikiContentView } from './WikiContentView';
 import { useWikiGraph } from '../hooks/useWikiGraph';
@@ -68,7 +69,7 @@ export interface WikiGraphProps {
 // Sub-component: NotGeneratedState
 // ---------------------------------------------------------------------------
 
-function NotGeneratedState() {
+function NotGeneratedState({ onGenerated }: { onGenerated?: () => void }) {
   const { t } = useTranslation();
   const [isGenerating, setIsGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
@@ -77,7 +78,7 @@ function NotGeneratedState() {
     setIsGenerating(true);
     setGenError(null);
     try {
-      const locale = localStorage.getItem('codeatlas-locale') || 'en';
+      const locale = i18n.language || localStorage.getItem('codeatlas-locale') || 'en';
       const res = await fetch('/api/wiki/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -87,7 +88,7 @@ function NotGeneratedState() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.message || `HTTP ${res.status}`);
       }
-      window.location.reload();
+      onGenerated?.();
     } catch (err) {
       setGenError(err instanceof Error ? err.message : String(err));
       setIsGenerating(false);
@@ -520,7 +521,7 @@ export function WikiGraph({
   // ---------------------------------------------------------------------------
 
   if (graph.isLoading) return <LoadingState />;
-  if (graph.manifestStatus === 'not_generated') return <NotGeneratedState />;
+  if (graph.manifestStatus === 'not_generated') return <NotGeneratedState onGenerated={graph.refetch} />;
   if (graph.manifestStatus === 'error') return <ErrorState />;
 
   const { width, height } = dimensions;

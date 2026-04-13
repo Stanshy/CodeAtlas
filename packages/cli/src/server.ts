@@ -261,7 +261,7 @@ export async function startServer(options: ServerOptions): Promise<void> {
     const configRaw = readFileSync(configPath, 'utf-8');
     const config = JSON.parse(configRaw) as Record<string, unknown>;
     if (typeof config.aiProvider === 'string') currentAiProvider = config.aiProvider;
-    if (typeof config.aiApiKey === 'string') currentAiKey = config.aiApiKey;
+    // API key is NOT read from .codeatlas.json — use env vars or Web UI
     if (typeof config.ollamaModel === 'string') currentOllamaModel = config.ollamaModel;
   } catch {
     // No config file or corrupted — use CLI defaults
@@ -505,6 +505,8 @@ export async function startServer(options: ServerOptions): Promise<void> {
       mode,
       privacyLevel,
       model,
+      // Whether an API key is currently loaded (in memory) — never expose the actual key
+      hasApiKey: !!currentAiKey,
       // Sprint 16: cacheSize replaces pipeline progress tracking
       cacheSize: aiCache.size,
       // Sprint 16 T1: job metrics
@@ -779,7 +781,7 @@ Response format: ["keyword1", "keyword2", ...]`;
       return reply.status(400).send({ ok: false, message: 'Missing provider field' });
     }
 
-    const validProviders = ['openai', 'anthropic', 'ollama', 'claude-code', 'gemini', 'disabled'];
+    const validProviders = ['openai', 'anthropic', 'ollama', 'gemini', 'disabled'];
     if (!validProviders.includes(body.provider)) {
       return reply.status(400).send({ ok: false, message: `Invalid provider: ${body.provider}` });
     }
@@ -805,9 +807,9 @@ Response format: ["keyword1", "keyword2", ...]`;
         // File doesn't exist or is corrupted — start fresh
       }
       config.aiProvider = body.provider;
-      if (body.apiKey !== undefined) {
-        config.aiApiKey = body.apiKey;
-      }
+      // API key is kept in memory only — never persist to disk
+      // Users should use environment variables (ANTHROPIC_API_KEY, etc.)
+      delete config.aiApiKey;
       writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
       persisted = true;
     } catch (err) {
@@ -1497,7 +1499,7 @@ Response format: ["keyword1", "keyword2", ...]`;
         const projectConfigRaw = readFileSync(projectConfigPath, 'utf-8');
         const projectConfig = JSON.parse(projectConfigRaw) as Record<string, unknown>;
         if (typeof projectConfig.aiProvider === 'string') currentAiProvider = projectConfig.aiProvider;
-        if (typeof projectConfig.aiApiKey === 'string') currentAiKey = projectConfig.aiApiKey;
+        // API key is NOT read from .codeatlas.json — use env vars or Web UI
         if (typeof projectConfig.ollamaModel === 'string') currentOllamaModel = projectConfig.ollamaModel;
       } catch {
         // No config file — keep current AI settings
@@ -1532,6 +1534,10 @@ Response format: ["keyword1", "keyword2", ...]`;
         // Switch server to ready mode
         currentAnalysisPath = newAnalysisPath;
         serverMode = 'ready';
+
+        // Switch AI cache to new project's cache directory
+        const newCacheDir = path.join(path.dirname(newAnalysisPath), 'cache');
+        aiCache.switchProject(path.join(newCacheDir, 'ai-results.json'));
 
         // Update recent projects
         await addRecentProject({
@@ -1748,7 +1754,8 @@ class P {
   interface IFileDialog {
     int Show(IntPtr w);
     void SetFileTypes(); void SetFileTypeIndex(); void GetFileTypeIndex();
-    void Advise(); void Unadvise(); void SetOptions();
+    void Advise(); void Unadvise();
+    void SetOptions([MarshalAs(UnmanagedType.U4)] uint o);
     void GetOptions([MarshalAs(UnmanagedType.U4)] out uint o);
     void SetDefaultFolder(); void SetFolder(); void GetFolder();
     void GetCurrentSelection(); void SetFileName(); void GetFileName();
@@ -1762,9 +1769,9 @@ class P {
   static void Main() {
     CoInitializeEx(IntPtr.Zero, 2);
     try {
-      var d=(IFileDialog)new FD(); uint o; d.GetOptions(out o); d.SetOptions();
+      var d=(IFileDialog)new FD(); uint o; d.GetOptions(out o);
       // FOS_PICKFOLDERS=0x20 | FOS_FORCEFILESYSTEM=0x40 | FOS_PATHMUSTEXIST=0x800
-      typeof(IFileDialog).GetMethod("SetOptions").Invoke(d,new object[]{o|0x20u|0x40u|0x800u});
+      d.SetOptions(o|0x20u|0x40u|0x800u);
       var w = GetForegroundWindow();
       if(d.Show(w)==0){IShellItem i;d.GetResult(out i);string p;i.GetDisplayName(0x80058000,out p);Console.Write(p);}
     } finally { CoUninitialize(); }
@@ -1780,7 +1787,8 @@ class P {
       const result = execSync(`"${exeFile}"`, { encoding: 'utf8', timeout: 60_000 }).trim();
 
       return reply.send({ path: result || null });
-    } catch {
+    } catch (err) {
+      console.error('[browse-folder] Error:', err instanceof Error ? err.message : String(err));
       return reply.send({ path: null });
     } finally {
       browseDialogOpen = false;

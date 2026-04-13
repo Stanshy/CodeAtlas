@@ -1,6 +1,6 @@
 # CodeAtlas
 
-> Visualize any codebase in 5 minutes. Local-first, privacy-focused.
+> One click to understand what you built. Local-first, privacy-focused.
 
 **English** | [繁體中文](README.zh-TW.md)
 
@@ -9,25 +9,38 @@
 
 ---
 
+## What is CodeAtlas?
+
+You built an app, but you're not sure how all the pieces fit together. CodeAtlas turns any codebase into **interactive visual maps** so you can understand your project's architecture, data flow, and logic — without reading a single line of code.
+
+---
+
 ## Features
 
-- Three perspectives: System Framework (SF) / Logic Operation (LO) / Data Journey (DJ)
-- AI-powered analysis (Claude, Gemini, OpenAI, Ollama — your choice, or disable entirely)
-- Wiki knowledge export + Obsidian-compatible knowledge graph
-- i18n: English + Traditional Chinese (繁體中文)
-- Local-first: your code never leaves your machine
-- Supports JavaScript, TypeScript, Python, and Java
+- **Visual understanding** — See your entire project as interactive maps, not walls of code
+- **AI-powered explanations** — Get plain-language summaries of what each part does (Claude, Gemini, OpenAI, Ollama, or fully offline)
+- **Three perspectives** — Structure Flow (file connections), Logic Overview (what each part does), Data Journey (how data moves)
+- **Wiki knowledge export** — Generate readable documentation + Obsidian-compatible knowledge graph
+- **Local-first & private** — Your code never leaves your machine, no cloud accounts needed
+- **Bilingual** — English + Traditional Chinese (繁體中文)
+- **Multi-language** — Supports JavaScript, TypeScript, Python, and Java projects
 
 ---
 
 ## Quick Start
 
 ```bash
-npm install -g codeatlas
-codeatlas
+npx code-atlas
 ```
 
-That's it. A browser window opens with the welcome page — pick a project folder and explore.
+That's it. Your browser opens automatically — pick a project folder and start exploring.
+
+### Install globally (optional)
+
+```bash
+npm install -g code-atlas
+code-atlas
+```
 
 ---
 
@@ -35,9 +48,9 @@ That's it. A browser window opens with the welcome page — pick a project folde
 
 | Command | Description |
 |---------|-------------|
-| `codeatlas` | Zero-arg launch — opens browser, pick a project |
+| `code-atlas` | Zero-arg launch — opens browser, pick a project |
 | `codeatlas web [path]` | Analyze a specific path and open the web UI |
-| `codeatlas wiki [path]` | Export a knowledge wiki (Markdown for Obsidian) |
+| `code-atlas wiki [path]` | Export a knowledge wiki (Markdown for Obsidian) |
 | `codeatlas analyze [path]` | CLI-only analysis (no browser) |
 
 ### Common Flags
@@ -85,7 +98,7 @@ Configure your provider in the web UI Settings panel or via the `--ai` CLI flag.
 Generate Obsidian-compatible Markdown files from your codebase:
 
 ```bash
-codeatlas wiki ./my-project --lang en
+code-atlas wiki ./my-project --lang en
 ```
 
 Produces interlinked `.md` files with frontmatter, cross-references, and an interactive knowledge graph viewable in the web UI. Import the output folder directly into Obsidian to explore your codebase as a knowledge base.
