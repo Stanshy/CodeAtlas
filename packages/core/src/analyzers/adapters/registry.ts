@@ -11,6 +11,14 @@ import type {
 } from './types.js';
 import { ExpressAdapter } from './express-adapter.js';
 import { FastifyAdapter } from './fastify-adapter.js';
+import { NestJSAdapter } from './nestjs-adapter.js';
+import { KoaAdapter } from './koa-adapter.js';
+import { HonoAdapter } from './hono-adapter.js';
+import { DjangoAdapter } from './django-adapter.js';
+import { FlaskAdapter } from './flask-adapter.js';
+import { FastAPIAdapter } from './fastapi-adapter.js';
+import { SpringBootAdapter } from './spring-boot-adapter.js';
+import { AIFallbackAdapter } from './ai-fallback-adapter.js';
 
 // ---------------------------------------------------------------------------
 // AdapterRegistry
@@ -133,22 +141,23 @@ export class AdapterRegistry {
 export function createDefaultRegistry(): AdapterRegistry {
   const registry = new AdapterRegistry();
 
-  // JS/TS framework adapters (T4, T5)
+  // JS/TS framework adapters
   registry.register(new ExpressAdapter());
   registry.register(new FastifyAdapter());
+  registry.register(new NestJSAdapter());
+  registry.register(new KoaAdapter());
+  registry.register(new HonoAdapter());
 
-  // Python framework adapters — PythonBaseAdapter is abstract;
-  // concrete subclasses (Flask, FastAPI, Django) pending future Sprint.
-  // registry.register(new FlaskAdapter());
-  // registry.register(new FastAPIAdapter());
-  // registry.register(new DjangoAdapter());
+  // Python framework adapters
+  registry.register(new FlaskAdapter());
+  registry.register(new FastAPIAdapter());
+  registry.register(new DjangoAdapter());
 
-  // Future adapters:
-  // registry.register(new NestJSAdapter());
-  // registry.register(new KoaAdapter());
-  // registry.register(new HonoAdapter());
-  // registry.register(new SpringBootAdapter());
-  // registry.register(new AIFallbackAdapter());
+  // Java framework adapters
+  registry.register(new SpringBootAdapter());
+
+  // AI Fallback — always last, lowest confidence
+  registry.register(new AIFallbackAdapter());
 
   return registry;
 }

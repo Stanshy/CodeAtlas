@@ -18,10 +18,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type { GraphNode, AnalysisResult } from '../types.js';
+import type { GraphNode, AnalysisResult, SummaryProvider } from '../types.js';
 import { classifyMethodRole } from '../ai/method-role-classifier.js';
 import { createDefaultRegistry } from './adapters/registry.js';
 import type { AdapterContext } from './adapters/types.js';
+import { AIFallbackAdapter } from './adapters/ai-fallback-adapter.js';
 
 // ---------------------------------------------------------------------------
 // Public types (unchanged)
@@ -156,6 +157,76 @@ export function detectEndpoints(analysis: AnalysisResult): EndpointGraph | null 
   }
 
   return { endpoints, chains };
+}
+
+// ---------------------------------------------------------------------------
+// Public API — async orchestrator (with AI fallback)
+// ---------------------------------------------------------------------------
+
+/**
+ * Async version of `detectEndpoints()` that includes the AI fallback path.
+ *
+ * Flow:
+ * 1. Run the sync adapter pipeline (same as `detectEndpoints()`)
+ * 2. If no endpoints found and an AI provider is available, delegate to
+ *    `AIFallbackAdapter.extractEndpointsAsync()` for AI-powered detection
+ * 3. If AI is not configured or fails, return null (static degradation)
+ *
+ * Sprint 24 T18: server.ts should call this instead of the sync version.
+ *
+ * @param analysis  The analysis result from the core engine
+ * @param provider  Optional AI provider for fallback detection
+ * @returns EndpointGraph or null
+ */
+export async function detectEndpointsAsync(
+  analysis: AnalysisResult,
+  provider?: SummaryProvider | null,
+): Promise<EndpointGraph | null> {
+  // Rollback flag — use legacy monolithic code path (sync, no AI)
+  if (process.env.LEGACY_ENDPOINT_DETECTION === 'true') {
+    return legacyDetectEndpoints(analysis);
+  }
+
+  const registry = createDefaultRegistry();
+  const ctx = buildAdapterContext(analysis);
+  const matched = registry.getMatchedAdapters(analysis);
+
+  const endpoints: ApiEndpoint[] = [];
+  const chains: EndpointChain[] = [];
+
+  for (const adapter of matched) {
+    // Skip AI fallback in sync pass — handled separately below
+    if (adapter.name === 'ai-fallback') continue;
+
+    const eps = adapter.extractEndpoints(ctx);
+    for (const ep of eps) {
+      if (!endpoints.some((e) => e.id === ep.id)) {
+        endpoints.push(ep);
+      }
+    }
+    chains.push(...adapter.buildChains(eps, ctx));
+  }
+
+  // If rule-based adapters found endpoints, return them
+  if (endpoints.length > 0) {
+    return { endpoints, chains };
+  }
+
+  // Layer 2: AI Fallback — only when no rule-based adapter found endpoints
+  if (provider) {
+    const aiFallback = registry.getAdapterByName('ai-fallback');
+    if (aiFallback && aiFallback instanceof AIFallbackAdapter) {
+      aiFallback.setProvider(provider);
+      const aiEndpoints = await aiFallback.extractEndpointsAsync(ctx);
+      if (aiEndpoints.length > 0) {
+        const aiChains = aiFallback.buildChains(aiEndpoints, ctx);
+        return { endpoints: aiEndpoints, chains: aiChains };
+      }
+    }
+  }
+
+  // Layer 3: Static degradation — fall back to legacy path
+  return legacyDetectEndpoints(analysis);
 }
 
 // ===========================================================================
