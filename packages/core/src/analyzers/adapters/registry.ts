@@ -9,6 +9,8 @@ import type {
   FrameworkDetection,
   AdapterRegistryEntry,
 } from './types.js';
+import { ExpressAdapter } from './express-adapter.js';
+import { FastifyAdapter } from './fastify-adapter.js';
 
 // ---------------------------------------------------------------------------
 // AdapterRegistry
@@ -123,24 +125,28 @@ export class AdapterRegistry {
 /**
  * 建立預設 registry，註冊所有內建 adapter。
  *
- * 目前先回傳空的 registry，待各 adapter 實作完成後（T4–T6）再補上註冊邏輯。
- * 最終預計註冊：Express, Fastify, NestJS, Koa, Hono,
- * Django, Flask, FastAPI, Spring Boot, AI Fallback。
+ * 目前已註冊：Express, Fastify。
+ * PythonBaseAdapter 為 abstract，需待 Flask/FastAPI/Django 子類完成後再補上。
  *
  * @returns 已註冊內建 adapter 的 AdapterRegistry 實例
  */
 export function createDefaultRegistry(): AdapterRegistry {
   const registry = new AdapterRegistry();
 
-  // TODO: T4–T6 完成後依序補上內建 adapter 註冊
-  // registry.register(new ExpressAdapter());
-  // registry.register(new FastifyAdapter());
+  // JS/TS framework adapters (T4, T5)
+  registry.register(new ExpressAdapter());
+  registry.register(new FastifyAdapter());
+
+  // Python framework adapters — PythonBaseAdapter is abstract;
+  // concrete subclasses (Flask, FastAPI, Django) pending future Sprint.
+  // registry.register(new FlaskAdapter());
+  // registry.register(new FastAPIAdapter());
+  // registry.register(new DjangoAdapter());
+
+  // Future adapters:
   // registry.register(new NestJSAdapter());
   // registry.register(new KoaAdapter());
   // registry.register(new HonoAdapter());
-  // registry.register(new DjangoAdapter());
-  // registry.register(new FlaskAdapter());
-  // registry.register(new FastAPIAdapter());
   // registry.register(new SpringBootAdapter());
   // registry.register(new AIFallbackAdapter());
 
