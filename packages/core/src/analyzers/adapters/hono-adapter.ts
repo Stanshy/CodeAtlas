@@ -90,14 +90,7 @@ export class HonoAdapter extends BaseAdapter {
    * @returns 偵測結果（confidence 1.0），若未偵測到則回傳 `null`
    */
   detect(analysis: AnalysisResult): FrameworkDetection | null {
-    const pkgNode = analysis.graph.nodes.find(
-      (n: GraphNode) =>
-        n.type === 'file' &&
-        (n.filePath === 'package.json' || n.filePath.endsWith('/package.json')),
-    );
-    if (!pkgNode) return null;
-
-    const source = this.readSourceCode(analysis, pkgNode);
+    const source = this.readProjectFile(analysis, 'package.json');
     if (!source) return null;
 
     let pkg: Record<string, unknown>;

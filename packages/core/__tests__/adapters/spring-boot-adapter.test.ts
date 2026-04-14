@@ -217,36 +217,33 @@ describe('SpringBootAdapter', () => {
 
   describe('detect()', () => {
     it('returns null when pom.xml has no spring-boot-starter-web', () => {
-      const pomNode = makeFileNode('pom', 'pom.xml', 'xml');
-      const analysis = makeAnalysis([pomNode]);
+      const analysis = makeAnalysis([]);
 
-      // Mock readSourceCode on the adapter instance
-      const originalReadSourceCode = (adapter as any).readSourceCode;
-      (adapter as any).readSourceCode = (_a: any, node: GraphNode) => {
-        if (node.filePath === 'pom.xml') return POM_WITHOUT_SPRING;
+      const orig = (adapter as any).readProjectFile;
+      (adapter as any).readProjectFile = (_a: any, relativePath: string) => {
+        if (relativePath === 'pom.xml') return POM_WITHOUT_SPRING;
         return '';
       };
 
       const result = adapter.detect(analysis);
 
-      (adapter as any).readSourceCode = originalReadSourceCode;
+      (adapter as any).readProjectFile = orig;
 
       expect(result).toBeNull();
     });
 
     it('returns detection for pom.xml with spring-boot-starter-web', () => {
-      const pomNode = makeFileNode('pom', 'pom.xml', 'xml');
-      const analysis = makeAnalysis([pomNode]);
+      const analysis = makeAnalysis([]);
 
-      const originalReadSourceCode = (adapter as any).readSourceCode;
-      (adapter as any).readSourceCode = (_a: any, node: GraphNode) => {
-        if (node.filePath === 'pom.xml') return POM_WITH_SPRING;
+      const orig = (adapter as any).readProjectFile;
+      (adapter as any).readProjectFile = (_a: any, relativePath: string) => {
+        if (relativePath === 'pom.xml') return POM_WITH_SPRING;
         return '';
       };
 
       const result = adapter.detect(analysis);
 
-      (adapter as any).readSourceCode = originalReadSourceCode;
+      (adapter as any).readProjectFile = orig;
 
       expect(result).not.toBeNull();
       expect(result!.adapterName).toBe('spring-boot');
@@ -254,18 +251,17 @@ describe('SpringBootAdapter', () => {
     });
 
     it('returns detection for build.gradle with spring-boot-starter-web', () => {
-      const gradleNode = makeFileNode('gradle', 'build.gradle', 'groovy');
-      const analysis = makeAnalysis([gradleNode]);
+      const analysis = makeAnalysis([]);
 
-      const originalReadSourceCode = (adapter as any).readSourceCode;
-      (adapter as any).readSourceCode = (_a: any, node: GraphNode) => {
-        if (node.filePath === 'build.gradle') return BUILD_GRADLE_WITH_SPRING;
+      const orig = (adapter as any).readProjectFile;
+      (adapter as any).readProjectFile = (_a: any, relativePath: string) => {
+        if (relativePath === 'build.gradle') return BUILD_GRADLE_WITH_SPRING;
         return '';
       };
 
       const result = adapter.detect(analysis);
 
-      (adapter as any).readSourceCode = originalReadSourceCode;
+      (adapter as any).readProjectFile = orig;
 
       expect(result).not.toBeNull();
       expect(result!.adapterName).toBe('spring-boot');

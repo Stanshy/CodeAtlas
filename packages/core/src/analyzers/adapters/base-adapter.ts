@@ -212,6 +212,25 @@ export abstract class BaseAdapter implements FrameworkAdapter {
   }
 
   /**
+   * 從磁碟直接讀取專案根目錄下的指定檔案。
+   *
+   * 用於 detect() 階段讀取設定檔（package.json, requirements.txt, pom.xml 等），
+   * 這些檔案不一定存在於 analysis.graph.nodes 中（scanner 只收程式碼檔案）。
+   *
+   * @param analysis 分析結果（提供 projectPath）
+   * @param relativePath 相對於專案根的檔案路徑
+   * @returns 檔案內容，讀取失敗時為空字串
+   */
+  protected readProjectFile(analysis: AnalysisResult, relativePath: string): string {
+    try {
+      const absolutePath = path.join(analysis.projectPath, relativePath);
+      return fs.readFileSync(absolutePath, 'utf-8');
+    } catch {
+      return '';
+    }
+  }
+
+  /**
    * 在指定檔案中尋找包含給定行號的最小範圍具名函式節點。
    *
    * 用於匿名 inline handler 的場景：當 handler 為匿名函式時，

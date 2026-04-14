@@ -121,11 +121,13 @@ export class AIFallbackAdapter extends BaseAdapter {
 
       const prompt = buildEndpointDetectionPrompt(sourceFiles);
 
-      // Call AI provider — use summarize() as it's the common interface
-      const response = await this.provider.summarize({
-        prompt,
-        projectName: 'endpoint-detection',
-        context: '',
+      // Call AI provider — summarize(code, context) is the common interface
+      // We pass the prompt as "code" and a minimal SummaryContext
+      const response = await this.provider.summarize(prompt, {
+        filePath: 'endpoint-detection',
+        language: 'unknown',
+        imports: [],
+        exports: [],
       });
 
       if (!response) return [];

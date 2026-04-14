@@ -76,33 +76,24 @@ export class SpringBootAdapter extends BaseAdapter {
    * @returns 偵測結果（confidence 1.0），若未偵測到則回傳 `null`
    */
   detect(analysis: AnalysisResult): FrameworkDetection | null {
-    const buildFiles = analysis.graph.nodes.filter(
-      (n: GraphNode) =>
-        n.type === 'file' && /(?:pom\.xml|build\.gradle)$/i.test(n.filePath),
-    );
+    // Try pom.xml first (Maven)
+    const pomSource = this.readProjectFile(analysis, 'pom.xml');
+    if (pomSource && /<artifactId>\s*spring-boot-starter-web\s*<\/artifactId>/.test(pomSource)) {
+      return {
+        adapterName: this.name,
+        confidence: 1.0,
+        evidence: ['found spring-boot-starter-web in pom.xml'],
+      };
+    }
 
-    for (const node of buildFiles) {
-      const source = this.readSourceCode(analysis, node);
-      if (!source) continue;
-
-      const isPom = /pom\.xml$/i.test(node.filePath);
-      const isGradle = /build\.gradle$/i.test(node.filePath);
-
-      if (isPom && /<artifactId>\s*spring-boot-starter-web\s*<\/artifactId>/.test(source)) {
-        return {
-          adapterName: this.name,
-          confidence: 1.0,
-          evidence: ['found spring-boot-starter-web in pom.xml'],
-        };
-      }
-
-      if (isGradle && /spring-boot-starter-web/.test(source)) {
-        return {
-          adapterName: this.name,
-          confidence: 1.0,
-          evidence: ['found spring-boot-starter-web in build.gradle'],
-        };
-      }
+    // Try build.gradle (Gradle)
+    const gradleSource = this.readProjectFile(analysis, 'build.gradle');
+    if (gradleSource && /spring-boot-starter-web/.test(gradleSource)) {
+      return {
+        adapterName: this.name,
+        confidence: 1.0,
+        evidence: ['found spring-boot-starter-web in build.gradle'],
+      };
     }
 
     return null;

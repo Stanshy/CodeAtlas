@@ -79,6 +79,10 @@ class TestableKoaAdapter extends KoaAdapter {
   protected override readSourceCode(_analysis: AnalysisResult, node: GraphNode): string {
     return this.sourceMap.get(node.filePath) ?? '';
   }
+
+  protected override readProjectFile(_analysis: AnalysisResult, relativePath: string): string {
+    return this.sourceMap.get(relativePath) ?? '';
+  }
 }
 
 // ---------------------------------------------------------------------------

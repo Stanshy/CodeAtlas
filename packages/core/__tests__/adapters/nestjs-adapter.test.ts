@@ -51,24 +51,21 @@ describe('NestJSAdapter', () => {
     });
 
     it('returns null when package.json has no NestJS deps', () => {
-      const pkgNode = makeFileNode('package.json');
-      const analysis = makeAnalysis([pkgNode]);
-      // Mock readSourceCode by using projectPath
-      const originalReadSourceCode = (adapter as any).readSourceCode;
-      (adapter as any).readSourceCode = () =>
+      const analysis = makeAnalysis([]);
+      const orig = (adapter as any).readProjectFile;
+      (adapter as any).readProjectFile = () =>
         JSON.stringify({ dependencies: { express: '^4.18.0' } });
 
       const result = adapter.detect(analysis);
       expect(result).toBeNull();
 
-      (adapter as any).readSourceCode = originalReadSourceCode;
+      (adapter as any).readProjectFile = orig;
     });
 
     it('returns detection when @nestjs/common is in dependencies', () => {
-      const pkgNode = makeFileNode('package.json');
-      const analysis = makeAnalysis([pkgNode]);
-      const originalReadSourceCode = (adapter as any).readSourceCode;
-      (adapter as any).readSourceCode = () =>
+      const analysis = makeAnalysis([]);
+      const orig = (adapter as any).readProjectFile;
+      (adapter as any).readProjectFile = () =>
         JSON.stringify({ dependencies: { '@nestjs/common': '^10.0.0', '@nestjs/core': '^10.0.0' } });
 
       const result = adapter.detect(analysis);
@@ -77,21 +74,20 @@ describe('NestJSAdapter', () => {
       expect(result!.confidence).toBe(1.0);
       expect(result!.evidence[0]).toContain('@nestjs/common');
 
-      (adapter as any).readSourceCode = originalReadSourceCode;
+      (adapter as any).readProjectFile = orig;
     });
 
     it('returns detection when @nestjs/core is in devDependencies', () => {
-      const pkgNode = makeFileNode('package.json');
-      const analysis = makeAnalysis([pkgNode]);
-      const originalReadSourceCode = (adapter as any).readSourceCode;
-      (adapter as any).readSourceCode = () =>
+      const analysis = makeAnalysis([]);
+      const orig = (adapter as any).readProjectFile;
+      (adapter as any).readProjectFile = () =>
         JSON.stringify({ devDependencies: { '@nestjs/core': '^9.0.0' } });
 
       const result = adapter.detect(analysis);
       expect(result).not.toBeNull();
       expect(result!.adapterName).toBe('nestjs');
 
-      (adapter as any).readSourceCode = originalReadSourceCode;
+      (adapter as any).readProjectFile = orig;
     });
   });
 
