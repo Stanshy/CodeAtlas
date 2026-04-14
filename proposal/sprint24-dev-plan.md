@@ -467,7 +467,7 @@ Sprint 分支從 master 切：git checkout -b sprint-24
 | T17 | 2026-04-14 | ✅ 完成 | AI Fallback Adapter，detect 0.1 confidence + async AI 路徑 + 優雅降級 |
 | T18 | 2026-04-14 | ✅ 完成 | detectEndpointsAsync() 三層 fallback + server.ts 3 call sites 更新 |
 | T19 | 2026-04-14 | ✅ 完成 | adapters/index.ts + core/index.ts barrel exports |
-| T20 | | | |
+| T20 | 2026-04-14 | ✅ 完成 | 21 integration tests，5 框架 100% detection rate，144 total tests pass |
 | T21 | | | |
 
 ### Review / Gate 紀錄
