@@ -468,12 +468,12 @@ Sprint 分支從 master 切：git checkout -b sprint-24
 | T18 | 2026-04-14 | ✅ 完成 | detectEndpointsAsync() 三層 fallback + server.ts 3 call sites 更新 |
 | T19 | 2026-04-14 | ✅ 完成 | adapters/index.ts + core/index.ts barrel exports |
 | T20 | 2026-04-14 | ✅ 完成 | 21 integration tests，5 框架 100% detection rate，144 total tests pass |
-| T21 | | | |
+| T21 | 2026-04-14 | ✅ 完成 | G2 Code Review: 0 Blocker, 0 Major, 6 Minor |
 
 ### Review / Gate 紀錄
 
 | Gate | 日期 | 結果 | 審查者 | 備註 |
 |------|------|------|--------|------|
 | G0 | 2026-04-13 | ✅ 通過 | 老闆 | |
-| G2 | | | | |
+| G2 | 2026-04-14 | ✅ 通過 | tech-lead | 0 Blocker, 0 Major, 6 Minor。144 tests pass, build clean |
 | G3 | | | | |
