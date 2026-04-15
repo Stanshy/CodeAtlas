@@ -1,0 +1,2478 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeAtlas — Method Level Mockup (Sprint 13)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS (Sprint 12 exact copy)
+   ============================================================ */
+:root {
+  --bg-paper:        #fafafa;
+  --bg-grid:         #f0f0f0;
+  --grid-line:       #d8d8d8;
+  --grid-line-major: #c8c8c8;
+  --ink-primary:     #1a1a2e;
+  --ink-secondary:   #4a4a6a;
+  --ink-muted:       #8888aa;
+  --ink-faint:       #bbbbcc;
+  --border-default:  #d0d0d8;
+  --shadow-card:     0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+  --shadow-hover:    0 4px 16px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
+  --sf-border:       #1565c0;
+  --sf-bg:           #e3f2fd;
+  --sf-accent:       #1976d2;
+  --sf-line:         #1e88e5;
+  --lo-routes:       #1565c0;
+  --lo-services:     #7b1fa2;
+  --lo-controllers:  #e65100;
+  --lo-models:       #4e342e;
+  --lo-utils:        #546e7a;
+  --lo-middleware:   #00838f;
+  --dj-border:       #2e7d32;
+  --dj-bg:           #e8f5e9;
+  --dj-accent:       #388e3c;
+  --dj-line:         #43a047;
+  --dj-glow:         rgba(46, 125, 50, 0.2);
+  --font-ui: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font-ui);
+  background: var(--bg-paper);
+  color: var(--ink-primary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   GRID BACKGROUND
+   ============================================================ */
+.grid-bg {
+  background-color: var(--bg-paper);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(var(--grid-line-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-major) 1px, transparent 1px);
+  background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-width: 1200px;
+}
+
+/* Header */
+#header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  height: 48px;
+  background: white;
+  border-bottom: 1px solid var(--border-default);
+  flex-shrink: 0;
+  z-index: 10;
+}
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink-primary);
+}
+.header-logo svg { width: 20px; height: 20px; }
+.header-sep { color: var(--ink-faint); font-size: 12px; }
+.header-path {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-secondary);
+  background: #f4f4f8;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-default);
+}
+.header-badge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Tab Bar */
+#tabbar {
+  display: flex;
+  align-items: stretch;
+  height: 44px;
+  background: white;
+  border-bottom: 1px solid var(--border-default);
+  flex-shrink: 0;
+  padding: 0 8px;
+  gap: 2px;
+}
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--ink-secondary); }
+.tab-btn.active { color: var(--ink-primary); }
+.tab-btn.active.sf-tab { border-bottom-color: var(--sf-border); }
+.tab-btn.active.lo-tab { border-bottom-color: var(--lo-services); }
+.tab-btn.active.dj-tab { border-bottom-color: var(--dj-border); }
+.tab-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sf-dot { background: var(--sf-border); }
+.lo-dot { background: conic-gradient(var(--lo-routes) 0deg 90deg, var(--lo-services) 90deg 180deg, var(--lo-models) 180deg 270deg, var(--lo-middleware) 270deg 360deg); }
+.dj-dot { background: var(--dj-border); }
+
+/* Main area */
+#main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Canvas */
+.canvas-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+.canvas-area.scrollable {
+  overflow-y: auto;
+}
+.canvas-area svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.canvas-area.scrollable svg {
+  height: auto;
+  min-height: 100%;
+}
+
+/* Tab panels visibility */
+.tab-panel { display: none; width: 100%; height: 100%; }
+.tab-panel.active { display: flex; }
+
+/* Right Panel */
+.right-panel {
+  width: 300px;
+  flex-shrink: 0;
+  background: white;
+  border-left: 1px solid var(--border-default);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.panel-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8px;
+  color: var(--ink-faint);
+  font-size: 13px;
+  text-align: center;
+  padding: 24px;
+}
+.panel-placeholder svg { opacity: 0.3; }
+.panel-content { display: none; flex-direction: column; height: 100%; }
+.panel-content.visible { display: flex; }
+
+/* Panel sections */
+.panel-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border-default);
+  flex-shrink: 0;
+}
+.panel-header-title {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-primary);
+  word-break: break-all;
+}
+.panel-header-sub {
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+.panel-section {
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f0f4;
+  flex-shrink: 0;
+}
+.panel-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+.panel-stat-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+.panel-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.panel-stat-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink-primary);
+}
+.panel-stat-label {
+  font-size: 10px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.panel-file-list { display: flex; flex-direction: column; gap: 2px; }
+.panel-file-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.panel-file-row:hover { background: #f4f4f8; }
+.panel-file-toggle {
+  width: 14px; height: 14px;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+  font-size: 10px;
+  transition: transform 0.15s;
+}
+.panel-file-toggle.open { transform: rotate(90deg); }
+.panel-file-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-secondary);
+  flex: 1;
+}
+.panel-file-badge {
+  font-size: 10px;
+  color: var(--ink-muted);
+  background: #f0f0f4;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.panel-fn-list {
+  display: none;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 0 4px 20px;
+  border-top: 1px solid #f4f4f8;
+}
+.panel-fn-list.open { display: flex; }
+.panel-fn-item {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-muted);
+  padding: 2px 4px;
+}
+.panel-dep-list { display: flex; flex-direction: column; gap: 4px; }
+.panel-dep-item {
+  font-size: 12px;
+  color: var(--ink-secondary);
+  padding: 3px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.panel-dep-item::before {
+  content: '•';
+  color: var(--ink-faint);
+}
+.panel-dep-item.api-dep::before { content: '→'; color: var(--sf-accent); }
+
+/* Bottom Legend */
+#legend {
+  height: 36px;
+  background: white;
+  border-top: 1px solid var(--border-default);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  overflow: hidden;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--ink-secondary);
+}
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.legend-line {
+  width: 20px; height: 2px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   TAB 1: SYSTEM FRAMEWORK
+   ============================================================ */
+.sf-node-foreign { overflow: visible; }
+.sf-card {
+  width: 150px;
+  height: 80px;
+  background: white;
+  border: 1.5px solid var(--sf-border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.15s;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+.sf-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+.sf-card.selected { box-shadow: 0 0 0 3px rgba(21,101,192,0.4), var(--shadow-hover); }
+.sf-card.dimmed { opacity: 0.3; }
+.sf-card.highlighted { box-shadow: 0 0 0 2px rgba(21,101,192,0.6), var(--shadow-hover); }
+.sf-card-accent {
+  height: 5px;
+  background: var(--sf-line);
+  flex-shrink: 0;
+}
+.sf-card-accent.backend { background: #1565c0; }
+.sf-card-accent.frontend { background: #7b1fa2; }
+.sf-card-accent.infra { background: #546e7a; }
+.sf-card-body {
+  flex: 1;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.sf-card-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-primary);
+  line-height: 1.3;
+  word-break: break-all;
+}
+.sf-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sf-card-badge {
+  font-size: 9px;
+  color: var(--sf-accent);
+  background: var(--sf-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+.sf-card-badge.auto-expanded {
+  background: #fce4ec;
+  color: #c62828;
+}
+.sf-card-icon { font-size: 14px; line-height: 1; }
+
+/* ============================================================
+   TAB 2: LOGIC OPERATION
+   ============================================================ */
+.lo-hint {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  z-index: 5;
+  transition: opacity 0.3s;
+}
+.lo-hint-text {
+  font-size: 14px;
+  color: var(--ink-muted);
+  font-weight: 400;
+}
+.lo-hint-sub {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-top: 4px;
+}
+.lo-chain-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  background: #fff8e1;
+  color: #e65100;
+  border: 1px solid #ffcc02;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-weight: 600;
+}
+.lo-bottom-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 44px;
+  background: white;
+  border-top: 1px solid var(--border-default);
+  display: none;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
+  z-index: 20;
+}
+.lo-bottom-bar.visible { display: flex; }
+.lo-chain-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-primary);
+}
+.lo-chain-count {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+.lo-clear-btn {
+  margin-left: auto;
+  padding: 6px 14px;
+  background: white;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+  transition: background 0.1s, border-color 0.1s;
+}
+.lo-clear-btn:hover { background: #f4f4f8; border-color: var(--ink-muted); }
+
+/* Method node via foreignObject */
+.lo-method-node {
+  cursor: pointer;
+  overflow: visible;
+}
+.lo-node-card {
+  width: 100px;
+  height: 28px;
+  background: white;
+  border-radius: 4px;
+  border-left: 3px solid var(--lo-routes);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  gap: 4px;
+  transition: all 0.2s;
+  overflow: hidden;
+  user-select: none;
+}
+.lo-node-card:hover { box-shadow: var(--shadow-hover); }
+.lo-node-card.active-node {
+  width: 160px;
+  height: 44px;
+  border-width: 2px;
+  box-shadow: var(--shadow-hover);
+  align-items: flex-start;
+  padding: 6px 8px;
+  flex-direction: column;
+  gap: 2px;
+}
+.lo-node-card.selected-node {
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.2), var(--shadow-hover);
+}
+.lo-node-method {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--ink-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+.lo-node-class {
+  font-size: 8px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: none;
+}
+.lo-node-card.active-node .lo-node-method { font-size: 11px; flex: 0 0 auto; }
+.lo-node-card.active-node .lo-node-class { display: block; }
+
+/* Lo right panel */
+.lo-panel-sig {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-secondary);
+  background: #f8f8fc;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border-default);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.lo-metric-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+}
+.lo-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.lo-metric-val {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-primary);
+}
+.lo-metric-label {
+  font-size: 10px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   TAB 3: DATA JOURNEY
+   ============================================================ */
+.dj-entry-card {
+  width: 100%;
+  height: 100%;
+  background: white;
+  border: 1.5px solid var(--border-default);
+  border-left: 4px solid var(--dj-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-card);
+  user-select: none;
+  box-sizing: border-box;
+}
+.dj-entry-card:hover {
+  border-style: solid;
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+}
+.dj-entry-card.selected {
+  border-style: solid;
+  border-color: var(--dj-accent);
+  box-shadow: 0 0 0 3px var(--dj-glow), var(--shadow-hover);
+}
+.dj-pulse-ring {
+  fill: none;
+  stroke: var(--dj-line);
+  stroke-width: 2;
+  opacity: 0;
+  animation: dj-pulse 2s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes dj-pulse {
+  0% { opacity: 0.5; }
+  100% { opacity: 0;
+}
+.dj-entry-method {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-primary);
+  margin-bottom: 3px;
+}
+.dj-entry-desc {
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+.dj-entry-badge {
+  display: inline-block;
+  font-size: 9px;
+  background: var(--dj-bg);
+  color: var(--dj-accent);
+  border: 1px solid var(--dj-border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* Journey step node */
+.dj-step-node {
+  background: white;
+  border: 1.5px solid var(--dj-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-width: 260px;
+  max-width: 340px;
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s;
+  opacity: 0;
+  transform: translateY(10px);
+}
+.dj-step-node.appeared {
+  opacity: 1;
+  transform: translateY(0);
+}
+.dj-step-node.active-step {
+  border-color: var(--dj-accent);
+  box-shadow: 0 0 0 3px var(--dj-glow), var(--shadow-hover);
+}
+.dj-step-num {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--dj-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+.dj-step-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-primary);
+}
+.dj-step-desc {
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
+/* DJ hint overlay */
+.dj-hint {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  z-index: 5;
+  transition: opacity 0.3s;
+}
+.dj-hint-text {
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+.dj-hint-sub {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-top: 4px;
+}
+
+/* DJ right panel */
+.dj-panel-progress { padding: 0; }
+.dj-panel-header-block {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border-default);
+  flex-shrink: 0;
+}
+.dj-panel-journey-title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dj-accent);
+  word-break: break-all;
+}
+.dj-panel-journey-sub {
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+.dj-step-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+.dj-step-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.1s;
+  border-bottom: 1px solid #f8f8fc;
+}
+.dj-step-item:hover { background: #f8fffe; }
+.dj-step-item.active-item { background: var(--dj-bg); }
+.dj-step-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dj-step-num-badge {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #f0f0f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.dj-step-item.active-item .dj-step-num-badge {
+  background: var(--dj-accent);
+  color: white;
+}
+.dj-step-item.completed-item .dj-step-num-badge {
+  background: var(--dj-bg);
+  color: var(--dj-accent);
+}
+.dj-step-item-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-secondary);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dj-step-status { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--ink-faint); }
+.dj-step-status.done { background: var(--dj-accent); border-color: var(--dj-accent); }
+.dj-step-status.active { border-color: var(--dj-accent); background: transparent;
+  box-shadow: 0 0 0 2px var(--dj-glow); }
+.dj-step-detail {
+  display: none;
+  margin-top: 8px;
+  background: #f8fffe;
+  border-radius: 6px;
+  border: 1px solid #c8e6c9;
+  padding: 8px;
+  font-size: 11px;
+}
+.dj-step-detail.open { display: block; }
+.dj-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+.dj-detail-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--dj-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+}
+.dj-detail-val {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-secondary);
+  background: white;
+  border: 1px solid #e0f0e0;
+  border-radius: 3px;
+  padding: 3px 6px;
+}
+.dj-replay-btn {
+  margin: 12px 16px;
+  padding: 8px;
+  background: var(--dj-bg);
+  border: 1px solid var(--dj-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dj-accent);
+  text-align: center;
+  transition: background 0.1s;
+  flex-shrink: 0;
+}
+.dj-replay-btn:hover { background: #c8e6c9; }
+.dj-clear-btn {
+  margin: 0 16px 12px;
+  padding: 8px;
+  background: white;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+  text-align: center;
+  transition: background 0.1s;
+  flex-shrink: 0;
+}
+.dj-clear-btn:hover { background: var(--bg-grid); }
+
+/* ============================================================
+   SVG EDGES
+   ============================================================ */
+.sf-edge { stroke: var(--sf-line); stroke-width: 1.5; fill: none; opacity: 0.6; transition: opacity 0.2s, stroke-width 0.2s; }
+.sf-edge.highlighted { stroke: var(--sf-accent); stroke-width: 2.5; opacity: 1; }
+.sf-edge.dimmed { opacity: 0.1; }
+.lo-edge { stroke: #aaa; stroke-width: 1.5; fill: none; opacity: 0.7; }
+.lo-edge.active-edge { stroke-width: 2; opacity: 1; }
+.dj-edge { stroke: var(--dj-line); stroke-width: 2; fill: none; opacity: 0; transition: opacity 0.5s; }
+.dj-edge.appeared { opacity: 0.8; }
+.dj-edge-anim {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  transition: stroke-dashoffset 0.4s ease;
+}
+.dj-edge-anim.drawn { stroke-dashoffset: 0; }
+
+/* Arrow animation for journey edges */
+@keyframes dash-flow {
+  to { stroke-dashoffset: -20; }
+}
+.dj-edge-flow {
+  stroke: var(--dj-line);
+  stroke-width: 2;
+  fill: none;
+  stroke-dasharray: 6 4;
+  animation: dash-flow 0.8s linear infinite;
+}
+
+/* ============================================================
+   MISC UTILITIES
+   ============================================================ */
+.badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 9px; font-weight: 600;
+  padding: 1px 5px; border-radius: 3px;
+}
+.hidden { display: none !important; }
+.fade-out { opacity: 0 !important; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============================================================
+       HEADER
+       ============================================================ -->
+  <div id="header">
+    <div class="header-logo">
+      <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="10" cy="10" r="3" fill="#1a1a2e"/>
+        <circle cx="3" cy="5" r="2" fill="#1565c0"/>
+        <circle cx="17" cy="5" r="2" fill="#7b1fa2"/>
+        <circle cx="3" cy="15" r="2" fill="#2e7d32"/>
+        <circle cx="17" cy="15" r="2" fill="#546e7a"/>
+        <line x1="10" y1="10" x2="3" y2="5" stroke="#bbbbcc" stroke-width="1"/>
+        <line x1="10" y1="10" x2="17" y2="5" stroke="#bbbbcc" stroke-width="1"/>
+        <line x1="10" y1="10" x2="3" y2="15" stroke="#bbbbcc" stroke-width="1"/>
+        <line x1="10" y1="10" x2="17" y2="15" stroke="#bbbbcc" stroke-width="1"/>
+      </svg>
+      CodeAtlas
+    </div>
+    <span class="header-sep">/</span>
+    <span class="header-path">~/projects/VideoBrief</span>
+    <span class="header-badge">Sprint 13 · Method-Level</span>
+  </div>
+
+  <!-- ============================================================
+       TAB BAR
+       ============================================================ -->
+  <div id="tabbar">
+    <button class="tab-btn sf-tab active" onclick="switchTab('sf')">
+      <span class="tab-dot sf-dot"></span>
+      系統框架
+    </button>
+    <button class="tab-btn lo-tab" onclick="switchTab('lo')">
+      <span class="tab-dot lo-dot"></span>
+      邏輯運作
+    </button>
+    <button class="tab-btn dj-tab" onclick="switchTab('dj')">
+      <span class="tab-dot dj-dot"></span>
+      資料旅程
+    </button>
+  </div>
+
+  <!-- ============================================================
+       MAIN
+       ============================================================ -->
+  <div id="main">
+
+    <!-- ==================== TAB 1: SF ==================== -->
+    <div id="panel-sf" class="tab-panel active">
+      <div class="canvas-area grid-bg" id="sf-canvas-wrap">
+        <svg id="sf-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="right-panel" id="sf-right">
+        <div class="panel-placeholder" id="sf-placeholder">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <rect x="4" y="12" width="32" height="20" rx="3" stroke="#bbbbcc" stroke-width="1.5"/>
+            <rect x="8" y="6" width="24" height="4" rx="2" fill="#e0e0ec"/>
+            <line x1="4" y1="20" x2="36" y2="20" stroke="#bbbbcc" stroke-width="1"/>
+          </svg>
+          點擊目錄卡片查看詳情
+        </div>
+        <div class="panel-content" id="sf-detail"></div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: LO ==================== -->
+    <div id="panel-lo" class="tab-panel">
+      <div class="canvas-area grid-bg" id="lo-canvas-wrap" style="position:relative;">
+        <svg id="lo-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="lo-hint" id="lo-hint">
+          <div class="lo-hint-text">點擊任一方法查看呼叫鏈</div>
+          <div class="lo-hint-sub">★ 推薦鏈已標記</div>
+        </div>
+        <div class="lo-bottom-bar" id="lo-bottom-bar">
+          <span class="lo-chain-name" id="lo-chain-name">—</span>
+          <span class="lo-chain-count" id="lo-chain-count"></span>
+          <button class="lo-clear-btn" onclick="clearLoChain()">清除選取</button>
+        </div>
+      </div>
+      <div class="right-panel" id="lo-right">
+        <div class="panel-placeholder" id="lo-placeholder">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <rect x="12" y="4" width="16" height="10" rx="2" stroke="#bbbbcc" stroke-width="1.5"/>
+            <rect x="4" y="26" width="14" height="10" rx="2" stroke="#bbbbcc" stroke-width="1.5"/>
+            <rect x="22" y="26" width="14" height="10" rx="2" stroke="#bbbbcc" stroke-width="1.5"/>
+            <line x1="20" y1="14" x2="11" y2="26" stroke="#bbbbcc" stroke-width="1"/>
+            <line x1="20" y1="14" x2="29" y2="26" stroke="#bbbbcc" stroke-width="1"/>
+          </svg>
+          選擇呼叫鏈後點擊節點查看詳情
+        </div>
+        <div class="panel-content" id="lo-detail"></div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: DJ ==================== -->
+    <div id="panel-dj" class="tab-panel">
+      <div class="canvas-area grid-bg" id="dj-canvas-wrap" style="position:relative;">
+        <svg id="dj-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="dj-hint" id="dj-hint">
+          <div class="dj-hint-text">選擇 API 端點開始追蹤</div>
+          <div class="dj-hint-sub">依分類選擇端點開始追蹤</div>
+        </div>
+      </div>
+      <div class="right-panel" id="dj-right">
+        <div class="panel-placeholder" id="dj-placeholder">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="8" r="4" stroke="#bbbbcc" stroke-width="1.5"/>
+            <circle cx="8" cy="28" r="4" stroke="#bbbbcc" stroke-width="1.5"/>
+            <circle cx="32" cy="28" r="4" stroke="#bbbbcc" stroke-width="1.5"/>
+            <line x1="20" y1="12" x2="8" y2="24" stroke="#bbbbcc" stroke-width="1" stroke-dasharray="3 2"/>
+            <line x1="20" y1="12" x2="32" y2="24" stroke="#bbbbcc" stroke-width="1" stroke-dasharray="3 2"/>
+          </svg>
+          選擇 API 端點開始追蹤
+        </div>
+        <div class="panel-content" id="dj-detail"></div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- ============================================================
+       BOTTOM LEGEND
+       ============================================================ -->
+  <div id="legend">
+    <div id="sf-legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#7b1fa2"></div>Frontend
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#1565c0"></div>Backend
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#546e7a"></div>Infra
+      </div>
+      <div class="legend-item">
+        <div class="legend-line" style="background:#1e88e5;border-radius:2px"></div>依賴邊
+      </div>
+    </div>
+    <div id="lo-legend" style="display:none;gap:20px;align-items:center;display:none">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--lo-routes)"></div>routes</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--lo-services)"></div>services</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--lo-middleware)"></div>core/middleware</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--lo-models)"></div>models</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--lo-utils)"></div>utils/tasks</div>
+    </div>
+    <div id="dj-legend" style="display:none">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--dj-accent)"></div>Data Transform Step</div>
+      <div class="legend-item">
+        <div class="legend-line" style="background:var(--dj-line);border-radius:2px"></div>資料流向
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+/* ============================================================
+   SHARED STATE
+   ============================================================ */
+let currentTab = 'sf';
+
+/* ============================================================
+   TAB SWITCHING
+   ============================================================ */
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+  document.querySelector(`.${tab}-tab`).classList.add('active');
+  document.getElementById(`panel-${tab}`).classList.add('active');
+
+  document.getElementById('sf-legend').style.display = tab === 'sf' ? 'contents' : 'none';
+  document.getElementById('lo-legend').style.display = tab === 'lo' ? 'contents' : 'none';
+  document.getElementById('dj-legend').style.display = tab === 'dj' ? 'contents' : 'none';
+
+  if (tab === 'sf' && !sfInitialized) { initSF(); sfInitialized = true; }
+  if (tab === 'lo' && !loInitialized) { initLO(); loInitialized = true; }
+  if (tab === 'dj' && !djInitialized) { initDJ(); djInitialized = true; }
+}
+
+/* ============================================================
+   TAB 1: SYSTEM FRAMEWORK
+   ============================================================ */
+let sfInitialized = false;
+let sfNodes = [], sfEdges = [];
+let sfSelectedNode = null;
+
+const SF_NODES = [
+  // id, label, sublabel, files, type, category, row, col
+  { id: 'frontend', label: 'frontend/', sublabel: '', files: 102, type: 'root', category: 'frontend', autoExpand: true },
+  { id: 'backend', label: 'backend/', sublabel: '', files: 59, type: 'root', category: 'backend', autoExpand: false },
+  // Frontend expanded
+  { id: 'fe-app', label: 'app/', sublabel: 'frontend/src/app/', files: 15, type: 'dir', category: 'frontend', autoExpand: false },
+  { id: 'fe-components', label: 'components/', sublabel: 'frontend/src/components/', files: 24, type: 'dir', category: 'frontend', autoExpand: false },
+  { id: 'fe-services', label: 'services/', sublabel: 'frontend/src/services/', files: 7, type: 'dir', category: 'frontend', autoExpand: false },
+  { id: 'fe-hooks', label: 'hooks/', sublabel: 'frontend/src/hooks/', files: 2, type: 'dir', category: 'frontend', autoExpand: false },
+  { id: 'fe-contexts', label: 'contexts/', sublabel: 'frontend/src/contexts/', files: 1, type: 'dir', category: 'frontend', autoExpand: false },
+  { id: 'fe-utils', label: 'utils/', sublabel: 'frontend/src/utils/', files: 3, type: 'dir', category: 'frontend', autoExpand: false },
+  { id: 'fe-types', label: 'types/', sublabel: 'frontend/src/types/', files: 1, type: 'dir', category: 'frontend', autoExpand: false },
+  // Backend
+  { id: 'be-routes', label: 'api/routes/', sublabel: 'backend/app/api/', files: 8, type: 'dir', category: 'backend', autoExpand: false },
+  { id: 'be-services', label: 'services/', sublabel: 'backend/app/services/', files: 16, type: 'dir', category: 'backend', autoExpand: false },
+  { id: 'be-models', label: 'models/', sublabel: 'backend/app/models/', files: 4, type: 'dir', category: 'backend', autoExpand: false },
+  { id: 'be-core', label: 'core/', sublabel: 'backend/app/core/', files: 6, type: 'dir', category: 'backend', autoExpand: false },
+  { id: 'be-schemas', label: 'schemas/', sublabel: 'backend/app/schemas/', files: 4, type: 'dir', category: 'backend', autoExpand: false },
+  { id: 'be-tasks', label: 'tasks/', sublabel: 'backend/app/tasks/', files: 2, type: 'dir', category: 'backend', autoExpand: false },
+  // Infra
+  { id: 'nginx', label: 'nginx/', sublabel: '', files: 2, type: 'dir', category: 'infra', autoExpand: false },
+  { id: 'relay', label: 'relay/', sublabel: '', files: 3, type: 'dir', category: 'infra', autoExpand: false },
+];
+
+const SF_EDGES = [
+  { from: 'fe-services', to: 'be-routes', label: 'HTTP' },
+  { from: 'fe-app', to: 'fe-components' },
+  { from: 'fe-app', to: 'fe-services' },
+  { from: 'fe-app', to: 'fe-hooks' },
+  { from: 'fe-components', to: 'fe-services' },
+  { from: 'fe-components', to: 'fe-hooks' },
+  { from: 'fe-hooks', to: 'fe-services' },
+  { from: 'fe-services', to: 'fe-types' },
+  { from: 'fe-contexts', to: 'fe-hooks' },
+  { from: 'be-routes', to: 'be-services' },
+  { from: 'be-routes', to: 'be-core' },
+  { from: 'be-routes', to: 'be-schemas' },
+  { from: 'be-services', to: 'be-models' },
+  { from: 'be-services', to: 'be-core' },
+  { from: 'be-models', to: 'be-core' },
+  { from: 'be-tasks', to: 'be-services' },
+  { from: 'relay', to: 'be-services' },
+];
+
+const SF_NODE_DETAILS = {
+  'frontend': {
+    title: 'frontend/',
+    path: 'frontend/',
+    stats: { files: 102, functions: 280, lines: '~14,800' },
+    files: [],
+    upstream: [],
+    downstream: ['fe-app', 'fe-components', 'fe-services', 'fe-hooks', 'fe-contexts', 'fe-utils', 'fe-types']
+  },
+  'backend': {
+    title: 'backend/',
+    path: 'backend/',
+    stats: { files: 59, functions: 190, lines: '~8,200' },
+    files: [],
+    upstream: [],
+    downstream: ['be-routes', 'be-services', 'be-models', 'be-core', 'be-schemas', 'be-tasks']
+  },
+  'fe-app': {
+    title: 'frontend/src/app/',
+    path: 'frontend/src/app/',
+    stats: { files: 15, functions: 42, lines: '~2,100' },
+    files: [
+      { name: 'layout.tsx', fns: 3 },
+      { name: 'page.tsx', fns: 2 },
+      { name: 'dashboard/page.tsx', fns: 4 },
+      { name: 'upload/page.tsx', fns: 6 },
+      { name: 'video/[id]/page.tsx', fns: 5 },
+    ],
+    upstream: ['frontend (root)'],
+    downstream: ['components/', 'services/', 'hooks/']
+  },
+  'fe-components': {
+    title: 'frontend/src/components/',
+    path: 'frontend/src/components/',
+    stats: { files: 24, functions: 86, lines: '~4,400' },
+    files: [
+      { name: 'VideoCard.tsx', fns: 3 },
+      { name: 'UploadZone.tsx', fns: 5 },
+      { name: 'ResultViewer.tsx', fns: 7 },
+      { name: 'ProgressBar.tsx', fns: 2 },
+      { name: 'Navbar.tsx', fns: 3 },
+    ],
+    upstream: ['app/'],
+    downstream: ['services/', 'hooks/']
+  },
+  'fe-services': {
+    title: 'frontend/src/services/',
+    path: 'frontend/src/services/',
+    stats: { files: 7, functions: 34, lines: '~1,200' },
+    files: [
+      { name: 'video-api.ts', fns: 11 },
+      { name: 'auth-api.ts', fns: 2 },
+      { name: 'billing-api.ts', fns: 5 },
+      { name: 'admin-api.ts', fns: 10 },
+      { name: 'share-api.ts', fns: 3 },
+      { name: 'referral-api.ts', fns: 2 },
+      { name: 'api.ts', fns: 2 },
+    ],
+    upstream: ['app/', 'components/', 'hooks/'],
+    downstream: ['types/', 'backend/api/routes/ (API)']
+  },
+  'fe-hooks': {
+    title: 'frontend/src/hooks/',
+    path: 'frontend/src/hooks/',
+    stats: { files: 2, functions: 8, lines: '~320' },
+    files: [
+      { name: 'useVideoStatus.ts', fns: 4 },
+      { name: 'useAuth.ts', fns: 4 },
+    ],
+    upstream: ['app/', 'components/', 'contexts/'],
+    downstream: ['services/']
+  },
+  'fe-contexts': {
+    title: 'frontend/src/contexts/',
+    path: 'frontend/src/contexts/',
+    stats: { files: 1, functions: 3, lines: '~120' },
+    files: [{ name: 'AuthContext.tsx', fns: 3 }],
+    upstream: [],
+    downstream: ['hooks/']
+  },
+  'fe-utils': {
+    title: 'frontend/src/utils/',
+    path: 'frontend/src/utils/',
+    stats: { files: 3, functions: 12, lines: '~380' },
+    files: [
+      { name: 'format.ts', fns: 5 },
+      { name: 'validators.ts', fns: 4 },
+      { name: 'constants.ts', fns: 3 },
+    ],
+    upstream: [],
+    downstream: []
+  },
+  'fe-types': {
+    title: 'frontend/src/types/',
+    path: 'frontend/src/types/',
+    stats: { files: 1, functions: 0, lines: '~210' },
+    files: [{ name: 'index.ts', fns: 0 }],
+    upstream: ['services/'],
+    downstream: []
+  },
+  'be-routes': {
+    title: 'backend/app/api/routes/',
+    path: 'backend/app/api/',
+    stats: { files: 8, functions: 38, lines: '~1,800' },
+    files: [
+      { name: 'videos.py', fns: 9 },
+      { name: 'auth.py', fns: 4 },
+      { name: 'billing.py', fns: 6 },
+      { name: 'admin.py', fns: 8 },
+      { name: 'shares.py', fns: 4 },
+      { name: 'referrals.py', fns: 3 },
+      { name: 'health.py', fns: 2 },
+      { name: 'deps.py', fns: 2 },
+    ],
+    upstream: ['frontend/services/ (HTTP)'],
+    downstream: ['services/', 'core/', 'schemas/']
+  },
+  'be-services': {
+    title: 'backend/app/services/',
+    path: 'backend/app/services/',
+    stats: { files: 16, functions: 88, lines: '~4,200' },
+    files: [
+      { name: 'video_service.py', fns: 14 },
+      { name: 'whisper.py', fns: 6 },
+      { name: 'article.py', fns: 5 },
+      { name: 'quota_service.py', fns: 8 },
+      { name: 'billing_service.py', fns: 9 },
+      { name: 'ffmpeg.py', fns: 7 },
+    ],
+    upstream: ['api/routes/', 'tasks/', 'relay/'],
+    downstream: ['models/', 'core/']
+  },
+  'be-models': {
+    title: 'backend/app/models/',
+    path: 'backend/app/models/',
+    stats: { files: 4, functions: 16, lines: '~520' },
+    files: [
+      { name: 'video.py', fns: 5 },
+      { name: 'user.py', fns: 4 },
+      { name: 'result.py', fns: 4 },
+      { name: 'billing.py', fns: 3 },
+    ],
+    upstream: ['services/'],
+    downstream: ['core/ (database)']
+  },
+  'be-core': {
+    title: 'backend/app/core/',
+    path: 'backend/app/core/',
+    stats: { files: 6, functions: 28, lines: '~880' },
+    files: [
+      { name: 'auth.py', fns: 6 },
+      { name: 'database.py', fns: 5 },
+      { name: 'config.py', fns: 4 },
+      { name: 'limiter.py', fns: 4 },
+      { name: 'security.py', fns: 5 },
+      { name: 'logging.py', fns: 4 },
+    ],
+    upstream: ['api/routes/', 'services/', 'models/'],
+    downstream: []
+  },
+  'be-schemas': {
+    title: 'backend/app/schemas/',
+    path: 'backend/app/schemas/',
+    stats: { files: 4, functions: 20, lines: '~420' },
+    files: [
+      { name: 'video.py', fns: 6 },
+      { name: 'user.py', fns: 5 },
+      { name: 'billing.py', fns: 5 },
+      { name: 'common.py', fns: 4 },
+    ],
+    upstream: ['api/routes/'],
+    downstream: []
+  },
+  'be-tasks': {
+    title: 'backend/app/tasks/',
+    path: 'backend/app/tasks/',
+    stats: { files: 2, functions: 8, lines: '~340' },
+    files: [
+      { name: 'video_tasks.py', fns: 5 },
+      { name: 'celery_app.py', fns: 3 },
+    ],
+    upstream: [],
+    downstream: ['services/']
+  },
+  'nginx': {
+    title: 'nginx/',
+    path: 'nginx/',
+    stats: { files: 2, functions: 0, lines: '~80' },
+    files: [
+      { name: 'nginx.conf', fns: 0 },
+      { name: 'default.conf', fns: 0 },
+    ],
+    upstream: [],
+    downstream: []
+  },
+  'relay': {
+    title: 'relay/',
+    path: 'relay/',
+    stats: { files: 3, functions: 9, lines: '~280' },
+    files: [
+      { name: 'relay.py', fns: 4 },
+      { name: 'config.py', fns: 3 },
+      { name: 'handler.py', fns: 2 },
+    ],
+    upstream: [],
+    downstream: ['backend/services/']
+  },
+};
+
+// Layout positions (x,y centers for 150x80 cards)
+const SF_POSITIONS = {
+  // Row 0: roots
+  'frontend': { x: 260, y: 60 },
+  'backend':  { x: 780, y: 60 },
+  // Row 1: frontend expanded
+  'fe-app':       { x: 60,  y: 220 },
+  'fe-components':{ x: 230, y: 220 },
+  'fe-services':  { x: 400, y: 220 },
+  'fe-hooks':     { x: 570, y: 220 },
+  'fe-contexts':  { x: 60,  y: 340 },
+  'fe-utils':     { x: 230, y: 340 },
+  'fe-types':     { x: 400, y: 340 },
+  // Row 1: backend
+  'be-routes':    { x: 660, y: 220 },
+  'be-services':  { x: 830, y: 220 },
+  'be-models':    { x: 1000, y: 220 },
+  'be-core':      { x: 1170, y: 220 },
+  'be-schemas':   { x: 660, y: 340 },
+  'be-tasks':     { x: 830, y: 340 },
+  // Row 2: infra
+  'nginx': { x: 560, y: 460 },
+  'relay': { x: 730, y: 460 },
+};
+
+function initSF() {
+  const wrap = document.getElementById('sf-canvas-wrap');
+  const svg = document.getElementById('sf-svg');
+  const W = wrap.clientWidth || 1200;
+  const H = wrap.clientHeight || 600;
+  svg.setAttribute('viewBox', `0 0 ${Math.max(W, 1350)} ${Math.max(H, 580)}`);
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+
+  // Define arrow marker
+  const defs = createSVGEl('defs');
+  defs.innerHTML = `
+    <marker id="sf-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#1e88e5" opacity="0.7"/>
+    </marker>
+  `;
+  svg.appendChild(defs);
+
+  // Draw edges first (behind nodes)
+  const edgeGroup = createSVGEl('g', { id: 'sf-edges' });
+  SF_EDGES.forEach((e, i) => {
+    const from = SF_POSITIONS[e.from];
+    const to = SF_POSITIONS[e.to];
+    if (!from || !to) return;
+    const path = createSVGEl('path', {
+      id: `sf-edge-${i}`,
+      class: 'sf-edge',
+      'data-from': e.from,
+      'data-to': e.to,
+      'marker-end': 'url(#sf-arrow)',
+      'd': calcEdgePath(from, to, 150, 80)
+    });
+    edgeGroup.appendChild(path);
+  });
+  svg.appendChild(edgeGroup);
+
+  // Draw nodes via foreignObject
+  const nodeGroup = createSVGEl('g', { id: 'sf-nodes' });
+  SF_NODES.forEach(node => {
+    const pos = SF_POSITIONS[node.id];
+    if (!pos) return;
+    const fo = createSVGEl('foreignObject', {
+      x: pos.x, y: pos.y,
+      width: 150, height: 80,
+      id: `sf-fo-${node.id}`
+    });
+    fo.setAttribute('overflow', 'visible');
+    const div = document.createElement('div');
+    div.className = 'sf-card';
+    div.setAttribute('data-id', node.id);
+    div.innerHTML = `
+      <div class="sf-card-accent ${node.category}"></div>
+      <div class="sf-card-body">
+        <div class="sf-card-name">${node.label}</div>
+        <div class="sf-card-bottom">
+          <span class="sf-card-badge ${node.autoExpand ? 'auto-expanded' : ''}">${node.autoExpand ? 'auto-expanded ↓' : node.files + ' files'}</span>
+          <span class="sf-card-icon">${node.autoExpand ? '🔄' : '📁'}</span>
+        </div>
+        ${!node.autoExpand ? `<div style="font-size:9px;color:var(--ink-muted);margin-top:1px;">${node.files} files</div>` : ''}
+      </div>
+    `;
+    div.addEventListener('click', () => sfSelectNode(node.id, div));
+    fo.appendChild(div);
+    nodeGroup.appendChild(fo);
+  });
+  svg.appendChild(nodeGroup);
+}
+
+function calcEdgePath(from, to, W, H) {
+  const fx = from.x + W / 2;
+  const fy = from.y + H / 2;
+  const tx = to.x + W / 2;
+  const ty = to.y + H / 2;
+  // Source: bottom of from, target: top of to (if below) or side
+  const dy = ty - fy;
+  const dx = tx - fx;
+  if (Math.abs(dy) > Math.abs(dx)) {
+    // vertical
+    const sy = from.y + H;
+    const ey = to.y;
+    const mx = (fx + tx) / 2;
+    return `M ${fx} ${sy} C ${fx} ${sy + 30}, ${tx} ${ey - 30}, ${tx} ${ey}`;
+  } else {
+    // horizontal
+    const sx = dx > 0 ? from.x + W : from.x;
+    const ex = dx > 0 ? to.x : to.x + W;
+    const my = (fy + ty) / 2;
+    return `M ${sx} ${fy} C ${sx + dx * 0.4} ${fy}, ${ex - dx * 0.4} ${ty}, ${ex} ${ty}`;
+  }
+}
+
+function sfSelectNode(id, el) {
+  // Reset previous
+  document.querySelectorAll('.sf-card').forEach(c => {
+    c.classList.remove('selected', 'dimmed', 'highlighted');
+  });
+  document.querySelectorAll('.sf-edge').forEach(e => {
+    e.classList.remove('highlighted', 'dimmed');
+  });
+
+  sfSelectedNode = id;
+  el.classList.add('selected');
+
+  // Find connected edges and nodes
+  const connectedNodes = new Set([id]);
+  SF_EDGES.forEach((e, i) => {
+    const edgeEl = document.getElementById(`sf-edge-${i}`);
+    if (!edgeEl) return;
+    if (e.from === id || e.to === id) {
+      edgeEl.classList.add('highlighted');
+      connectedNodes.add(e.from);
+      connectedNodes.add(e.to);
+    } else {
+      edgeEl.classList.add('dimmed');
+    }
+  });
+
+  // Dim unconnected nodes
+  document.querySelectorAll('.sf-card').forEach(c => {
+    const cid = c.getAttribute('data-id');
+    if (!connectedNodes.has(cid)) {
+      c.classList.add('dimmed');
+    } else if (cid !== id) {
+      c.classList.add('highlighted');
+    }
+  });
+
+  // Show detail panel
+  sfShowDetail(id);
+}
+
+function sfShowDetail(id) {
+  const d = SF_NODE_DETAILS[id];
+  if (!d) return;
+  document.getElementById('sf-placeholder').style.display = 'none';
+  const detailEl = document.getElementById('sf-detail');
+  detailEl.classList.add('visible');
+
+  const fnListsHtml = d.files.map((f, fi) => `
+    <div class="panel-file-row" onclick="sfToggleFile(${fi}, '${id}')">
+      <span class="panel-file-toggle" id="sf-toggle-${id}-${fi}">▶</span>
+      <span class="panel-file-name">${f.name}</span>
+      ${f.fns > 0 ? `<span class="panel-file-badge">${f.fns} fn</span>` : ''}
+    </div>
+    <div class="panel-fn-list" id="sf-fnlist-${id}-${fi}">
+      ${f.fns > 0 ? Array.from({length: Math.min(f.fns, 5)}, (_, i) => `<span class="panel-fn-item">fn_${i+1}()</span>`).join('') : ''}
+    </div>
+  `).join('');
+
+  detailEl.innerHTML = `
+    <div class="panel-header">
+      <div class="panel-header-title">📁 ${d.title}</div>
+      <div class="panel-header-sub">${d.path}</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">📊 Statistics</div>
+      <div class="panel-stat-row">
+        <div class="panel-stat"><div class="panel-stat-val">${d.stats.files}</div><div class="panel-stat-label">Files</div></div>
+        <div class="panel-stat"><div class="panel-stat-val">${d.stats.functions}</div><div class="panel-stat-label">Functions</div></div>
+        <div class="panel-stat"><div class="panel-stat-val">${d.stats.lines}</div><div class="panel-stat-label">Lines</div></div>
+      </div>
+    </div>
+    ${d.files.length > 0 ? `
+    <div class="panel-section">
+      <div class="panel-section-title">📄 Files</div>
+      <div class="panel-file-list">${fnListsHtml}</div>
+    </div>` : ''}
+    ${d.upstream.length > 0 ? `
+    <div class="panel-section">
+      <div class="panel-section-title">⬆ Upstream (imported by)</div>
+      <div class="panel-dep-list">${d.upstream.map(u => `<div class="panel-dep-item">${u}</div>`).join('')}</div>
+    </div>` : ''}
+    ${d.downstream.length > 0 ? `
+    <div class="panel-section">
+      <div class="panel-section-title">⬇ Downstream (imports)</div>
+      <div class="panel-dep-list">${d.downstream.map(u => `<div class="panel-dep-item${u.includes('API') ? ' api-dep' : ''}">${u}</div>`).join('')}</div>
+    </div>` : ''}
+  `;
+}
+
+function sfToggleFile(fi, nodeId) {
+  const toggle = document.getElementById(`sf-toggle-${nodeId}-${fi}`);
+  const fnlist = document.getElementById(`sf-fnlist-${nodeId}-${fi}`);
+  if (!toggle || !fnlist) return;
+  const isOpen = fnlist.classList.contains('open');
+  fnlist.classList.toggle('open', !isOpen);
+  toggle.classList.toggle('open', !isOpen);
+}
+
+/* ============================================================
+   TAB 2: LOGIC OPERATION
+   ============================================================ */
+let loInitialized = false;
+let loCurrentChain = null;
+let loSelectedNodeId = null;
+
+const LO_CAT_COLORS = {
+  routes: '#1565c0',
+  services: '#7b1fa2',
+  middleware: '#00838f',
+  models: '#4e342e',
+  utils: '#546e7a',
+  tasks: '#546e7a',
+};
+
+const LO_CHAINS = {
+  upload: {
+    name: '影片上傳處理',
+    nodes: [
+      { id: 'upload-0', method: 'POST /videos/upload', cls: 'routes/videos.py', cat: 'routes', layer: 0 },
+      { id: 'upload-1', method: 'get_current_user()', cls: 'core/auth.py', cat: 'middleware', layer: 1 },
+      { id: 'upload-2', method: 'check_upload_quota()', cls: 'services/quota_service', cat: 'services', layer: 2 },
+      { id: 'upload-3', method: 'create_video()', cls: 'services/video_service', cat: 'services', layer: 3 },
+      { id: 'upload-4', method: 'process.delay()', cls: 'tasks/video_tasks', cat: 'tasks', layer: 4 },
+      { id: 'upload-5', method: 'extract_audio()', cls: 'services/ffmpeg', cat: 'services', layer: 5 },
+      { id: 'upload-6', method: 'transcribe_audio()', cls: 'services/whisper', cat: 'services', layer: 6 },
+      { id: 'upload-7', method: 'analyze_keyframes_batch()', cls: 'services/vision', cat: 'services', layer: 7 },
+      { id: 'upload-8', method: 'generate_summary_and_article()', cls: 'services/article', cat: 'services', layer: 8 },
+      { id: 'upload-9', method: 'upsert_result()', cls: 'services/video_service', cat: 'services', layer: 9 },
+    ]
+  },
+  query: {
+    name: '影片列表查詢',
+    nodes: [
+      { id: 'query-0', method: 'GET /videos', cls: 'routes/videos.py', cat: 'routes', layer: 0 },
+      { id: 'query-1', method: 'get_current_user()', cls: 'core/auth.py', cat: 'middleware', layer: 1 },
+      { id: 'query-2', method: 'get_videos()', cls: 'routes/video_list', cat: 'routes', layer: 2 },
+      { id: 'query-3', method: 'reset_usage_if_needed()', cls: 'services/quota_service', cat: 'services', layer: 3 },
+      { id: 'query-4', method: 'Video.query()', cls: 'models/video', cat: 'models', layer: 4 },
+      { id: 'query-5', method: '_format_dt()', cls: 'services/video_service', cat: 'services', layer: 5 },
+      { id: 'query-6', method: 'formatResponse()', cls: 'utils/response', cat: 'utils', layer: 6 },
+    ]
+  },
+  auth: {
+    name: 'Google 登入',
+    nodes: [
+      { id: 'auth-0', method: 'POST /auth/google', cls: 'routes/auth.py', cat: 'routes', layer: 0 },
+      { id: 'auth-1', method: 'verify_google_token()', cls: 'core/auth.py', cat: 'middleware', layer: 1 },
+      { id: 'auth-2', method: 'get_or_create_user()', cls: 'routes/auth.py', cat: 'routes', layer: 2 },
+      { id: 'auth-3', method: 'ensure_referral_code()', cls: 'services/referral_service', cat: 'services', layer: 3 },
+      { id: 'auth-4', method: 'create_access_token()', cls: 'core/auth.py', cat: 'middleware', layer: 4 },
+      { id: 'auth-5', method: 'Response 200 {token, user}', cls: 'routes/auth.py', cat: 'routes', layer: 5 },
+    ]
+  }
+};
+
+const LO_BACKGROUND_NODES = [
+  // video-api frontend
+  { id: 'bg-upload', method: 'upload()', cls: 'video-api', cat: 'routes' },
+  { id: 'bg-process', method: 'process()', cls: 'video-api', cat: 'routes' },
+  { id: 'bg-getStatus', method: 'getStatus()', cls: 'video-api', cat: 'routes' },
+  { id: 'bg-getResult', method: 'getResult()', cls: 'video-api', cat: 'routes' },
+  { id: 'bg-exportMd', method: 'exportMarkdown()', cls: 'video-api', cat: 'routes' },
+  { id: 'bg-exportPdf', method: 'exportPdf()', cls: 'video-api', cat: 'routes' },
+  { id: 'bg-getVideos', method: 'getVideos()', cls: 'video-api', cat: 'routes' },
+  { id: 'bg-regenerate', method: 'regenerate()', cls: 'video-api', cat: 'routes' },
+  { id: 'bg-submitUrl', method: 'submitUrl()', cls: 'video-api', cat: 'routes' },
+  { id: 'bg-getFrameUrl', method: 'getFrameUrl()', cls: 'video-api', cat: 'routes' },
+  { id: 'bg-getFrameBlob', method: 'getFrameBlob()', cls: 'video-api', cat: 'routes' },
+  // auth-api
+  { id: 'bg-googleLogin', method: 'googleLogin()', cls: 'auth-api', cat: 'middleware' },
+  { id: 'bg-getMe', method: 'getMe()', cls: 'auth-api', cat: 'middleware' },
+  // billing-api
+  { id: 'bg-getPlans', method: 'getPlans()', cls: 'billing-api', cat: 'routes' },
+  { id: 'bg-getUsage', method: 'getUsage()', cls: 'billing-api', cat: 'routes' },
+  { id: 'bg-createCheckout', method: 'createCheckout()', cls: 'billing-api', cat: 'services' },
+  { id: 'bg-cancelSub', method: 'cancelSubscription()', cls: 'billing-api', cat: 'services' },
+  { id: 'bg-getSub', method: 'getSubscription()', cls: 'billing-api', cat: 'services' },
+  // admin-api
+  { id: 'bg-getDashboard', method: 'getDashboard()', cls: 'admin-api', cat: 'routes' },
+  { id: 'bg-getUsers', method: 'getUsers()', cls: 'admin-api', cat: 'routes' },
+  { id: 'bg-getUserDetail', method: 'getUserDetail()', cls: 'admin-api', cat: 'routes' },
+  { id: 'bg-updateUserPlan', method: 'updateUserPlan()', cls: 'admin-api', cat: 'services' },
+  { id: 'bg-deleteVideo', method: 'deleteVideo()', cls: 'admin-api', cat: 'services' },
+  { id: 'bg-retryVideo', method: 'retryVideo()', cls: 'admin-api', cat: 'services' },
+  // share-api
+  { id: 'bg-enableShare', method: 'enableShare()', cls: 'share-api', cat: 'services' },
+  { id: 'bg-disableShare', method: 'disableShare()', cls: 'share-api', cat: 'services' },
+  { id: 'bg-getSharedVideo', method: 'getSharedVideo()', cls: 'share-api', cat: 'services' },
+  // referral-api
+  { id: 'bg-getReferral', method: 'getReferral()', cls: 'referral-api', cat: 'services' },
+  { id: 'bg-applyReferral', method: 'applyReferral()', cls: 'referral-api', cat: 'services' },
+  // backend services
+  { id: 'bg-updateVideoStatus', method: 'update_video_status()', cls: 'video_service', cat: 'services' },
+  { id: 'bg-updateProgress', method: 'update_progress()', cls: 'video_service', cat: 'services' },
+  { id: 'bg-upsertTranscript', method: 'upsert_transcript()', cls: 'video_service', cat: 'services' },
+  { id: 'bg-createKeyframes', method: 'create_keyframes()', cls: 'video_service', cat: 'services' },
+  { id: 'bg-createEcpay', method: 'create_ecpay_checkout()', cls: 'billing_service', cat: 'services' },
+  { id: 'bg-handleEcpay', method: 'handle_ecpay_return()', cls: 'billing_service', cat: 'services' },
+  { id: 'bg-cancelEcpay', method: 'cancel_ecpay_subscription()', cls: 'billing_service', cat: 'services' },
+  { id: 'bg-genShareToken', method: 'generate_share_token()', cls: 'share_service', cat: 'services' },
+  { id: 'bg-enableSharing', method: 'enable_sharing()', cls: 'share_service', cat: 'services' },
+  { id: 'bg-disableSharing', method: 'disable_sharing()', cls: 'share_service', cat: 'services' },
+  { id: 'bg-checkAnonQuota', method: 'check_anonymous_quota()', cls: 'anonymous_service', cat: 'services' },
+  { id: 'bg-incrAnonUsage', method: 'increment_anonymous_usage()', cls: 'anonymous_service', cat: 'services' },
+  { id: 'bg-getQueueLen', method: 'get_queue_length()', cls: 'queue_service', cat: 'services' },
+  { id: 'bg-getQueuePos', method: 'get_queue_position()', cls: 'queue_service', cat: 'services' },
+];
+
+const LO_NODE_DETAILS = {
+  // Chain: upload
+  'upload-0': { method: 'POST /videos/upload', sig: '(request: Request,\n file: UploadFile)\n  → JSONResponse', cls: 'routes/videos.py', file: 'backend/app/api/routes/videos.py', lines: 28, complexity: 5, callers: [], callees: ['get_current_user()', 'check_upload_quota()', 'create_video()'], exec: '~0.1s', errRate: '0.3%' },
+  'upload-1': { method: 'get_current_user()', sig: '(token: str = Depends)\n  → User', cls: 'core/auth.py', file: 'backend/app/core/auth.py', lines: 18, complexity: 3, callers: ['POST /videos/upload'], callees: ['jwt.decode()', 'db.query(User)'], exec: '~5ms', errRate: '0.1%' },
+  'upload-2': { method: 'check_upload_quota()', sig: '(user: User, db: Session)\n  → bool', cls: 'QuotaService', file: 'backend/app/services/quota_service.py', lines: 22, complexity: 4, callers: ['upload_video()'], callees: ['User.plan', 'compare_usage_count()'], exec: '~8ms', errRate: '0.5%' },
+  'upload-3': { method: 'create_video()', sig: '(user_id, filename, path, size)\n  → Video', cls: 'VideoService', file: 'backend/app/services/video_service.py', lines: 30, complexity: 3, callers: ['upload_video()'], callees: ['db.add()', 'db.commit()'], exec: '~12ms', errRate: '0.2%' },
+  'upload-4': { method: 'process.delay()', sig: '(video_id: UUID)\n  → AsyncResult', cls: 'CeleryTask', file: 'backend/app/tasks/video_tasks.py', lines: 12, complexity: 2, callers: ['upload_video()'], callees: ['Redis queue'], exec: '~3ms', errRate: '0.4%' },
+  'upload-5': { method: 'extract_audio()', sig: '(video_path: str)\n  → str (wav path)', cls: 'FFmpegService', file: 'backend/app/services/ffmpeg.py', lines: 38, complexity: 6, callers: ['process_video_task()'], callees: ['subprocess.run()'], exec: '~8s', errRate: '1.2%' },
+  'upload-6': { method: 'transcribe_audio()', sig: '(audio_path: str)\n  → TranscriptResult', cls: 'WhisperService', file: 'backend/app/services/whisper.py', lines: 45, complexity: 8, callers: ['process_video()','extract_audio() ← before'], callees: ['_transcribe_single_file()', '_transcribe_chunked()'], exec: '~12s', errRate: '2.1%' },
+  'upload-7': { method: 'analyze_keyframes_batch()', sig: '(frames: list[str])\n  → list[FrameAnalysis]', cls: 'VisionService', file: 'backend/app/services/vision.py', lines: 52, complexity: 9, callers: ['process_video_task()'], callees: ['OpenAI Vision API'], exec: '~6s', errRate: '1.8%' },
+  'upload-8': { method: 'generate_summary_and_article()', sig: '(transcript, config)\n  → ArticleResult', cls: 'ArticleService', file: 'backend/app/services/article.py', lines: 68, complexity: 11, callers: ['process_video_task()'], callees: ['GPT-4 API', 'format_output()'], exec: '~15s', errRate: '3.2%' },
+  'upload-9': { method: 'upsert_result()', sig: '(video_id, summary, article)\n  → Result', cls: 'VideoService', file: 'backend/app/services/video_service.py', lines: 24, complexity: 3, callers: ['process_video_task()'], callees: ['db.merge()', 'db.commit()'], exec: '~10ms', errRate: '0.1%' },
+  // Chain: query
+  'query-0': { method: 'GET /videos', sig: '(page: int = 1,\n limit: int = 20)\n  → VideoListResponse', cls: 'routes/videos.py', file: 'backend/app/api/routes/videos.py', lines: 22, complexity: 3, callers: [], callees: ['get_current_user()', 'get_videos()'], exec: '~50ms', errRate: '0.1%' },
+  'query-1': { method: 'get_current_user()', sig: '(token: str = Depends)\n  → User', cls: 'core/auth.py', file: 'backend/app/core/auth.py', lines: 18, complexity: 3, callers: ['GET /videos'], callees: ['jwt.decode()'], exec: '~5ms', errRate: '0.1%' },
+  'query-2': { method: 'get_videos()', sig: '(user: User, page, limit)\n  → list[Video]', cls: 'routes/video_list.py', file: 'backend/app/api/routes/videos.py', lines: 16, complexity: 4, callers: ['GET /videos'], callees: ['reset_usage_if_needed()', 'Video.query()'], exec: '~30ms', errRate: '0.2%' },
+  'query-3': { method: 'reset_usage_if_needed()', sig: '(user: User)\n  → None', cls: 'QuotaService', file: 'backend/app/services/quota_service.py', lines: 20, complexity: 5, callers: ['get_videos()'], callees: ['compare_dates()', 'User.update()'], exec: '~8ms', errRate: '0.1%' },
+  'query-4': { method: 'Video.query()', sig: '(user_id: UUID,\n page, limit)\n  → list[Video]', cls: 'Video (model)', file: 'backend/app/models/video.py', lines: 14, complexity: 2, callers: ['get_videos()'], callees: ['db.query()', 'filter()', 'paginate()'], exec: '~20ms', errRate: '0.0%' },
+  'query-5': { method: '_format_dt()', sig: '(dt: datetime) → str', cls: 'VideoService', file: 'backend/app/services/video_service.py', lines: 8, complexity: 1, callers: ['get_videos()'], callees: ['strftime()'], exec: '~0.1ms', errRate: '0.0%' },
+  'query-6': { method: 'formatResponse()', sig: '(data, meta)\n  → JSONResponse', cls: 'utils/response', file: 'backend/app/utils/response.py', lines: 12, complexity: 2, callers: ['GET /videos'], callees: ['jsonify()'], exec: '~1ms', errRate: '0.0%' },
+  // Chain: auth
+  'auth-0': { method: 'POST /auth/google', sig: '(body: GoogleLoginRequest)\n  → TokenResponse', cls: 'routes/auth.py', file: 'backend/app/api/routes/auth.py', lines: 30, complexity: 5, callers: [], callees: ['verify_google_token()', 'get_or_create_user()'], exec: '~200ms', errRate: '0.5%' },
+  'auth-1': { method: 'verify_google_token()', sig: '(id_token: str)\n  → GoogleUserInfo', cls: 'core/auth.py', file: 'backend/app/core/auth.py', lines: 24, complexity: 4, callers: ['POST /auth/google'], callees: ['Google API verify'], exec: '~180ms', errRate: '0.4%' },
+  'auth-2': { method: 'get_or_create_user()', sig: '(google_info: dict)\n  → User', cls: 'routes/auth.py', file: 'backend/app/api/routes/auth.py', lines: 20, complexity: 4, callers: ['google_login()'], callees: ['db.query(User).filter()', 'db.add()'], exec: '~15ms', errRate: '0.1%' },
+  'auth-3': { method: 'ensure_referral_code()', sig: '(user: User)\n  → User', cls: 'ReferralService', file: 'backend/app/services/referral_service.py', lines: 18, complexity: 3, callers: ['get_or_create_user()'], callees: ['generate_code()', 'User.update()'], exec: '~8ms', errRate: '0.0%' },
+  'auth-4': { method: 'create_access_token()', sig: '(data: dict)\n  → str (JWT)', cls: 'core/auth.py', file: 'backend/app/core/auth.py', lines: 14, complexity: 2, callers: ['google_login()'], callees: ['jwt.encode()'], exec: '~2ms', errRate: '0.0%' },
+  'auth-5': { method: 'Response 200 {token, user}', sig: '() → JSONResponse\n  {access_token, user}', cls: 'routes/auth.py', file: 'backend/app/api/routes/auth.py', lines: 6, complexity: 1, callers: ['google_login()'], callees: ['JSONResponse()'], exec: '~0.5ms', errRate: '0.0%' },
+};
+
+// Chain star-node ids (for initial star badges)
+const LO_CHAIN_STAR_NODES = {
+  upload: 'upload-0',
+  query: 'query-0',
+  auth: 'auth-0'
+};
+
+function initLO() {
+  const wrap = document.getElementById('lo-canvas-wrap');
+  const svg = document.getElementById('lo-svg');
+  const W = wrap.clientWidth || 900;
+  const H = wrap.clientHeight || 600;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+
+  const defs = createSVGEl('defs');
+  defs.innerHTML = `
+    <marker id="lo-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#aaa"/>
+    </marker>
+    <marker id="lo-arrow-active" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+  `;
+  svg.appendChild(defs);
+
+  // Background nodes group
+  const bgGroup = createSVGEl('g', { id: 'lo-bg-nodes' });
+  const cols = Math.floor(W / 120);
+  LO_BACKGROUND_NODES.forEach((n, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const nx = 20 + col * 120;
+    const ny = 30 + row * 48;
+    const fo = createSVGEl('foreignObject', { x: nx, y: ny, width: 100, height: 28, 'data-bgid': n.id });
+    const div = document.createElement('div');
+    div.className = 'lo-node-card';
+    div.style.borderLeftColor = LO_CAT_COLORS[n.cat] || '#888';
+    div.style.opacity = '0.35';
+    div.style.cursor = 'pointer';
+    div.style.width = '100px';
+    div.innerHTML = `<span class="lo-node-method" style="font-size:8px">${n.method}</span>`;
+    // Find chain for this bg node
+    const chainKey = loFindChainForBgNode(n.id);
+    div.addEventListener('click', () => {
+      if (chainKey) loSelectChain(chainKey);
+    });
+    // Star badge for recommended chains
+    fo.appendChild(div);
+    bgGroup.appendChild(fo);
+
+    // Star overlay for recommended
+    if (chainKey && (n.id === 'bg-upload' || n.id === 'bg-googleLogin' || n.id === 'bg-getVideos')) {
+      const star = createSVGEl('text', {
+        x: nx + 95, y: ny - 2,
+        'font-size': '10', fill: '#f59e0b',
+        style: 'pointer-events:none; user-select:none;'
+      });
+      star.textContent = '★';
+      bgGroup.appendChild(star);
+    }
+  });
+  svg.appendChild(bgGroup);
+
+  // Chain stars
+  const starsGroup = createSVGEl('g', { id: 'lo-stars' });
+  const starPositions = [
+    { label: '★ 影片上傳處理', x: 20, y: 24, chain: 'upload' },
+    { label: '★ 影片列表查詢', x: 140, y: 24, chain: 'query' },
+    { label: '★ Google 登入', x: 260, y: 24, chain: 'auth' },
+  ];
+  starPositions.forEach(sp => {
+    const fo = createSVGEl('foreignObject', { x: sp.x, y: sp.y - 16, width: 120, height: 20 });
+    const div = document.createElement('div');
+    div.className = 'lo-chain-badge';
+    div.style.cursor = 'pointer';
+    div.textContent = sp.label;
+    div.addEventListener('click', () => loSelectChain(sp.chain));
+    fo.appendChild(div);
+    starsGroup.appendChild(fo);
+  });
+  svg.appendChild(starsGroup);
+
+  // Chain nodes + edges group (hidden initially)
+  const chainGroup = createSVGEl('g', { id: 'lo-chain-group', style: 'display:none' });
+  svg.appendChild(chainGroup);
+}
+
+function loFindChainForBgNode(bgId) {
+  if (bgId === 'bg-upload') return 'upload';
+  if (bgId === 'bg-getVideos') return 'query';
+  if (bgId === 'bg-googleLogin') return 'auth';
+  return null;
+}
+
+function loSelectChain(chainKey) {
+  loCurrentChain = chainKey;
+  const chain = LO_CHAINS[chainKey];
+  const wrap = document.getElementById('lo-canvas-wrap');
+  const svg = document.getElementById('lo-svg');
+  const W = wrap.clientWidth || 900;
+  const H = wrap.clientHeight || 600;
+
+  // Hide bg nodes
+  const bgGroup = document.getElementById('lo-bg-nodes');
+  bgGroup.style.display = 'none';
+  const stars = document.getElementById('lo-stars');
+  stars.style.display = 'none';
+
+  // Hide hint
+  document.getElementById('lo-hint').classList.add('fade-out');
+
+  // Show chain group
+  const chainGroup = document.getElementById('lo-chain-group');
+  chainGroup.style.display = '';
+  chainGroup.innerHTML = '';
+
+  // Layout chain: centered, TB
+  const nodeW = 200;
+  const nodeH = 44;
+  const layerH = 100;
+  const totalLayers = chain.nodes.length;
+  const startY = 40;
+  const centerX = W / 2 - nodeW / 2;
+
+  // Calculate required height and make scrollable if needed
+  const requiredH = startY + totalLayers * layerH + 40;
+  const svgH = Math.max(H, requiredH);
+  svg.setAttribute('viewBox', `0 0 ${W} ${svgH}`);
+  svg.style.height = svgH + 'px';
+  wrap.classList.add('scrollable');
+
+  // Add chain title
+  const titleFo = createSVGEl('foreignObject', { x: centerX - 40, y: 8, width: 280, height: 28 });
+  const titleDiv = document.createElement('div');
+  titleDiv.style.cssText = 'font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--ink-primary);text-align:center;padding:4px;';
+  titleDiv.textContent = chain.name;
+  titleFo.appendChild(titleDiv);
+  chainGroup.appendChild(titleFo);
+
+  // Draw edges first
+  chain.nodes.forEach((n, i) => {
+    if (i === 0) return;
+    const fromNode = chain.nodes[i - 1];
+    const toNode = n;
+    const fx = centerX + nodeW / 2;
+    const fy = startY + (i - 1) * layerH + nodeH;
+    const tx = centerX + nodeW / 2;
+    const ty = startY + i * layerH;
+    const path = createSVGEl('path', {
+      class: 'lo-edge active-edge',
+      d: `M ${fx} ${fy} L ${tx} ${ty}`,
+      'marker-end': 'url(#lo-arrow-active)',
+      'stroke': LO_CAT_COLORS[toNode.cat] || '#888',
+      'stroke-width': '1.5',
+      'fill': 'none',
+      'opacity': '0.6'
+    });
+    chainGroup.appendChild(path);
+
+    // Layer label connector
+    const catColor = LO_CAT_COLORS[fromNode.cat] || '#888';
+    const dot = createSVGEl('circle', {
+      cx: centerX - 16, cy: startY + (i - 1) * layerH + nodeH / 2,
+      r: 4, fill: catColor, opacity: 0.5
+    });
+    chainGroup.appendChild(dot);
+  });
+
+  // Draw nodes
+  chain.nodes.forEach((n, i) => {
+    const nx = centerX;
+    const ny = startY + i * layerH;
+    const color = LO_CAT_COLORS[n.cat] || '#888';
+
+    // Side category indicator
+    const sideBar = createSVGEl('rect', {
+      x: nx - 8, y: ny, width: 4, height: nodeH, rx: 2,
+      fill: color, opacity: 0.5
+    });
+    chainGroup.appendChild(sideBar);
+
+    // Layer number
+    const layerText = createSVGEl('text', {
+      x: nx - 16, y: ny + nodeH / 2 + 4,
+      'font-size': '9', fill: color,
+      'text-anchor': 'middle',
+      style: 'pointer-events:none; user-select:none; font-family:monospace; font-weight:600;'
+    });
+    layerText.textContent = i;
+    chainGroup.appendChild(layerText);
+
+    const fo = createSVGEl('foreignObject', { x: nx, y: ny, width: nodeW, height: nodeH });
+    const div = document.createElement('div');
+    div.className = 'lo-node-card active-node';
+    div.style.borderColor = color;
+    div.style.width = nodeW + 'px';
+    div.style.height = nodeH + 'px';
+    div.style.cursor = 'pointer';
+    div.setAttribute('data-nid', n.id);
+    div.innerHTML = `
+      <span class="lo-node-method" style="font-size:11px;color:var(--ink-primary)">${n.method}</span>
+      <span class="lo-node-class">${n.cls}</span>
+    `;
+    div.addEventListener('click', () => loSelectNode(n.id, div, color));
+    fo.appendChild(div);
+    chainGroup.appendChild(fo);
+  });
+
+  // Update bottom bar
+  const bar = document.getElementById('lo-bottom-bar');
+  bar.classList.add('visible');
+  document.getElementById('lo-chain-name').textContent = chain.name;
+  document.getElementById('lo-chain-count').textContent = `${chain.nodes.length} 個節點`;
+}
+
+function loSelectNode(nodeId, el, color) {
+  // Deselect others
+  document.querySelectorAll('[data-nid]').forEach(n => n.classList.remove('selected-node'));
+  el.classList.add('selected-node');
+  loSelectedNodeId = nodeId;
+  loShowNodeDetail(nodeId, color);
+}
+
+function loShowNodeDetail(nodeId, color) {
+  const d = LO_NODE_DETAILS[nodeId];
+  if (!d) return;
+  document.getElementById('lo-placeholder').style.display = 'none';
+  const detailEl = document.getElementById('lo-detail');
+  detailEl.classList.add('visible');
+
+  const borderColor = color || '#888';
+  detailEl.innerHTML = `
+    <div class="panel-header" style="border-left:4px solid ${borderColor}">
+      <div class="panel-header-title">🔧 ${d.method}</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">Signature</div>
+      <div class="lo-panel-sig">${d.sig}</div>
+    </div>
+    <div class="panel-section">
+      <div style="font-size:12px;color:var(--ink-secondary);margin-bottom:4px;">Class: <strong>${d.cls}</strong></div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--ink-muted);word-break:break-all;">File: ${d.file}</div>
+      <div class="lo-metric-row" style="margin-top:8px">
+        <div class="lo-metric"><div class="lo-metric-val">${d.lines}</div><div class="lo-metric-label">Lines</div></div>
+        <div class="lo-metric"><div class="lo-metric-val">${d.complexity}</div><div class="lo-metric-label">Complexity</div></div>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">⬆ Callers (${d.callers.length})</div>
+      <div class="panel-dep-list">${d.callers.length ? d.callers.map(c => `<div class="panel-dep-item">${c}</div>`).join('') : '<div style="font-size:11px;color:var(--ink-faint);">—</div>'}</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">⬇ Callees (${d.callees.length})</div>
+      <div class="panel-dep-list">${d.callees.map(c => `<div class="panel-dep-item">${c}</div>`).join('')}</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">📊 Metrics</div>
+      <div class="panel-dep-list">
+        <div class="panel-dep-item">Avg execution: ${d.exec}</div>
+        <div class="panel-dep-item">Error rate: ${d.errRate}</div>
+      </div>
+    </div>
+  `;
+}
+
+function clearLoChain() {
+  loCurrentChain = null;
+  loSelectedNodeId = null;
+
+  // Restore SVG size and remove scroll
+  const wrap = document.getElementById('lo-canvas-wrap');
+  const svg = document.getElementById('lo-svg');
+  const W = wrap.clientWidth || 900;
+  const H = wrap.clientHeight || 600;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.style.height = '100%';
+  wrap.classList.remove('scrollable');
+  wrap.scrollTop = 0;
+
+  // Show bg nodes and hint
+  document.getElementById('lo-bg-nodes').style.display = '';
+  document.getElementById('lo-stars').style.display = '';
+  document.getElementById('lo-hint').classList.remove('fade-out');
+
+  // Hide chain group
+  document.getElementById('lo-chain-group').style.display = 'none';
+
+  // Hide bottom bar
+  document.getElementById('lo-bottom-bar').classList.remove('visible');
+
+  // Reset right panel
+  document.getElementById('lo-placeholder').style.display = 'flex';
+  document.getElementById('lo-detail').classList.remove('visible');
+}
+
+/* ============================================================
+   TAB 3: DATA JOURNEY
+   ============================================================ */
+let djInitialized = false;
+let djCurrentJourney = null;
+let djAnimationTimer = null;
+let djCurrentStep = -1;
+
+const DJ_CATEGORIES = [
+  {
+    name: '🎬 影片 Videos',
+    color: '#1565c0',
+    entries: [
+      { id: 'j-upload',  method: 'POST /api/v1/videos/upload',        desc: '影片上傳',  badge: '8 steps' },
+      { id: 'j-process', method: 'POST /api/v1/videos/{id}/process',  desc: '觸發處理',  badge: '9 steps' },
+      { id: 'j-list',    method: 'GET /api/v1/videos',                desc: '影片列表',  badge: '7 steps' },
+      { id: 'j-result',  method: 'GET /api/v1/videos/{id}/result',    desc: '取得結果',  badge: '5 steps' },
+    ]
+  },
+  {
+    name: '🔐 認證 Auth',
+    color: '#00838f',
+    entries: [
+      { id: 'j-auth', method: 'POST /api/v1/auth/google', desc: 'Google 登入', badge: '6 steps' },
+    ]
+  },
+  {
+    name: '💳 付款 Billing',
+    color: '#7b1fa2',
+    entries: [
+      { id: 'j-billing', method: 'POST /api/v1/billing/checkout', desc: '建立付款', badge: '5 steps' },
+    ]
+  },
+];
+// Flat list for backwards compat
+const DJ_ENTRIES = DJ_CATEGORIES.flatMap(c => c.entries);
+
+const DJ_JOURNEYS = {
+  'j-upload': {
+    title: 'POST /api/v1/videos/upload',
+    desc: '影片上傳流程',
+    steps: [
+      { name: 'POST /api/v1/videos/upload', desc: 'HTTP multipart 請求進入', input: 'multipart/form-data (video file)', output: 'Request object + UploadFile', transform: 'HTTP → FastAPI Request 解析', method: 'upload_video()', file: 'routes/videos.py' },
+      { name: 'get_current_user()', desc: 'JWT Token 驗證', input: 'Authorization: Bearer <token>', output: 'User object (id, email, plan)', transform: 'JWT decode → DB lookup → User', method: 'get_current_user()', file: 'core/auth.py' },
+      { name: 'check_upload_quota()', desc: '檢查上傳配額', input: 'User object', output: 'bool (quota OK)', transform: 'User.plan → quota limit → compare usage_count', method: 'check_upload_quota()', file: 'services/quota_service.py' },
+      { name: 'validate_video_file()', desc: '檔案驗證', input: 'UploadFile', output: 'validated file metadata', transform: 'Extension + size + MIME check', method: 'validate_video_file()', file: 'utils/file_utils.py' },
+      { name: 'save_upload_file()', desc: '存檔到磁碟', input: 'UploadFile stream', output: 'file_path (str)', transform: 'Stream → sanitized filename → disk write', method: 'save_upload_file()', file: 'utils/file_utils.py' },
+      { name: 'create_video()', desc: '建立 Video 記錄', input: '{user_id, filename, path, size}', output: 'Video ORM object', transform: 'Dict → SQLAlchemy INSERT → Video', method: 'create_video()', file: 'services/video_service.py' },
+      { name: 'increment_upload_usage()', desc: '更新配額用量', input: 'user_id', output: 'updated User.upload_count', transform: 'User.upload_count += 1', method: 'increment_upload_usage()', file: 'services/quota_service.py' },
+      { name: 'Response 201', desc: '回傳上傳結果', input: 'Video object', output: '{id, filename, status: "uploaded"}', transform: 'ORM → Pydantic schema → JSON', method: 'VideoResponse.from_orm()', file: 'schemas/video.py' },
+    ]
+  },
+  'j-auth': {
+    title: 'POST /api/v1/auth/google',
+    desc: 'Google OAuth 登入流程',
+    steps: [
+      { name: 'POST /api/v1/auth/google', desc: 'Google OAuth 請求', input: '{id_token: string}', output: 'Request body parsed', transform: 'JSON body → GoogleLoginRequest schema', method: 'google_login()', file: 'routes/auth.py' },
+      { name: 'verify_google_token()', desc: '驗證 Google Token', input: 'id_token string', output: '{google_id, email, name, avatar}', transform: 'Google API verify → user info extract', method: 'verify_google_token()', file: 'core/auth.py' },
+      { name: 'get_or_create_user()', desc: '取得或建立用戶', input: '{google_id, email, name}', output: 'User ORM object', transform: 'SELECT by google_id → if null INSERT → User', method: 'db.query(User).filter()', file: 'routes/auth.py' },
+      { name: 'ensure_referral_code()', desc: '確保推薦碼', input: 'User object', output: 'User with referral_code', transform: 'if null → generate 10-char code → UPDATE', method: 'ensure_referral_code()', file: 'services/referral_service.py' },
+      { name: 'create_access_token()', desc: '產生 JWT Token', input: '{user_id: UUID}', output: 'JWT token string', transform: 'Payload + secret → jwt.encode() → token', method: 'create_access_token()', file: 'core/auth.py' },
+      { name: 'Response 200', desc: '回傳登入結果', input: '{token, User}', output: '{access_token, token_type, user: {...}}', transform: 'User ORM → dict + token → JSON', method: 'return JSONResponse', file: 'routes/auth.py' },
+    ]
+  },
+  'j-process': {
+    title: 'POST /api/v1/videos/{id}/process',
+    desc: '影片處理流程',
+    steps: [
+      { name: 'POST /videos/{id}/process', desc: '觸發影片處理', input: 'videoId (path param) + options body', output: 'Request parsed', transform: 'Path param + JSON body → ProcessRequest', method: 'process_video_endpoint()', file: 'routes/videos.py' },
+      { name: 'get_current_user()', desc: 'JWT Token 驗證', input: 'Authorization header', output: 'User object', transform: 'JWT decode → User', method: 'get_current_user()', file: 'core/auth.py' },
+      { name: 'get_video_by_id()', desc: '查詢影片記錄', input: 'video_id (UUID)', output: 'Video ORM object', transform: 'SELECT * FROM videos WHERE id = ?', method: 'get_video_by_id()', file: 'services/video_service.py' },
+      { name: 'check_queue_capacity()', desc: '檢查佇列容量', input: 'none', output: 'bool', transform: 'Redis LLEN → compare max_queue', method: 'check_queue_capacity()', file: 'services/queue_service.py' },
+      { name: 'process_video_task.delay()', desc: '推入 Celery 佇列', input: 'video_id', output: 'task_id', transform: 'video_id → Celery task → Redis queue', method: 'process_video_task.delay()', file: 'tasks/' },
+      { name: 'extract_audio()', desc: 'FFmpeg 抽取音軌', input: 'video file path', output: 'audio .wav path', transform: 'MP4 → ffmpeg -i → WAV 16kHz mono', method: 'extract_audio()', file: 'services/ffmpeg.py' },
+      { name: 'transcribe_audio()', desc: 'Whisper 語音轉文字', input: 'audio .wav path', output: '{text, segments[]}', transform: 'WAV → OpenAI Whisper API → transcript', method: 'transcribe_audio()', file: 'services/whisper.py' },
+      { name: 'generate_summary_and_article()', desc: 'AI 生成摘要', input: 'transcript text + config', output: '{summary, article, keyframes}', transform: 'Transcript → GPT-4 prompt → structured output', method: 'generate_summary_and_article()', file: 'services/article.py' },
+      { name: 'upsert_result()', desc: '儲存最終結果', input: '{video_id, summary, article}', output: 'Result ORM object', transform: 'Dict → INSERT/UPDATE results → commit', method: 'upsert_result()', file: 'services/video_service.py' },
+    ]
+  },
+  'j-list': {
+    title: 'GET /api/v1/videos',
+    desc: '影片列表查詢流程',
+    steps: [
+      { name: 'GET /api/v1/videos', desc: '影片列表請求', input: '?page=1&limit=20', output: 'Request params', transform: 'Query params → pagination', method: 'list_videos()', file: 'routes/videos.py' },
+      { name: 'get_current_user()', desc: 'JWT Token 驗證', input: 'Authorization header', output: 'User object', transform: 'JWT → User', method: 'get_current_user()', file: 'core/auth.py' },
+      { name: 'reset_usage_if_needed()', desc: '重置用量（如需）', input: 'User object', output: 'User (reset)', transform: 'date compare → reset counter', method: 'reset_usage_if_needed()', file: 'services/quota_service.py' },
+      { name: 'Video.query()', desc: '查詢影片資料', input: 'user_id + pagination', output: 'list[Video]', transform: 'SQLAlchemy query → paginate', method: 'Video.query()', file: 'models/video.py' },
+      { name: '_format_dt()', desc: '格式化時間', input: 'datetime objects', output: 'ISO strings', transform: 'datetime → strftime', method: '_format_dt()', file: 'services/video_service.py' },
+      { name: 'formatResponse()', desc: '格式化回應', input: 'Video list + meta', output: 'JSONResponse', transform: 'ORM list → JSON array', method: 'formatResponse()', file: 'utils/response.py' },
+      { name: 'Response 200', desc: '回傳列表', input: 'Formatted data', output: '{videos[], total, page}', transform: 'dict → JSON 200', method: 'return JSONResponse', file: 'routes/videos.py' },
+    ]
+  },
+  'j-billing': {
+    title: 'POST /api/v1/billing/checkout',
+    desc: '建立付款流程',
+    steps: [
+      { name: 'POST /billing/checkout', desc: '建立付款請求', input: '{plan_id, return_url}', output: 'CheckoutRequest', transform: 'JSON → Pydantic schema', method: 'create_checkout()', file: 'routes/billing.py' },
+      { name: 'get_current_user()', desc: 'JWT Token 驗證', input: 'Authorization header', output: 'User object', transform: 'JWT → User', method: 'get_current_user()', file: 'core/auth.py' },
+      { name: 'validate_plan()', desc: '驗證方案', input: 'plan_id', output: 'Plan object', transform: 'plan_id → DB lookup', method: 'validate_plan()', file: 'services/billing_service.py' },
+      { name: 'create_ecpay_checkout()', desc: '建立 ECPay 訂單', input: '{user, plan, return_url}', output: '{checkout_url, order_id}', transform: 'params → ECPay API → checkout URL', method: 'create_ecpay_checkout()', file: 'services/billing_service.py' },
+      { name: 'Response 200', desc: '回傳付款連結', input: 'checkout data', output: '{checkout_url}', transform: 'dict → JSON 200', method: 'return JSONResponse', file: 'routes/billing.py' },
+    ]
+  },
+  'j-result': {
+    title: 'GET /api/v1/videos/{id}/result',
+    desc: '取得影片結果流程',
+    steps: [
+      { name: 'GET /videos/{id}/result', desc: '取得結果請求', input: 'video_id (path)', output: 'Request parsed', transform: 'Path param → UUID', method: 'get_result()', file: 'routes/videos.py' },
+      { name: 'get_current_user()', desc: 'JWT Token 驗證', input: 'Authorization header', output: 'User object', transform: 'JWT → User', method: 'get_current_user()', file: 'core/auth.py' },
+      { name: 'get_video_by_id()', desc: '查詢影片', input: 'video_id', output: 'Video ORM', transform: 'SELECT WHERE id', method: 'get_video_by_id()', file: 'services/video_service.py' },
+      { name: 'get_result_by_video()', desc: '取得分析結果', input: 'video_id', output: 'Result ORM', transform: 'JOIN videos → results', method: 'get_result_by_video()', file: 'services/video_service.py' },
+      { name: 'Response 200', desc: '回傳分析結果', input: 'Result object', output: '{summary, article, keyframes}', transform: 'ORM → ResultSchema → JSON', method: 'ResultResponse.from_orm()', file: 'schemas/video.py' },
+    ]
+  },
+};
+
+function initDJ() {
+  const wrap = document.getElementById('dj-canvas-wrap');
+  const svg = document.getElementById('dj-svg');
+  const W = wrap.clientWidth || 900;
+  const H = wrap.clientHeight || 600;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+
+  const defs = createSVGEl('defs');
+  defs.innerHTML = `
+    <marker id="dj-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#43a047"/>
+    </marker>
+  `;
+  svg.appendChild(defs);
+
+  // Entry cards group — categorized layout
+  const entryGroup = createSVGEl('g', { id: 'dj-entries' });
+
+  const cardW = 260;
+  const cardH = 64;
+  const catHeaderH = 28;
+  const cardGap = 12;
+  const catGap = 24;
+  const maxCols = 2;
+  const marginLeft = 40;
+
+  let curY = 30;
+
+  DJ_CATEGORIES.forEach((cat, ci) => {
+    // Category header
+    const headerFo = createSVGEl('foreignObject', {
+      x: marginLeft, y: curY, width: W - marginLeft * 2, height: catHeaderH
+    });
+    const headerDiv = document.createElement('div');
+    headerDiv.style.cssText = `font-family:var(--font-ui);font-size:13px;font-weight:700;color:${cat.color};border-bottom:2px solid ${cat.color}22;padding-bottom:4px;display:flex;align-items:center;gap:6px;`;
+    headerDiv.textContent = cat.name;
+    const countSpan = document.createElement('span');
+    countSpan.style.cssText = 'font-size:11px;font-weight:500;color:var(--ink-muted);';
+    countSpan.textContent = `${cat.entries.length} endpoint${cat.entries.length > 1 ? 's' : ''}`;
+    headerDiv.appendChild(countSpan);
+    headerFo.appendChild(headerDiv);
+    entryGroup.appendChild(headerFo);
+    curY += catHeaderH + 8;
+
+    // Entry cards in grid
+    const cols = Math.min(maxCols, cat.entries.length);
+    const totalCardW = cols * cardW + (cols - 1) * cardGap;
+    const startX = marginLeft;
+
+    cat.entries.forEach((entry, i) => {
+      const col = i % maxCols;
+      const row = Math.floor(i / maxCols);
+      const ex = startX + col * (cardW + cardGap);
+      const ey = curY + row * (cardH + cardGap);
+
+      // Pulse ring
+      const ring = createSVGEl('rect', {
+        x: ex, y: ey, width: cardW, height: cardH, rx: 10,
+        class: 'dj-pulse-ring',
+        style: `animation-delay:${(ci * 0.5 + i * 0.15)}s`
+      });
+      entryGroup.appendChild(ring);
+
+      const fo = createSVGEl('foreignObject', { x: ex, y: ey, width: cardW, height: cardH });
+      const div = document.createElement('div');
+      div.className = 'dj-entry-card';
+      div.setAttribute('data-entry', entry.id);
+      div.style.borderLeftColor = cat.color;
+      div.innerHTML = `
+        <div class="dj-entry-method">${entry.method}</div>
+        <div class="dj-entry-desc">${entry.desc}</div>
+        <span class="dj-entry-badge">${entry.badge}</span>
+      `;
+      div.addEventListener('click', () => djStartJourney(entry.id));
+      fo.appendChild(div);
+      entryGroup.appendChild(fo);
+    });
+
+    const catRows = Math.ceil(cat.entries.length / maxCols);
+    curY += catRows * (cardH + cardGap) + catGap;
+  });
+
+  svg.appendChild(entryGroup);
+
+  // Journey display group
+  const journeyGroup = createSVGEl('g', { id: 'dj-journey-group', style: 'display:none' });
+  svg.appendChild(journeyGroup);
+}
+
+function djStartJourney(entryId) {
+  const journey = DJ_JOURNEYS[entryId];
+  if (!journey) return;
+
+  // Clear previous animation
+  if (djAnimationTimer) { clearTimeout(djAnimationTimer); djAnimationTimer = null; }
+
+  djCurrentJourney = entryId;
+  djCurrentStep = -1;
+
+  const wrap = document.getElementById('dj-canvas-wrap');
+  const svg = document.getElementById('dj-svg');
+  const W = wrap.clientWidth || 900;
+  const H = wrap.clientHeight || 600;
+
+  // Hide entries and hint
+  document.getElementById('dj-entries').style.display = 'none';
+  document.getElementById('dj-hint').classList.add('fade-out');
+
+  // Clear and show journey group
+  const jGroup = document.getElementById('dj-journey-group');
+  jGroup.style.display = '';
+  jGroup.innerHTML = '';
+
+  // Layout: vertical stagger, centered
+  const nodeW = 340;
+  const nodeH = 60;
+  const stepSpacing = 80;
+  const totalH = journey.steps.length * stepSpacing + nodeH;
+  const startY = 30;
+  const cx = W / 2 - nodeW / 2;
+
+  // Make scrollable if content exceeds viewport
+  const requiredH = startY + totalH + 40;
+  const svgH = Math.max(H, requiredH);
+  svg.setAttribute('viewBox', `0 0 ${W} ${svgH}`);
+  svg.style.height = svgH + 'px';
+  wrap.classList.add('scrollable');
+
+  // Pre-create all step nodes (invisible)
+  const stepEls = [];
+  journey.steps.forEach((step, i) => {
+    const nx = cx;
+    const ny = startY + i * stepSpacing;
+
+    // Edge (connect from previous)
+    if (i > 0) {
+      const prevNy = startY + (i - 1) * stepSpacing + nodeH;
+      const path = createSVGEl('path', {
+        class: 'dj-edge',
+        id: `dj-edge-${i}`,
+        d: `M ${cx + nodeW / 2} ${prevNy} L ${cx + nodeW / 2} ${ny}`,
+        'marker-end': 'url(#dj-arrow)'
+      });
+      jGroup.appendChild(path);
+    }
+
+    // Step number circle
+    const numCircle = createSVGEl('circle', {
+      cx: cx - 16, cy: ny + nodeH / 2,
+      r: 10,
+      fill: '#e8f5e9',
+      stroke: '#43a047',
+      'stroke-width': '1.5',
+      opacity: 0,
+      id: `dj-num-circle-${i}`
+    });
+    jGroup.appendChild(numCircle);
+    const numText = createSVGEl('text', {
+      x: cx - 16, y: ny + nodeH / 2 + 4,
+      'text-anchor': 'middle',
+      'font-size': '9',
+      'font-weight': '700',
+      fill: '#388e3c',
+      opacity: 0,
+      id: `dj-num-text-${i}`,
+      style: 'pointer-events:none; user-select:none; font-family:monospace;'
+    });
+    numText.textContent = i + 1;
+    jGroup.appendChild(numText);
+
+    const fo = createSVGEl('foreignObject', {
+      x: nx, y: ny,
+      width: nodeW, height: nodeH,
+      id: `dj-fo-${i}`,
+      opacity: 0
+    });
+    const div = document.createElement('div');
+    div.className = 'dj-step-node';
+    div.setAttribute('data-step', i);
+    div.innerHTML = `
+      <div class="dj-step-num">Step ${i + 1}</div>
+      <div class="dj-step-name">${step.name}</div>
+      <div class="dj-step-desc">${step.desc}</div>
+    `;
+    div.addEventListener('click', () => djPanelSetActive(i));
+    fo.appendChild(div);
+    jGroup.appendChild(fo);
+    stepEls.push({ fo, div, numCircle, numText });
+  });
+
+  // Show right panel
+  djShowPanel(journey, entryId);
+
+  // Stagger animation
+  function animateStep(stepIdx) {
+    if (stepIdx >= journey.steps.length) return;
+    djCurrentStep = stepIdx;
+
+    const { fo, div, numCircle, numText } = stepEls[stepIdx];
+
+    // Fade in node
+    let opacity = 0;
+    const fadeIn = setInterval(() => {
+      opacity = Math.min(1, opacity + 0.15);
+      fo.setAttribute('opacity', opacity);
+      numCircle.setAttribute('opacity', opacity);
+      numText.setAttribute('opacity', opacity);
+      if (opacity >= 1) clearInterval(fadeIn);
+    }, 20);
+
+    // Show edge
+    if (stepIdx > 0) {
+      const edgeEl = document.getElementById(`dj-edge-${stepIdx}`);
+      if (edgeEl) {
+        edgeEl.classList.add('appeared');
+      }
+    }
+
+    // Activate step
+    div.classList.add('appeared', 'active-step');
+    if (stepIdx > 0) {
+      const prevDiv = stepEls[stepIdx - 1].div;
+      prevDiv.classList.remove('active-step');
+    }
+
+    // Update panel
+    djPanelSetActive(stepIdx);
+
+    djAnimationTimer = setTimeout(() => animateStep(stepIdx + 1), 350);
+  }
+
+  animateStep(0);
+}
+
+function djShowPanel(journey, entryId) {
+  document.getElementById('dj-placeholder').style.display = 'none';
+  const detailEl = document.getElementById('dj-detail');
+  detailEl.classList.add('visible');
+
+  const stepsHtml = journey.steps.map((s, i) => `
+    <div class="dj-step-item" id="dj-panel-step-${i}" onclick="djPanelSetActive(${i})">
+      <div class="dj-step-item-header">
+        <div class="dj-step-num-badge" id="dj-panel-badge-${i}">${i + 1}</div>
+        <div class="dj-step-item-name">${s.name}</div>
+        <div class="dj-step-status" id="dj-panel-status-${i}"></div>
+      </div>
+      <div class="dj-step-detail" id="dj-panel-detail-${i}">
+        <div class="dj-detail-row">
+          <div class="dj-detail-label">📥 Input</div>
+          <div class="dj-detail-val">${s.input}</div>
+          <div class="dj-detail-label">📤 Output</div>
+          <div class="dj-detail-val">${s.output}</div>
+          <div class="dj-detail-label">🔄 Transform</div>
+          <div class="dj-detail-val">${s.transform}</div>
+          <div class="dj-detail-label">📍 Method</div>
+          <div class="dj-detail-val">${s.method}<br><span style="opacity:0.7">${s.file}</span></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  detailEl.innerHTML = `
+    <div class="dj-panel-header-block">
+      <div class="dj-panel-journey-title">${journey.title}</div>
+      <div class="dj-panel-journey-sub">${journey.desc} · ${journey.steps.length} 步驟</div>
+    </div>
+    <div class="dj-step-list" id="dj-step-list">${stepsHtml}</div>
+    <button class="dj-replay-btn" onclick="djReplay()">重播此旅程</button>
+    <button class="dj-clear-btn" onclick="djClearSelection()">清除選取</button>
+  `;
+}
+
+function djPanelSetActive(stepIdx) {
+  const journey = DJ_JOURNEYS[djCurrentJourney];
+  if (!journey) return;
+
+  journey.steps.forEach((_, i) => {
+    const item = document.getElementById(`dj-panel-step-${i}`);
+    const badge = document.getElementById(`dj-panel-badge-${i}`);
+    const status = document.getElementById(`dj-panel-status-${i}`);
+    const detail = document.getElementById(`dj-panel-detail-${i}`);
+    if (!item) return;
+
+    if (i === stepIdx) {
+      item.classList.add('active-item');
+      item.classList.remove('completed-item');
+      if (detail) detail.classList.add('open');
+      if (status) { status.classList.remove('done'); status.classList.add('active'); }
+      // Scroll into view
+      item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    } else if (i < stepIdx) {
+      item.classList.remove('active-item');
+      item.classList.add('completed-item');
+      if (detail) detail.classList.remove('open');
+      if (status) { status.classList.add('done'); status.classList.remove('active'); }
+    } else {
+      item.classList.remove('active-item', 'completed-item');
+      if (detail) detail.classList.remove('open');
+      if (status) { status.classList.remove('done', 'active'); }
+    }
+  });
+
+  // Highlight canvas step
+  document.querySelectorAll('[data-step]').forEach(el => {
+    el.classList.remove('active-step');
+  });
+  const targetStep = document.querySelector(`[data-step="${stepIdx}"]`);
+  if (targetStep) targetStep.classList.add('active-step');
+}
+
+function djReplay() {
+  if (!djCurrentJourney) return;
+  // Reset all animation state
+  if (djAnimationTimer) { clearTimeout(djAnimationTimer); djAnimationTimer = null; }
+
+  // Scroll to top
+  document.getElementById('dj-canvas-wrap').scrollTop = 0;
+
+  // Re-hide journey group elements
+  const jGroup = document.getElementById('dj-journey-group');
+  jGroup.innerHTML = '';
+  jGroup.style.display = 'none';
+
+  // Re-init journey
+  djStartJourney(djCurrentJourney);
+}
+
+function djClearSelection() {
+  // Stop any running animation
+  if (djAnimationTimer) { clearTimeout(djAnimationTimer); djAnimationTimer = null; }
+  djCurrentJourney = null;
+  djCurrentStep = -1;
+
+  // Restore SVG size and remove scroll
+  const wrap = document.getElementById('dj-canvas-wrap');
+  const svg = document.getElementById('dj-svg');
+  const W = wrap.clientWidth || 900;
+  const H = wrap.clientHeight || 600;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.style.height = '100%';
+  wrap.classList.remove('scrollable');
+  wrap.scrollTop = 0;
+
+  // Hide journey group, show entries + hint
+  const jGroup = document.getElementById('dj-journey-group');
+  if (jGroup) { jGroup.innerHTML = ''; jGroup.style.display = 'none'; }
+  const entries = document.getElementById('dj-entries');
+  if (entries) entries.style.display = '';
+  const hint = document.getElementById('dj-hint');
+  if (hint) hint.classList.remove('fade-out');
+
+  // Reset right panel to placeholder
+  document.getElementById('dj-placeholder').style.display = '';
+  const detailEl = document.getElementById('dj-detail');
+  detailEl.classList.remove('visible');
+  detailEl.innerHTML = '';
+}
+
+/* ============================================================
+   SVG UTILITIES
+   ============================================================ */
+function createSVGEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    el.setAttribute(k, v);
+  }
+  return el;
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize first tab
+  initSF();
+  sfInitialized = true;
+
+  // Legend visibility for default tab
+  document.getElementById('sf-legend').style.display = 'contents';
+  document.getElementById('lo-legend').style.display = 'none';
+  document.getElementById('dj-legend').style.display = 'none';
+});
+
+// Re-render on resize for SF
+window.addEventListener('resize', () => {
+  // Could re-init, but for simplicity just scale SVG via viewBox
+});
+</script>
+</body>
+</html>

@@ -367,3 +367,48 @@ ${REPLY_RULES}
 ${CHAIN_TO_ANALYZE_LABEL['en']}
 ${chainContext}`;
 }
+
+// ---------------------------------------------------------------------------
+// AI Endpoint Detection — Sprint 24
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a prompt for AI endpoint detection.
+ * Used by AIFallbackAdapter when rule-based adapters find no endpoints.
+ *
+ * @param sourceFiles - Array of source file objects with path and content
+ */
+export function buildEndpointDetectionPrompt(sourceFiles: Array<{ path: string; content: string }>): string {
+  const fileList = sourceFiles.map(f =>
+    `### File: ${f.path}\n\`\`\`\n${f.content}\n\`\`\``
+  ).join('\n\n');
+
+  return `Analyze the following source code files and identify all API endpoints (HTTP routes/handlers).
+
+For each endpoint, provide:
+- method: HTTP method (GET, POST, PUT, DELETE, PATCH)
+- path: The URL path/route pattern
+- handler: The function/method name that handles this endpoint
+- filePath: The file where it's defined
+- line: Line number if identifiable
+- framework: The web framework being used (if identifiable)
+- confidence: Your confidence level (0-1) in this detection
+
+Look for common patterns across all web frameworks:
+- Route decorators (@app.route, @Get, @RequestMapping, etc.)
+- Router method calls (router.get, app.post, etc.)
+- URL configuration patterns (urlpatterns, etc.)
+- Controller/handler class definitions
+- Middleware registrations that define routes
+
+Return a JSON object matching this structure:
+{
+  "endpoints": [...],
+  "framework": "detected framework name or null",
+  "language": "detected language"
+}
+
+Source files to analyze:
+
+${fileList}`;
+}

@@ -1,0 +1,2204 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeAtlas — Sprint 9 Control Panel Mockup (G1 Review)</title>
+<style>
+  :root {
+    --bg-base:        #0a0a0f;
+    --bg-surface:     #0f0f1a;
+    --bg-elevated:    #13131f;
+    --bg-overlay:     #1a1a2e;
+    --cyan:           #00d4ff;
+    --cyan-bright:    #00ffff;
+    --cyan-dim:       #0099cc;
+    --magenta:        #bd00ff;
+    --magenta-bright: #ff00ff;
+    --green:          #00cc66;
+    --green-bright:   #00ff88;
+    --amber:          #ff8800;
+    --amber-bright:   #ffaa00;
+    --text-primary:   #e8eaf6;
+    --text-secondary: #9e9ec8;
+    --text-muted:     #5c5c88;
+    --text-disabled:  #3a3a5c;
+    --panel-width:    280px;
+    --panel-collapsed: 44px;
+    --toolbar-height: 52px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    height: 100vh;
+    overflow: hidden;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ─── TOOLBAR ─────────────────────────────────────────────── */
+  #toolbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--toolbar-height);
+    background: var(--bg-surface);
+    border-bottom: 1px solid rgba(0, 212, 255, 0.12);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 8px;
+    z-index: 40;
+    box-shadow: 0 2px 24px rgba(0,0,0,0.5);
+  }
+
+  .toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .toolbar-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  /* Hamburger */
+  #hamburger-btn {
+    width: 36px; height: 36px;
+    background: transparent;
+    border: 1px solid rgba(0,212,255,0.15);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 5px;
+    padding: 8px;
+    transition: all 200ms ease-out;
+    flex-shrink: 0;
+  }
+  #hamburger-btn:hover {
+    border-color: var(--cyan);
+    box-shadow: 0 0 12px rgba(0,212,255,0.2);
+  }
+  .ham-line {
+    width: 18px; height: 2px;
+    background: var(--text-secondary);
+    border-radius: 2px;
+    transition: all 200ms ease-out;
+    transform-origin: center;
+  }
+  #hamburger-btn.is-open .ham-line:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+    background: var(--cyan);
+  }
+  #hamburger-btn.is-open .ham-line:nth-child(2) {
+    opacity: 0; transform: scaleX(0);
+  }
+  #hamburger-btn.is-open .ham-line:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+    background: var(--cyan);
+  }
+
+  /* Logo mark */
+  .logo-mark {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--cyan);
+    text-shadow: 0 0 10px rgba(0,212,255,0.6);
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  /* Search bar */
+  .search-trigger {
+    width: 100%;
+    height: 34px;
+    background: var(--bg-elevated);
+    border: 1px solid rgba(0,212,255,0.12);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    cursor: pointer;
+    transition: all 200ms ease-out;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .search-trigger:hover {
+    border-color: rgba(0,212,255,0.35);
+    box-shadow: 0 0 12px rgba(0,212,255,0.08);
+    color: var(--text-secondary);
+  }
+  .search-icon { font-size: 12px; flex-shrink: 0; }
+  .search-kbd {
+    margin-left: auto;
+    font-size: 10px;
+    background: var(--bg-overlay);
+    border: 1px solid var(--text-disabled);
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: var(--text-muted);
+  }
+
+  /* ViewMode badge */
+  #viewmode-badge {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.25);
+    color: var(--cyan);
+    transition: all 200ms ease-out;
+    white-space: nowrap;
+  }
+
+  /* 2D/3D toggle */
+  .mode-toggle {
+    display: flex;
+    background: var(--bg-elevated);
+    border: 1px solid rgba(0,212,255,0.12);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .mode-btn {
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 150ms ease-out;
+  }
+  .mode-btn.active {
+    background: rgba(0,212,255,0.15);
+    color: var(--cyan);
+    text-shadow: 0 0 8px rgba(0,212,255,0.5);
+  }
+  .mode-btn:hover:not(.active) { color: var(--text-secondary); }
+
+  /* Overview icon btn */
+  .toolbar-icon-btn {
+    width: 32px; height: 32px;
+    background: transparent;
+    border: 1px solid rgba(0,212,255,0.12);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: all 150ms ease-out;
+    color: var(--text-secondary);
+  }
+  .toolbar-icon-btn:hover {
+    border-color: rgba(0,212,255,0.3);
+    color: var(--cyan);
+    box-shadow: 0 0 8px rgba(0,212,255,0.15);
+  }
+
+  /* ─── LAYOUT CONTAINER ───────────────────────────────────── */
+  #app-layout {
+    display: flex;
+    height: 100vh;
+    padding-top: var(--toolbar-height);
+  }
+
+  /* ─── CONTROL PANEL ──────────────────────────────────────── */
+  #control-panel {
+    position: fixed;
+    top: var(--toolbar-height);
+    left: 0;
+    bottom: 0;
+    width: var(--panel-width);
+    background: var(--bg-surface);
+    border-right: 1px solid rgba(0,212,255,0.1);
+    z-index: 35;
+    display: flex;
+    flex-direction: column;
+    transition: width 250ms ease-out;
+    overflow: hidden;
+    box-shadow: 4px 0 32px rgba(0,0,0,0.4);
+  }
+  #control-panel.collapsed {
+    width: var(--panel-collapsed);
+  }
+
+  /* Scrollable sections area */
+  .panel-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0,212,255,0.2) transparent;
+  }
+  .panel-scroll::-webkit-scrollbar { width: 4px; }
+  .panel-scroll::-webkit-scrollbar-track { background: transparent; }
+  .panel-scroll::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 2px; }
+
+  /* Panel sections */
+  .panel-section {
+    border-bottom: 1px solid rgba(0,212,255,0.06);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 14px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 150ms ease-out;
+    min-height: 42px;
+  }
+  .section-header:hover { background: rgba(0,212,255,0.04); }
+
+  .section-icon {
+    font-size: 14px;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    opacity: 1;
+    transition: opacity 200ms ease-out;
+  }
+
+  .section-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .badge-p1 {
+    background: rgba(255, 136, 0, 0.2);
+    border: 1px solid rgba(255, 136, 0, 0.4);
+    color: var(--amber);
+  }
+
+  .chevron {
+    font-size: 10px;
+    color: var(--text-muted);
+    transition: transform 200ms ease-out;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+  .chevron.open { transform: rotate(90deg); }
+
+  .section-content {
+    overflow: hidden;
+    transition: max-height 280ms ease-out, opacity 200ms ease-out;
+    max-height: 0;
+    opacity: 0;
+  }
+  .section-content.open {
+    max-height: 600px;
+    opacity: 1;
+  }
+  .section-inner { padding: 8px 14px 14px; }
+
+  /* Collapsed icon list */
+  .collapsed-icons {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 0;
+  }
+  #control-panel.collapsed .collapsed-icons { display: flex; }
+  #control-panel.collapsed .panel-scroll { display: none; }
+
+  .collapsed-icon-btn {
+    width: 36px; height: 36px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: all 150ms ease-out;
+    position: relative;
+  }
+  .collapsed-icon-btn:hover {
+    background: rgba(0,212,255,0.1);
+  }
+  .collapsed-icon-btn.active {
+    background: rgba(0,212,255,0.15);
+    box-shadow: 0 0 10px rgba(0,212,255,0.2);
+  }
+  .collapsed-icon-tooltip {
+    position: absolute;
+    left: calc(100% + 10px);
+    top: 50%; transform: translateY(-50%);
+    background: var(--bg-overlay);
+    border: 1px solid rgba(0,212,255,0.25);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    white-space: nowrap;
+    color: var(--text-primary);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 150ms ease-out;
+    z-index: 50;
+  }
+  .collapsed-icon-btn:hover .collapsed-icon-tooltip { opacity: 1; }
+
+  /* ─── VIEW MODE CARDS ────────────────────────────────────── */
+  .view-mode-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .view-mode-card {
+    background: var(--bg-elevated);
+    border: 1.5px solid rgba(0,212,255,0.1);
+    border-radius: 8px;
+    padding: 10px 8px;
+    cursor: pointer;
+    transition: all 180ms ease-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    text-align: center;
+    user-select: none;
+  }
+  .view-mode-card:hover {
+    border-color: rgba(0,212,255,0.3);
+    background: rgba(0,212,255,0.05);
+  }
+  .view-mode-card.selected {
+    border-color: var(--cyan);
+    background: rgba(0,212,255,0.08);
+    box-shadow: 0 0 16px rgba(0,212,255,0.2), inset 0 0 12px rgba(0,212,255,0.04);
+  }
+  .vmc-icon { font-size: 20px; line-height: 1; }
+  .vmc-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+  }
+  .view-mode-card.selected .vmc-label { color: var(--cyan); }
+  .vmc-desc {
+    font-size: 9px;
+    color: var(--text-muted);
+    line-height: 1.3;
+  }
+
+  /* ─── TOGGLES ────────────────────────────────────────────── */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 0;
+    gap: 8px;
+  }
+  .toggle-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    user-select: none;
+    cursor: pointer;
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 34px;
+    height: 18px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .toggle-switch input { display: none; }
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 9px;
+    background: var(--bg-overlay);
+    border: 1px solid rgba(0,212,255,0.15);
+    transition: all 200ms ease-out;
+  }
+  .toggle-thumb {
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: all 200ms ease-out;
+  }
+  .toggle-switch.on .toggle-track {
+    background: rgba(0,212,255,0.2);
+    border-color: var(--cyan);
+    box-shadow: 0 0 8px rgba(0,212,255,0.3);
+  }
+  .toggle-switch.on .toggle-thumb {
+    left: 19px;
+    background: var(--cyan);
+    box-shadow: 0 0 6px rgba(0,212,255,0.7);
+  }
+
+  /* ─── SEGMENTED CONTROL ──────────────────────────────────── */
+  .segmented {
+    display: flex;
+    background: var(--bg-elevated);
+    border: 1px solid rgba(0,212,255,0.1);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 3px;
+  }
+  .seg-btn {
+    flex: 1;
+    padding: 5px 4px;
+    font-size: 10px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 150ms ease-out;
+    white-space: nowrap;
+  }
+  .seg-btn.active {
+    background: rgba(0,212,255,0.15);
+    color: var(--cyan);
+    text-shadow: 0 0 6px rgba(0,212,255,0.5);
+  }
+  .seg-btn:hover:not(.active) { color: var(--text-secondary); }
+
+  /* ─── SLIDER ─────────────────────────────────────────────── */
+  .slider-row { padding: 6px 0 2px; }
+  .slider-label-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 7px;
+  }
+  .slider-label { font-size: 12px; color: var(--text-secondary); }
+  .slider-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--cyan);
+    min-width: 18px;
+    text-align: right;
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--bg-overlay);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 8px rgba(0,212,255,0.6);
+    cursor: pointer;
+    margin-top: -5px;
+  }
+
+  /* ─── ANALYSIS BUTTONS ───────────────────────────────────── */
+  .analysis-btn {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 7px;
+    border: 1px solid;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    transition: all 180ms ease-out;
+    text-align: left;
+  }
+  .analysis-btn:last-child { margin-bottom: 0; }
+
+  .btn-e2e {
+    background: rgba(0, 204, 102, 0.08);
+    border-color: rgba(0, 204, 102, 0.3);
+    color: var(--green-bright);
+  }
+  .btn-e2e:hover {
+    background: rgba(0, 204, 102, 0.15);
+    border-color: var(--green);
+    box-shadow: 0 0 14px rgba(0,204,102,0.2);
+  }
+  .btn-e2e.active {
+    background: rgba(0, 204, 102, 0.2);
+    border-color: var(--green-bright);
+    box-shadow: 0 0 18px rgba(0,204,102,0.35);
+    animation: pulse-green 1.5s infinite;
+  }
+  @keyframes pulse-green {
+    0%, 100% { box-shadow: 0 0 14px rgba(0,204,102,0.25); }
+    50% { box-shadow: 0 0 22px rgba(0,204,102,0.45); }
+  }
+
+  .btn-ai {
+    background: rgba(189, 0, 255, 0.08);
+    border-color: rgba(189, 0, 255, 0.3);
+    color: #d966ff;
+  }
+  .btn-ai:hover {
+    background: rgba(189, 0, 255, 0.15);
+    border-color: var(--magenta);
+    box-shadow: 0 0 14px rgba(189,0,255,0.2);
+  }
+  .btn-icon { font-size: 14px; }
+  .btn-desc {
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-top: 1px;
+    display: block;
+  }
+  .btn-text-wrap { display: flex; flex-direction: column; }
+
+  /* Selecting mode indicator */
+  .selecting-indicator {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(0,204,102,0.1);
+    border: 1px solid rgba(0,204,102,0.3);
+    border-radius: 6px;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--green-bright);
+  }
+  .selecting-indicator.visible { display: flex; }
+  .select-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green-bright);
+    animation: blink 1s infinite;
+    flex-shrink: 0;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ─── FILTER SECTION ─────────────────────────────────────── */
+  .filter-group { margin-bottom: 10px; }
+  .filter-group-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    cursor: pointer;
+    user-select: none;
+  }
+  .checkbox-item:hover .cb-label { color: var(--text-primary); }
+
+  .cb-box {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+    border: 1.5px solid rgba(0,212,255,0.25);
+    background: var(--bg-elevated);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 150ms ease-out;
+    flex-shrink: 0;
+  }
+  .cb-check {
+    font-size: 8px;
+    color: var(--cyan);
+    opacity: 0;
+    transition: opacity 150ms ease-out;
+  }
+  .checkbox-item.checked .cb-box {
+    background: rgba(0,212,255,0.15);
+    border-color: var(--cyan);
+    box-shadow: 0 0 6px rgba(0,212,255,0.25);
+  }
+  .checkbox-item.checked .cb-check { opacity: 1; }
+
+  .cb-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    transition: color 150ms ease-out;
+    font-family: 'Courier New', monospace;
+  }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 4px; }
+  .filter-chip {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid;
+    transition: all 150ms ease-out;
+    user-select: none;
+  }
+  .chip-cyan {
+    background: rgba(0,212,255,0.08);
+    border-color: rgba(0,212,255,0.2);
+    color: var(--cyan-dim);
+  }
+  .chip-cyan.active {
+    background: rgba(0,212,255,0.18);
+    border-color: var(--cyan);
+    color: var(--cyan-bright);
+    box-shadow: 0 0 6px rgba(0,212,255,0.25);
+  }
+  .chip-magenta {
+    background: rgba(189,0,255,0.08);
+    border-color: rgba(189,0,255,0.2);
+    color: #c866ff;
+  }
+  .chip-magenta.active {
+    background: rgba(189,0,255,0.18);
+    border-color: var(--magenta);
+    color: var(--magenta-bright);
+    box-shadow: 0 0 6px rgba(189,0,255,0.25);
+  }
+  .chip-green {
+    background: rgba(0,204,102,0.08);
+    border-color: rgba(0,204,102,0.2);
+    color: #33cc77;
+  }
+  .chip-green.active {
+    background: rgba(0,204,102,0.18);
+    border-color: var(--green);
+    color: var(--green-bright);
+    box-shadow: 0 0 6px rgba(0,204,102,0.25);
+  }
+  .chip-amber {
+    background: rgba(255,136,0,0.08);
+    border-color: rgba(255,136,0,0.2);
+    color: #cc8833;
+  }
+  .chip-amber.active {
+    background: rgba(255,136,0,0.18);
+    border-color: var(--amber);
+    color: var(--amber-bright);
+    box-shadow: 0 0 6px rgba(255,136,0,0.25);
+  }
+
+  /* ─── AI SETTINGS ─────────────────────────────────────────── */
+  .ai-provider-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+  .provider-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(0,212,255,0.08);
+    cursor: pointer;
+    transition: all 150ms ease-out;
+    user-select: none;
+  }
+  .provider-option:hover { background: rgba(0,212,255,0.04); }
+  .provider-option.selected {
+    border-color: rgba(0,212,255,0.3);
+    background: rgba(0,212,255,0.06);
+  }
+  .provider-option.disabled-opt {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .radio-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(0,212,255,0.3);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 150ms ease-out;
+    flex-shrink: 0;
+  }
+  .provider-option.selected .radio-dot {
+    border-color: var(--cyan);
+    box-shadow: 0 0 6px rgba(0,212,255,0.4);
+  }
+  .radio-fill {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--cyan);
+    opacity: 0;
+    transition: opacity 150ms ease-out;
+    box-shadow: 0 0 4px rgba(0,212,255,0.8);
+  }
+  .provider-option.selected .radio-fill { opacity: 1; }
+  .provider-name { font-size: 12px; color: var(--text-secondary); }
+  .provider-option.selected .provider-name { color: var(--text-primary); }
+
+  .privacy-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(0,204,102,0.07);
+    border: 1px solid rgba(0,204,102,0.2);
+    margin-bottom: 8px;
+  }
+  .privacy-icon { font-size: 12px; }
+  .privacy-text { font-size: 11px; color: var(--green); }
+
+  .conn-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .conn-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .conn-connected {
+    background: rgba(0,204,102,0.12);
+    border: 1px solid rgba(0,204,102,0.3);
+    color: var(--green);
+  }
+  .conn-connected .conn-dot {
+    background: var(--green-bright);
+    box-shadow: 0 0 4px var(--green-bright);
+    animation: blink 2s infinite;
+  }
+  .conn-offline {
+    background: rgba(92,92,136,0.15);
+    border: 1px solid rgba(92,92,136,0.25);
+    color: var(--text-muted);
+  }
+  .conn-offline .conn-dot { background: var(--text-muted); }
+
+  /* ─── GRAPH CANVAS ────────────────────────────────────────── */
+  #graph-canvas {
+    position: fixed;
+    top: var(--toolbar-height);
+    left: var(--panel-width);
+    right: 0;
+    bottom: 0;
+    background: var(--bg-base);
+    transition: left 250ms ease-out;
+    overflow: hidden;
+  }
+  #graph-canvas.panel-collapsed { left: var(--panel-collapsed); }
+  #graph-canvas.panel-e2e { right: 300px; }
+
+  /* Dot grid */
+  .dot-grid {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(0,212,255,0.08) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* Vignette */
+  .vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* SVG graph */
+  .graph-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+
+  /* Graph nodes */
+  .graph-node {
+    cursor: pointer;
+    transition: all 200ms ease-out;
+  }
+  .graph-node:hover .node-rect {
+    filter: brightness(1.3);
+  }
+  .node-rect {
+    rx: 8; ry: 8;
+    transition: all 200ms ease-out;
+  }
+  .node-label {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    fill: var(--text-primary);
+    dominant-baseline: central;
+    text-anchor: middle;
+    pointer-events: none;
+    transition: opacity 200ms ease-out;
+  }
+
+  /* View mode overlays */
+  .canvas-mode-overlay {
+    position: absolute;
+    top: 16px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    display: none;
+    pointer-events: none;
+  }
+  .canvas-mode-overlay.visible { display: block; }
+
+  .overlay-dependency {
+    background: rgba(0,212,255,0.12);
+    border: 1px solid rgba(0,212,255,0.3);
+    color: var(--cyan);
+    text-shadow: 0 0 8px rgba(0,212,255,0.5);
+  }
+  .overlay-dataflow {
+    background: rgba(0,204,102,0.12);
+    border: 1px solid rgba(0,204,102,0.3);
+    color: var(--green-bright);
+    text-shadow: 0 0 8px rgba(0,204,102,0.5);
+  }
+  .overlay-callchain {
+    background: rgba(189,0,255,0.12);
+    border: 1px solid rgba(189,0,255,0.3);
+    color: #d966ff;
+    text-shadow: 0 0 8px rgba(189,0,255,0.5);
+  }
+
+  /* Selecting mode cursor */
+  #graph-canvas.selecting-mode { cursor: crosshair; }
+  .selecting-canvas-hint {
+    position: absolute;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    padding: 8px 18px;
+    background: rgba(0,0,0,0.75);
+    border: 1px solid rgba(0,204,102,0.4);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--green-bright);
+    pointer-events: none;
+    display: none;
+    backdrop-filter: blur(8px);
+    animation: float-up 0.3s ease-out;
+  }
+  .selecting-canvas-hint.visible { display: block; }
+  @keyframes float-up {
+    from { transform: translateX(-50%) translateY(8px); opacity: 0; }
+    to   { transform: translateX(-50%) translateY(0);   opacity: 1; }
+  }
+
+  /* Heatmap overlay */
+  .heatmap-overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse 60% 50% at 55% 45%,
+      rgba(255, 136, 0, 0.15) 0%,
+      rgba(255, 136, 0, 0.08) 30%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 40% 35% at 30% 60%,
+      rgba(189, 0, 255, 0.1) 0%,
+      transparent 60%
+    );
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 300ms ease-out;
+  }
+  .heatmap-overlay.visible { opacity: 1; }
+
+  /* ─── E2E PANEL ───────────────────────────────────────────── */
+  #e2e-panel {
+    position: fixed;
+    top: var(--toolbar-height);
+    right: 0;
+    bottom: 0;
+    width: 300px;
+    background: var(--bg-surface);
+    border-left: 1px solid rgba(0, 204, 102, 0.2);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 280ms ease-out;
+    box-shadow: -4px 0 32px rgba(0,0,0,0.4);
+  }
+  #e2e-panel.open {
+    transform: translateX(0);
+  }
+
+  .e2e-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(0, 204, 102, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .e2e-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--green-bright);
+    letter-spacing: 0.04em;
+    text-shadow: 0 0 10px rgba(0,204,102,0.4);
+  }
+  .e2e-close {
+    width: 26px; height: 26px;
+    background: rgba(0,204,102,0.08);
+    border: 1px solid rgba(0,204,102,0.2);
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    transition: all 150ms ease-out;
+  }
+  .e2e-close:hover {
+    background: rgba(0,204,102,0.15);
+    border-color: var(--green);
+    color: var(--green-bright);
+  }
+
+  .e2e-meta {
+    display: flex;
+    gap: 12px;
+    padding: 8px 16px;
+    border-bottom: 1px solid rgba(0,204,102,0.1);
+  }
+  .e2e-meta-item {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .e2e-meta-item strong {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .e2e-steps {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0,204,102,0.2) transparent;
+  }
+
+  .e2e-step {
+    padding: 6px 16px;
+    position: relative;
+  }
+  .step-node-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    background: var(--bg-elevated);
+    border: 1px solid rgba(0,204,102,0.15);
+    border-radius: 7px;
+    transition: all 150ms ease-out;
+    cursor: pointer;
+  }
+  .step-node-row:hover {
+    border-color: rgba(0,204,102,0.35);
+    background: rgba(0,204,102,0.05);
+  }
+  .step-num {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: rgba(0,204,102,0.15);
+    border: 1px solid rgba(0,204,102,0.3);
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--green);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-file-icon { font-size: 13px; }
+  .step-info { flex: 1; min-width: 0; }
+  .step-name {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .step-tag {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .tag-entry {
+    background: rgba(0,212,255,0.12);
+    color: var(--cyan);
+    border: 1px solid rgba(0,212,255,0.2);
+  }
+  .tag-exit {
+    background: rgba(189,0,255,0.12);
+    color: #d966ff;
+    border: 1px solid rgba(189,0,255,0.2);
+  }
+
+  .step-connector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 16px;
+    margin: 2px 0;
+  }
+  .connector-line {
+    width: 1px;
+    height: 16px;
+    background: linear-gradient(to bottom, rgba(0,204,102,0.4), rgba(0,204,102,0.1));
+    margin-left: 24px;
+    flex-shrink: 0;
+  }
+  .connector-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    font-family: 'Courier New', monospace;
+    padding-left: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .edge-type-badge {
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 9px;
+    font-weight: 600;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.2);
+    color: var(--cyan-dim);
+  }
+  .edge-type-call {
+    background: rgba(189,0,255,0.1);
+    border-color: rgba(189,0,255,0.2);
+    color: #c866ff;
+  }
+  .edge-type-export {
+    background: rgba(255,136,0,0.1);
+    border-color: rgba(255,136,0,0.2);
+    color: var(--amber);
+  }
+  .arrow-down { color: rgba(0,204,102,0.5); font-size: 10px; }
+
+  .e2e-footer {
+    padding: 12px 16px;
+    border-top: 1px solid rgba(0,204,102,0.15);
+  }
+  .e2e-clear-btn {
+    width: 100%;
+    padding: 8px;
+    background: rgba(0,204,102,0.06);
+    border: 1px solid rgba(0,204,102,0.2);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 150ms ease-out;
+  }
+  .e2e-clear-btn:hover {
+    background: rgba(0,204,102,0.12);
+    border-color: rgba(0,204,102,0.35);
+    color: var(--green-bright);
+  }
+
+  /* ─── MISC ────────────────────────────────────────────────── */
+  .divider {
+    height: 1px;
+    background: rgba(0,212,255,0.06);
+    margin: 4px 0;
+  }
+
+  .section-sub-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 8px;
+    margin-bottom: 5px;
+  }
+
+  /* Particles animation on edges */
+  @keyframes particle-flow {
+    0%   { stroke-dashoffset: 48; }
+    100% { stroke-dashoffset: 0; }
+  }
+  .edge-particle {
+    stroke-dasharray: 6 42;
+    animation: particle-flow 1.8s linear infinite;
+  }
+
+  /* Node glow states */
+  .node-glow-cyan { filter: drop-shadow(0 0 8px rgba(0,212,255,0.6)); }
+  .node-glow-magenta { filter: drop-shadow(0 0 8px rgba(189,0,255,0.6)); }
+  .node-dim { opacity: 0.12; }
+
+  /* Callchain mode: dim non-function nodes */
+  .view-callchain .node-file-type { opacity: 0.2; }
+
+  /* Dataflow mode: edge color */
+  .view-dataflow .graph-edge { stroke: var(--cyan) !important; }
+
+  /* Dependency mode: dim data-flow edges */
+  .view-dependency .edge-dataflow { opacity: 0.1; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TOOLBAR -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="toolbar">
+  <div class="toolbar-left">
+    <button id="hamburger-btn" class="is-open" title="Toggle Control Panel" onclick="togglePanel()">
+      <div class="ham-line"></div>
+      <div class="ham-line"></div>
+      <div class="ham-line"></div>
+    </button>
+    <span class="logo-mark">CODE ATLAS</span>
+  </div>
+
+  <div class="toolbar-center">
+    <div class="search-trigger" onclick="showSearchHint()">
+      <span class="search-icon">&#128269;</span>
+      <span>Search files, symbols, paths...</span>
+      <span class="search-kbd">Ctrl+K</span>
+    </div>
+  </div>
+
+  <div class="toolbar-right">
+    <span id="viewmode-badge">PANORAMA</span>
+    <div class="mode-toggle">
+      <button class="mode-btn active" onclick="setGraphMode('2D',this)">2D</button>
+      <button class="mode-btn" onclick="setGraphMode('3D',this)">3D</button>
+    </div>
+    <button class="toolbar-icon-btn" title="AI Overview" onclick="showAiToast()">&#127760;</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- CONTROL PANEL -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="control-panel">
+
+  <!-- Collapsed icon list -->
+  <div class="collapsed-icons">
+    <button class="collapsed-icon-btn" onclick="expandToSection(0)" title="視圖模式">
+      &#127758;
+      <span class="collapsed-icon-tooltip">視圖模式</span>
+    </button>
+    <button class="collapsed-icon-btn" onclick="expandToSection(1)" title="顯示偏好">
+      &#127775;
+      <span class="collapsed-icon-tooltip">顯示偏好</span>
+    </button>
+    <button class="collapsed-icon-btn" onclick="expandToSection(2)" title="分析工具">
+      &#128269;
+      <span class="collapsed-icon-tooltip">分析工具</span>
+    </button>
+    <button class="collapsed-icon-btn" onclick="expandToSection(3)" title="過濾器">
+      &#127895;
+      <span class="collapsed-icon-tooltip">過濾器</span>
+    </button>
+    <button class="collapsed-icon-btn" onclick="expandToSection(4)" title="AI 設定">
+      &#129302;
+      <span class="collapsed-icon-tooltip">AI 設定</span>
+    </button>
+  </div>
+
+  <!-- Scrollable sections -->
+  <div class="panel-scroll">
+
+    <!-- SECTION 1: View Mode -->
+    <div class="panel-section" id="sec-0">
+      <div class="section-header" onclick="toggleSection(0)">
+        <span class="section-icon" style="color:var(--cyan)">&#127758;</span>
+        <span class="section-title">視圖模式</span>
+        <span class="chevron open" id="chev-0">&#9658;</span>
+      </div>
+      <div class="section-content open" id="content-0">
+        <div class="section-inner">
+          <div class="view-mode-grid">
+            <div class="view-mode-card selected" id="vmc-panorama" onclick="selectViewMode('panorama',this)">
+              <div class="vmc-icon">&#127758;</div>
+              <div class="vmc-label">全景</div>
+              <div class="vmc-desc">所有節點 + 所有邊</div>
+            </div>
+            <div class="view-mode-card" id="vmc-dependency" onclick="selectViewMode('dependency',this)">
+              <div class="vmc-icon">&#128279;</div>
+              <div class="vmc-label">依賴視圖</div>
+              <div class="vmc-desc">聚焦 import/export</div>
+            </div>
+            <div class="view-mode-card" id="vmc-dataflow" onclick="selectViewMode('dataflow',this)">
+              <div class="vmc-icon">&#128202;</div>
+              <div class="vmc-label">資料流</div>
+              <div class="vmc-desc">data-flow + heatmap</div>
+            </div>
+            <div class="view-mode-card" id="vmc-callchain" onclick="selectViewMode('callchain',this)">
+              <div class="vmc-icon">&#9939;</div>
+              <div class="vmc-label">呼叫鏈</div>
+              <div class="vmc-desc">call 邊 + 函式節點</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: Display Prefs -->
+    <div class="panel-section" id="sec-1">
+      <div class="section-header" onclick="toggleSection(1)">
+        <span class="section-icon" style="color:var(--amber)">&#127775;</span>
+        <span class="section-title">顯示偏好</span>
+        <span class="chevron" id="chev-1">&#9658;</span>
+      </div>
+      <div class="section-content" id="content-1">
+        <div class="section-inner">
+          <div class="toggle-row">
+            <label class="toggle-label" for="tog-heatmap" onclick="toggleSwitch('tog-heatmap')">Heatmap</label>
+            <div class="toggle-switch" id="tog-heatmap" onclick="toggleSwitch('tog-heatmap')">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+          <div class="toggle-row">
+            <label class="toggle-label" onclick="toggleSwitch('tog-edgelabels')">邊 Symbol 標籤</label>
+            <div class="toggle-switch" id="tog-edgelabels" onclick="toggleSwitch('tog-edgelabels')">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+          <div class="toggle-row">
+            <label class="toggle-label" onclick="toggleSwitch('tog-particles')">粒子流動動畫</label>
+            <div class="toggle-switch on" id="tog-particles" onclick="toggleSwitch('tog-particles')">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="section-sub-label">節點標籤密度</div>
+          <div class="segmented">
+            <button class="seg-btn" onclick="selectSeg(this,'density')">全顯示</button>
+            <button class="seg-btn active" onclick="selectSeg(this,'density')">智慧縮略</button>
+            <button class="seg-btn" onclick="selectSeg(this,'density')">隱藏</button>
+          </div>
+          <div class="slider-row" style="margin-top:10px">
+            <div class="slider-label-row">
+              <span class="slider-label">影響分析深度</span>
+              <span class="slider-value" id="depth-val">5</span>
+            </div>
+            <input type="range" min="1" max="10" value="5" id="impact-depth"
+              oninput="document.getElementById('depth-val').textContent=this.value">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: Analysis Tools -->
+    <div class="panel-section" id="sec-2">
+      <div class="section-header" onclick="toggleSection(2)">
+        <span class="section-icon" style="color:var(--green)">&#128269;</span>
+        <span class="section-title">分析工具</span>
+        <span class="chevron" id="chev-2">&#9658;</span>
+      </div>
+      <div class="section-content" id="content-2">
+        <div class="section-inner">
+          <button class="analysis-btn btn-e2e" id="e2e-btn" onclick="startE2ESelecting()">
+            <span class="btn-icon">&#128279;</span>
+            <span class="btn-text-wrap">
+              <span>端到端追蹤</span>
+              <span class="btn-desc">選取起始節點追蹤路徑</span>
+            </span>
+          </button>
+          <div class="selecting-indicator" id="selecting-indicator">
+            <span class="select-dot"></span>
+            <span>選取模式 — 點擊圖中節點</span>
+          </div>
+          <button class="analysis-btn btn-ai" onclick="showAiToast()">
+            <span class="btn-icon">&#129302;</span>
+            <span class="btn-text-wrap">
+              <span>AI 專案概述</span>
+              <span class="btn-desc">自動生成架構說明</span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4: Filters -->
+    <div class="panel-section" id="sec-3">
+      <div class="section-header" onclick="toggleSection(3)">
+        <span class="section-icon" style="color:#a855f7">&#127895;</span>
+        <span class="section-title">過濾器</span>
+        <span class="chevron" id="chev-3">&#9658;</span>
+      </div>
+      <div class="section-content" id="content-3">
+        <div class="section-inner">
+          <div class="filter-group">
+            <div class="filter-group-label">目錄</div>
+            <div class="checkbox-item checked" onclick="toggleCheckbox(this)">
+              <div class="cb-box"><span class="cb-check">&#10003;</span></div>
+              <span class="cb-label">packages/</span>
+            </div>
+            <div class="checkbox-item checked" onclick="toggleCheckbox(this)">
+              <div class="cb-box"><span class="cb-check">&#10003;</span></div>
+              <span class="cb-label">src/</span>
+            </div>
+            <div class="checkbox-item checked" onclick="toggleCheckbox(this)">
+              <div class="cb-box"><span class="cb-check">&#10003;</span></div>
+              <span class="cb-label">utils/</span>
+            </div>
+          </div>
+          <div class="filter-group">
+            <div class="filter-group-label">節點類型</div>
+            <div class="chip-row">
+              <span class="filter-chip chip-cyan active" onclick="toggleChip(this)">file</span>
+              <span class="filter-chip chip-magenta active" onclick="toggleChip(this)">directory</span>
+              <span class="filter-chip chip-amber active" onclick="toggleChip(this)">function</span>
+            </div>
+          </div>
+          <div class="filter-group" style="margin-bottom:0">
+            <div class="filter-group-label">邊類型</div>
+            <div class="chip-row">
+              <span class="filter-chip chip-cyan active" onclick="toggleChip(this)">import</span>
+              <span class="filter-chip chip-green active" onclick="toggleChip(this)">export</span>
+              <span class="filter-chip chip-magenta active" onclick="toggleChip(this)">call</span>
+              <span class="filter-chip chip-amber active" onclick="toggleChip(this)">data-flow</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 5: AI Settings -->
+    <div class="panel-section" id="sec-4">
+      <div class="section-header" onclick="toggleSection(4)">
+        <span class="section-icon" style="color:#a78bfa">&#129302;</span>
+        <span class="section-title">AI 設定</span>
+        <span class="section-badge badge-p1">P1</span>
+        <span class="chevron" id="chev-4">&#9658;</span>
+      </div>
+      <div class="section-content" id="content-4">
+        <div class="section-inner">
+          <div class="privacy-indicator">
+            <span class="privacy-icon">&#128274;</span>
+            <span class="privacy-text">程式碼不出站 — local-first</span>
+          </div>
+          <div class="section-sub-label">Provider</div>
+          <div class="ai-provider-row">
+            <div class="provider-option" onclick="selectProvider(this)">
+              <div class="radio-dot"><div class="radio-fill"></div></div>
+              <span class="provider-name">&#128683; Disabled</span>
+            </div>
+            <div class="provider-option selected" onclick="selectProvider(this)">
+              <div class="radio-dot"><div class="radio-fill"></div></div>
+              <span class="provider-name">&#127968; Ollama (local)</span>
+            </div>
+            <div class="provider-option" onclick="selectProvider(this)">
+              <div class="radio-dot"><div class="radio-fill"></div></div>
+              <span class="provider-name">&#9889; OpenAI</span>
+            </div>
+            <div class="provider-option" onclick="selectProvider(this)">
+              <div class="radio-dot"><div class="radio-fill"></div></div>
+              <span class="provider-name">&#129302; Anthropic</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+            <span style="font-size:11px;color:var(--text-muted)">連線狀態</span>
+            <span class="conn-badge conn-connected" id="conn-badge">
+              <span class="conn-dot"></span> Connected
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end panel-scroll -->
+</div><!-- end control-panel -->
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- GRAPH CANVAS -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="graph-canvas">
+  <div class="dot-grid"></div>
+  <div class="heatmap-overlay" id="heatmap-overlay"></div>
+
+  <!-- View mode overlays -->
+  <div class="canvas-mode-overlay overlay-dependency" id="overlay-dependency">
+    &#128279; 依賴視圖 — import / export 邊過濾中
+  </div>
+  <div class="canvas-mode-overlay overlay-dataflow" id="overlay-dataflow">
+    &#128202; 資料流視圖 — data-flow 邊 + heatmap 已啟用
+  </div>
+  <div class="canvas-mode-overlay overlay-callchain" id="overlay-callchain">
+    &#9939; 呼叫鏈視圖 — call 邊 + 函式節點模式
+  </div>
+
+  <!-- Selecting mode hint -->
+  <div class="selecting-canvas-hint" id="selecting-canvas-hint">
+    &#128270; 點擊任意節點開始追蹤路徑
+  </div>
+
+  <!-- Mock Graph SVG -->
+  <svg class="graph-svg" id="graph-svg" viewBox="0 0 900 600" preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="rgba(0,204,102,0.6)" />
+      </marker>
+      <marker id="arrow-cyan" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="rgba(0,212,255,0.6)" />
+      </marker>
+      <marker id="arrow-magenta" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 z" fill="rgba(189,0,255,0.5)" />
+      </marker>
+      <filter id="glow-cyan">
+        <feGaussianBlur stdDeviation="3" result="blur" />
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="glow-magenta">
+        <feGaussianBlur stdDeviation="3" result="blur" />
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+
+    <!-- Edges (drawn before nodes) -->
+    <!-- index.ts → graph-builder.ts (import, cyan) -->
+    <path id="edge-1" class="graph-edge edge-import"
+      d="M 200 170 C 260 170, 290 240, 340 240"
+      stroke="rgba(0,212,255,0.45)" stroke-width="1.5" fill="none"
+      marker-end="url(#arrow-cyan)" />
+    <path class="graph-edge edge-import edge-particle"
+      d="M 200 170 C 260 170, 290 240, 340 240"
+      stroke="rgba(0,212,255,0.8)" stroke-width="1.5" fill="none" />
+
+    <!-- graph-builder.ts → import-resolver.ts (call, magenta) -->
+    <path id="edge-2" class="graph-edge edge-call"
+      d="M 460 240 C 530 240, 550 310, 590 320"
+      stroke="rgba(189,0,255,0.45)" stroke-width="1.5" fill="none"
+      marker-end="url(#arrow-magenta)" />
+    <path class="graph-edge edge-call edge-particle"
+      d="M 460 240 C 530 240, 550 310, 590 320"
+      stroke="rgba(189,0,255,0.7)" stroke-width="1.5" fill="none"
+      style="stroke-dasharray:6 42;animation-delay:0.4s" />
+
+    <!-- import-resolver.ts → App.tsx (export, green) -->
+    <path id="edge-3" class="graph-edge edge-export"
+      d="M 710 320 C 760 320, 770 240, 800 220"
+      stroke="rgba(0,204,102,0.45)" stroke-width="1.5" fill="none"
+      marker-end="url(#arrow-green)" />
+    <path class="graph-edge edge-export edge-particle"
+      d="M 710 320 C 760 320, 770 240, 800 220"
+      stroke="rgba(0,204,102,0.7)" stroke-width="1.5" fill="none"
+      style="stroke-dasharray:6 42;animation-delay:0.9s" />
+
+    <!-- App.tsx → GraphCanvas.tsx (import, cyan) -->
+    <path id="edge-4" class="graph-edge edge-import"
+      d="M 860 250 C 870 300, 820 370, 780 400"
+      stroke="rgba(0,212,255,0.45)" stroke-width="1.5" fill="none"
+      marker-end="url(#arrow-cyan)" />
+    <path class="graph-edge edge-import edge-particle"
+      d="M 860 250 C 870 300, 820 370, 780 400"
+      stroke="rgba(0,212,255,0.8)" stroke-width="1.5" fill="none"
+      style="stroke-dasharray:6 42;animation-delay:1.2s" />
+
+    <!-- packages/ dir → graph-builder (contains, dim) -->
+    <path id="edge-5" class="graph-edge edge-dataflow"
+      d="M 160 380 C 200 360, 280 320, 340 280"
+      stroke="rgba(255,136,0,0.3)" stroke-width="1" fill="none" stroke-dasharray="4 6" />
+
+    <!-- utils/ dir → import-resolver (data-flow) -->
+    <path id="edge-6" class="graph-edge edge-dataflow"
+      d="M 440 440 C 500 420, 560 390, 590 360"
+      stroke="rgba(255,136,0,0.3)" stroke-width="1" fill="none" stroke-dasharray="4 6" />
+
+    <!-- Nodes -->
+    <!-- packages/ (directory, magenta) -->
+    <g class="graph-node" id="node-packages" onclick="onNodeClick(this,'packages/')" filter="url(#glow-magenta)">
+      <rect class="node-rect" x="80" y="355" width="120" height="38"
+        fill="rgba(189,0,255,0.08)" stroke="rgba(189,0,255,0.55)" stroke-width="1.5" rx="8" ry="8"/>
+      <text class="node-label" x="140" y="374" style="fill:#d966ff;font-size:10px">&#128193;</text>
+      <text class="node-label" x="140" y="386" style="font-size:10px">packages/</text>
+    </g>
+
+    <!-- utils/ (directory, magenta) -->
+    <g class="graph-node" id="node-utils" onclick="onNodeClick(this,'utils/')" filter="url(#glow-magenta)">
+      <rect class="node-rect" x="360" y="415" width="110" height="38"
+        fill="rgba(189,0,255,0.08)" stroke="rgba(189,0,255,0.45)" stroke-width="1.5" rx="8" ry="8"/>
+      <text class="node-label" x="415" y="432" style="fill:#d966ff;font-size:10px">&#128193;</text>
+      <text class="node-label" x="415" y="444" style="font-size:10px">utils/</text>
+    </g>
+
+    <!-- index.ts (file, cyan) -->
+    <g class="graph-node" id="node-index" onclick="onNodeClick(this,'index.ts')">
+      <rect class="node-rect" x="110" y="148" width="120" height="40"
+        fill="rgba(0,212,255,0.07)" stroke="rgba(0,212,255,0.55)" stroke-width="1.5" rx="8" ry="8"/>
+      <text class="node-label" x="170" y="164" style="fill:var(--cyan);font-size:10px">&#128196;</text>
+      <text class="node-label" x="170" y="178" style="font-size:11px">index.ts</text>
+    </g>
+
+    <!-- graph-builder.ts (file, cyan) - highlighted in e2e -->
+    <g class="graph-node" id="node-graphbuilder" onclick="onNodeClick(this,'graph-builder.ts')" filter="url(#glow-cyan)">
+      <rect class="node-rect" x="340" y="218" width="148" height="40"
+        fill="rgba(0,212,255,0.1)" stroke="rgba(0,212,255,0.7)" stroke-width="1.5" rx="8" ry="8"/>
+      <text class="node-label" x="414" y="234" style="fill:var(--cyan-bright);font-size:10px">&#128196;</text>
+      <text class="node-label" x="414" y="248" style="font-size:11px">graph-builder.ts</text>
+    </g>
+
+    <!-- import-resolver.ts (file, cyan) -->
+    <g class="graph-node" id="node-importresolver" onclick="onNodeClick(this,'import-resolver.ts')">
+      <rect class="node-rect" x="590" y="298" width="150" height="40"
+        fill="rgba(0,212,255,0.07)" stroke="rgba(0,212,255,0.5)" stroke-width="1.5" rx="8" ry="8"/>
+      <text class="node-label" x="665" y="314" style="fill:var(--cyan);font-size:10px">&#128196;</text>
+      <text class="node-label" x="665" y="328" style="font-size:11px">import-resolver.ts</text>
+    </g>
+
+    <!-- App.tsx (file, cyan) -->
+    <g class="graph-node" id="node-app" onclick="onNodeClick(this,'App.tsx')">
+      <rect class="node-rect" x="800" y="198" width="100" height="40"
+        fill="rgba(0,212,255,0.07)" stroke="rgba(0,212,255,0.45)" stroke-width="1.5" rx="8" ry="8"/>
+      <text class="node-label" x="850" y="214" style="fill:var(--cyan);font-size:10px">&#128196;</text>
+      <text class="node-label" x="850" y="228" style="font-size:11px">App.tsx</text>
+    </g>
+
+    <!-- GraphCanvas.tsx (file, cyan) -->
+    <g class="graph-node" id="node-graphcanvas" onclick="onNodeClick(this,'GraphCanvas.tsx')">
+      <rect class="node-rect" x="720" y="380" width="140" height="40"
+        fill="rgba(0,212,255,0.07)" stroke="rgba(0,212,255,0.45)" stroke-width="1.5" rx="8" ry="8"/>
+      <text class="node-label" x="790" y="396" style="fill:var(--cyan);font-size:10px">&#128196;</text>
+      <text class="node-label" x="790" y="410" style="font-size:11px">GraphCanvas.tsx</text>
+    </g>
+  </svg>
+
+  <div class="vignette"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- E2E PANEL -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="e2e-panel">
+  <div class="e2e-header">
+    <span class="e2e-title">&#128279; E2E 追蹤路徑</span>
+    <button class="e2e-close" onclick="closeE2EPanel()">&#10005;</button>
+  </div>
+
+  <div class="e2e-meta">
+    <span class="e2e-meta-item">深度: <strong>4/10</strong></span>
+    <span class="e2e-meta-item">節點: <strong>5</strong></span>
+    <span class="e2e-meta-item">邊: <strong>4</strong></span>
+  </div>
+
+  <div class="e2e-steps">
+    <!-- Step 1 -->
+    <div class="e2e-step">
+      <div class="step-node-row">
+        <span class="step-num">1</span>
+        <span class="step-file-icon">&#128196;</span>
+        <div class="step-info">
+          <div class="step-name">index.ts</div>
+        </div>
+        <span class="step-tag tag-entry">入口</span>
+      </div>
+    </div>
+    <div class="step-connector">
+      <div style="width:1px;height:18px;background:linear-gradient(to bottom,rgba(0,204,102,0.4),rgba(0,204,102,0.1));margin-left:28px"></div>
+      <span style="padding-left:8px;font-size:9px;color:var(--text-muted);font-family:monospace;display:flex;align-items:center;gap:5px">
+        &#8595; <span class="edge-type-badge">import</span>
+      </span>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="e2e-step">
+      <div class="step-node-row">
+        <span class="step-num">2</span>
+        <span class="step-file-icon">&#128196;</span>
+        <div class="step-info">
+          <div class="step-name">graph-builder.ts</div>
+        </div>
+      </div>
+    </div>
+    <div class="step-connector">
+      <div style="width:1px;height:18px;background:linear-gradient(to bottom,rgba(0,204,102,0.4),rgba(0,204,102,0.1));margin-left:28px"></div>
+      <span style="padding-left:8px;font-size:9px;color:var(--text-muted);font-family:monospace;display:flex;align-items:center;gap:5px">
+        &#8595; <span class="edge-type-badge edge-type-call">call</span>
+        <span style="color:var(--text-disabled)">buildGraph()</span>
+      </span>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="e2e-step">
+      <div class="step-node-row">
+        <span class="step-num">3</span>
+        <span class="step-file-icon">&#128196;</span>
+        <div class="step-info">
+          <div class="step-name">import-resolver.ts</div>
+        </div>
+      </div>
+    </div>
+    <div class="step-connector">
+      <div style="width:1px;height:18px;background:linear-gradient(to bottom,rgba(0,204,102,0.4),rgba(0,204,102,0.1));margin-left:28px"></div>
+      <span style="padding-left:8px;font-size:9px;color:var(--text-muted);font-family:monospace;display:flex;align-items:center;gap:5px">
+        &#8595; <span class="edge-type-badge edge-type-export">export</span>
+        <span style="color:var(--text-disabled)">resolvedImports</span>
+      </span>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="e2e-step">
+      <div class="step-node-row">
+        <span class="step-num">4</span>
+        <span class="step-file-icon">&#128196;</span>
+        <div class="step-info">
+          <div class="step-name">App.tsx</div>
+        </div>
+      </div>
+    </div>
+    <div class="step-connector">
+      <div style="width:1px;height:18px;background:linear-gradient(to bottom,rgba(0,204,102,0.4),rgba(0,204,102,0.1));margin-left:28px"></div>
+      <span style="padding-left:8px;font-size:9px;color:var(--text-muted);font-family:monospace;display:flex;align-items:center;gap:5px">
+        &#8595; <span class="edge-type-badge">import</span>
+      </span>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="e2e-step">
+      <div class="step-node-row">
+        <span class="step-num">5</span>
+        <span class="step-file-icon">&#128196;</span>
+        <div class="step-info">
+          <div class="step-name">GraphCanvas.tsx</div>
+        </div>
+        <span class="step-tag tag-exit">終點</span>
+      </div>
+    </div>
+
+  </div><!-- end e2e-steps -->
+
+  <div class="e2e-footer">
+    <button class="e2e-clear-btn" onclick="closeE2EPanel()">&#128465; 清除追蹤</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TOAST -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="toast" style="
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--bg-overlay); border:1px solid rgba(0,212,255,0.25);
+  border-radius:8px; padding:10px 20px; font-size:12px; color:var(--text-primary);
+  z-index:100; opacity:0; transition:all 250ms ease-out; pointer-events:none;
+  backdrop-filter:blur(12px); white-space:nowrap;
+"></div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SCRIPT -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>
+  // ─── State ───────────────────────────────────────────────────
+  var state = {
+    panelOpen: true,
+    viewMode: 'panorama',
+    sections: [true, false, false, false, false],
+    e2eActive: false,
+    e2eSelecting: false,
+    heatmapOn: false,
+    particlesOn: true,
+  };
+
+  var viewModeLabels = {
+    panorama:   'PANORAMA',
+    dependency: 'DEPENDENCY',
+    dataflow:   'DATAFLOW',
+    callchain:  'CALLCHAIN',
+  };
+
+  // ─── Panel Toggle ──────────────────────────────────────────
+  function togglePanel() {
+    state.panelOpen = !state.panelOpen;
+    var panel = document.getElementById('control-panel');
+    var canvas = document.getElementById('graph-canvas');
+    var ham = document.getElementById('hamburger-btn');
+
+    if (state.panelOpen) {
+      panel.classList.remove('collapsed');
+      canvas.classList.remove('panel-collapsed');
+      ham.classList.add('is-open');
+    } else {
+      panel.classList.add('collapsed');
+      canvas.classList.add('panel-collapsed');
+      ham.classList.remove('is-open');
+    }
+  }
+
+  // ─── Expand to section (from collapsed icons) ─────────────
+  function expandToSection(idx) {
+    if (!state.panelOpen) {
+      // Expand panel first
+      state.panelOpen = true;
+      var panel = document.getElementById('control-panel');
+      var canvas = document.getElementById('graph-canvas');
+      var ham = document.getElementById('hamburger-btn');
+      panel.classList.remove('collapsed');
+      canvas.classList.remove('panel-collapsed');
+      ham.classList.add('is-open');
+    }
+    // Small delay to let panel animate open
+    setTimeout(function() {
+      if (!state.sections[idx]) {
+        openSection(idx);
+      }
+      // Scroll to section
+      var sec = document.getElementById('sec-' + idx);
+      if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  }
+
+  // ─── Section Toggle ────────────────────────────────────────
+  function toggleSection(idx) {
+    if (state.sections[idx]) {
+      closeSection(idx);
+    } else {
+      openSection(idx);
+    }
+  }
+
+  function openSection(idx) {
+    state.sections[idx] = true;
+    var content = document.getElementById('content-' + idx);
+    var chev = document.getElementById('chev-' + idx);
+    content.classList.add('open');
+    chev.classList.add('open');
+  }
+
+  function closeSection(idx) {
+    state.sections[idx] = false;
+    var content = document.getElementById('content-' + idx);
+    var chev = document.getElementById('chev-' + idx);
+    content.classList.remove('open');
+    chev.classList.remove('open');
+  }
+
+  // ─── View Mode ─────────────────────────────────────────────
+  function selectViewMode(mode, card) {
+    // Deselect all
+    var cards = document.querySelectorAll('.view-mode-card');
+    cards.forEach(function(c) { c.classList.remove('selected'); });
+
+    // Select clicked
+    card.classList.add('selected');
+    state.viewMode = mode;
+
+    // Update toolbar badge
+    var badge = document.getElementById('viewmode-badge');
+    badge.textContent = viewModeLabels[mode];
+
+    // Update canvas class
+    var canvas = document.getElementById('graph-canvas');
+    canvas.className = canvas.className.replace(/\bview-\S+/g, '').trim();
+
+    // Hide all overlays
+    document.getElementById('overlay-dependency').classList.remove('visible');
+    document.getElementById('overlay-dataflow').classList.remove('visible');
+    document.getElementById('overlay-callchain').classList.remove('visible');
+
+    // Hide heatmap (reset)
+    var heatmap = document.getElementById('heatmap-overlay');
+
+    if (mode === 'panorama') {
+      applyNodeDim([]);
+      applyEdgeDim([]);
+      heatmap.classList.remove('visible');
+      showToast('&#127758; 全景模式 — 顯示所有節點與邊');
+    } else if (mode === 'dependency') {
+      document.getElementById('overlay-dependency').classList.add('visible');
+      // Dim data-flow & call edges visually
+      dimEdgesByType(['edge-dataflow', 'edge-call']);
+      applyNodeDim([]);
+      heatmap.classList.remove('visible');
+      showToast('&#128279; 依賴視圖 — import/export 邊已過濾');
+    } else if (mode === 'dataflow') {
+      document.getElementById('overlay-dataflow').classList.add('visible');
+      heatmap.classList.add('visible');
+      dimEdgesByType([]);
+      applyNodeDim([]);
+      showToast('&#128202; 資料流視圖 — heatmap 已啟用');
+    } else if (mode === 'callchain') {
+      document.getElementById('overlay-callchain').classList.add('visible');
+      // Dim directory nodes
+      dimNodesByType(['node-packages', 'node-utils']);
+      // Dim non-call edges
+      dimEdgesByType(['edge-import', 'edge-export', 'edge-dataflow']);
+      heatmap.classList.remove('visible');
+      showToast('&#9939; 呼叫鏈視圖 — 函式節點 + call 邊');
+    }
+
+    // Clear E2E if active
+    if (state.e2eActive) closeE2EPanel();
+  }
+
+  function applyNodeDim(dimIds) {
+    var nodes = document.querySelectorAll('.graph-node');
+    nodes.forEach(function(n) {
+      if (dimIds.includes(n.id)) {
+        n.style.opacity = '0.1';
+      } else {
+        n.style.opacity = '1';
+      }
+    });
+  }
+
+  function dimNodesByType(ids) {
+    var nodes = document.querySelectorAll('.graph-node');
+    nodes.forEach(function(n) {
+      n.style.opacity = ids.includes(n.id) ? '0.1' : '1';
+    });
+  }
+
+  function dimEdgesByType(classNames) {
+    var edges = document.querySelectorAll('.graph-edge');
+    edges.forEach(function(e) {
+      var shouldDim = false;
+      classNames.forEach(function(cls) {
+        if (e.classList.contains(cls)) shouldDim = true;
+      });
+      e.style.opacity = shouldDim ? '0.08' : '1';
+    });
+  }
+
+  // ─── Toggle Switches ───────────────────────────────────────
+  function toggleSwitch(id) {
+    var sw = document.getElementById(id);
+    sw.classList.toggle('on');
+    var isOn = sw.classList.contains('on');
+
+    if (id === 'tog-heatmap') {
+      state.heatmapOn = isOn;
+      var hm = document.getElementById('heatmap-overlay');
+      isOn ? hm.classList.add('visible') : hm.classList.remove('visible');
+      showToast(isOn ? '&#128200; Heatmap 已開啟' : '&#128200; Heatmap 已關閉');
+    } else if (id === 'tog-particles') {
+      state.particlesOn = isOn;
+      var particles = document.querySelectorAll('.edge-particle');
+      particles.forEach(function(p) {
+        p.style.animationPlayState = isOn ? 'running' : 'paused';
+        p.style.opacity = isOn ? '1' : '0';
+      });
+      showToast(isOn ? '&#10024; 粒子動畫 已開啟' : '&#10024; 粒子動畫 已關閉');
+    } else if (id === 'tog-edgelabels') {
+      showToast(isOn ? '&#127991; 邊標籤 已顯示' : '&#127991; 邊標籤 已隱藏');
+    }
+  }
+
+  // ─── Segmented controls ────────────────────────────────────
+  function selectSeg(btn, group) {
+    var siblings = btn.parentElement.querySelectorAll('.seg-btn');
+    siblings.forEach(function(s) { s.classList.remove('active'); });
+    btn.classList.add('active');
+    showToast('&#127800; 標籤密度: ' + btn.textContent.trim());
+  }
+
+  // ─── Checkbox / Chip ──────────────────────────────────────
+  function toggleCheckbox(item) {
+    item.classList.toggle('checked');
+    var label = item.querySelector('.cb-label').textContent;
+    var isChecked = item.classList.contains('checked');
+    showToast((isChecked ? '&#9745; 目錄已加入: ' : '&#9744; 目錄已移除: ') + label);
+  }
+
+  function toggleChip(chip) {
+    chip.classList.toggle('active');
+    var isActive = chip.classList.contains('active');
+    showToast((isActive ? '&#10003; ' : '&#10005; ') + chip.textContent + ' 過濾器');
+  }
+
+  // ─── 2D/3D toggle ─────────────────────────────────────────
+  function setGraphMode(mode, btn) {
+    var btns = btn.parentElement.querySelectorAll('.mode-btn');
+    btns.forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    showToast('&#128250; 切換至 ' + mode + ' 模式');
+  }
+
+  // ─── AI Provider ──────────────────────────────────────────
+  function selectProvider(opt) {
+    if (opt.classList.contains('disabled-opt')) return;
+    var opts = document.querySelectorAll('.provider-option');
+    opts.forEach(function(o) { o.classList.remove('selected'); });
+    opt.classList.add('selected');
+    var name = opt.querySelector('.provider-name').textContent.trim();
+    var connBadge = document.getElementById('conn-badge');
+
+    // Simulate connection status
+    if (name.includes('Disabled')) {
+      connBadge.className = 'conn-badge conn-offline';
+      connBadge.innerHTML = '<span class="conn-dot"></span> Offline';
+    } else if (name.includes('Ollama')) {
+      connBadge.className = 'conn-badge conn-connected';
+      connBadge.innerHTML = '<span class="conn-dot"></span> Connected';
+    } else {
+      connBadge.className = 'conn-badge conn-connected';
+      connBadge.innerHTML = '<span class="conn-dot"></span> Ready';
+    }
+    showToast('&#129302; Provider: ' + name);
+  }
+
+  // ─── E2E Tracing ──────────────────────────────────────────
+  function startE2ESelecting() {
+    if (state.e2eSelecting) {
+      // Cancel selecting
+      cancelE2ESelecting();
+      return;
+    }
+
+    state.e2eSelecting = true;
+    var btn = document.getElementById('e2e-btn');
+    btn.classList.add('active');
+    btn.querySelector('span:first-child').textContent = '&#9745;';
+
+    document.getElementById('selecting-indicator').classList.add('visible');
+    document.getElementById('graph-canvas').classList.add('selecting-mode');
+    document.getElementById('selecting-canvas-hint').classList.add('visible');
+
+    // Ensure analysis section is visible
+    if (!state.sections[2]) openSection(2);
+
+    // Set up click handler on canvas
+    document.getElementById('graph-canvas').addEventListener('click', handleCanvasClickE2E, { once: false });
+    showToast('&#128270; 選取模式啟動 — 點擊節點開始追蹤');
+  }
+
+  function cancelE2ESelecting() {
+    state.e2eSelecting = false;
+    var btn = document.getElementById('e2e-btn');
+    btn.classList.remove('active');
+    document.getElementById('selecting-indicator').classList.remove('visible');
+    document.getElementById('graph-canvas').classList.remove('selecting-mode');
+    document.getElementById('selecting-canvas-hint').classList.remove('visible');
+    document.getElementById('graph-canvas').removeEventListener('click', handleCanvasClickE2E);
+  }
+
+  function handleCanvasClickE2E(e) {
+    // Check if a node was clicked (look for closest graph-node)
+    var nodeEl = e.target.closest('.graph-node');
+    if (nodeEl) {
+      cancelE2ESelecting();
+      triggerE2EResult(nodeEl.id);
+    }
+  }
+
+  function onNodeClick(el, label) {
+    if (state.e2eSelecting) {
+      cancelE2ESelecting();
+      triggerE2EResult(el.id);
+      return;
+    }
+    showToast('&#128196; 節點: ' + label);
+  }
+
+  function triggerE2EResult(startNodeId) {
+    state.e2eActive = true;
+
+    // Highlight traced path nodes
+    var tracedNodes = ['node-index', 'node-graphbuilder', 'node-importresolver', 'node-app', 'node-graphcanvas'];
+    var allNodes = document.querySelectorAll('.graph-node');
+    allNodes.forEach(function(n) {
+      if (tracedNodes.includes(n.id)) {
+        n.style.opacity = '1';
+        var rect = n.querySelector('.node-rect');
+        if (rect) {
+          rect.style.filter = 'drop-shadow(0 0 10px rgba(0,204,102,0.7))';
+        }
+      } else {
+        n.style.opacity = '0.1';
+      }
+    });
+
+    // Highlight traced edges
+    var tracedEdges = ['edge-1', 'edge-2', 'edge-3', 'edge-4'];
+    var allEdges = document.querySelectorAll('.graph-edge:not(.edge-particle)');
+    allEdges.forEach(function(e) {
+      if (tracedEdges.includes(e.id)) {
+        e.style.stroke = 'rgba(0,204,102,0.8)';
+        e.style.strokeWidth = '2.5';
+      } else {
+        e.style.opacity = '0.05';
+      }
+    });
+
+    // Open E2E panel
+    openE2EPanel();
+    showToast('&#128279; E2E 追蹤完成 — 找到 5 個節點');
+  }
+
+  function openE2EPanel() {
+    var panel = document.getElementById('e2e-panel');
+    var canvas = document.getElementById('graph-canvas');
+    panel.classList.add('open');
+    canvas.classList.add('panel-e2e');
+  }
+
+  function closeE2EPanel() {
+    state.e2eActive = false;
+    state.e2eSelecting = false;
+
+    // Reset panel state
+    var panel = document.getElementById('e2e-panel');
+    var canvas = document.getElementById('graph-canvas');
+    panel.classList.remove('open');
+    canvas.classList.remove('panel-e2e');
+
+    // Reset button
+    var btn = document.getElementById('e2e-btn');
+    btn.classList.remove('active');
+    document.getElementById('selecting-indicator').classList.remove('visible');
+    canvas.classList.remove('selecting-mode');
+    document.getElementById('selecting-canvas-hint').classList.remove('visible');
+
+    // Reset nodes and edges
+    var allNodes = document.querySelectorAll('.graph-node');
+    allNodes.forEach(function(n) {
+      n.style.opacity = '';
+      var rect = n.querySelector('.node-rect');
+      if (rect) rect.style.filter = '';
+    });
+    var allEdges = document.querySelectorAll('.graph-edge:not(.edge-particle)');
+    allEdges.forEach(function(e) {
+      e.style.opacity = '';
+      e.style.stroke = '';
+      e.style.strokeWidth = '';
+    });
+
+    // Re-apply current view mode dimming
+    selectViewModeQuiet(state.viewMode);
+    showToast('&#128465; 追蹤已清除');
+  }
+
+  function selectViewModeQuiet(mode) {
+    // Re-apply visual effects without toast / card selection
+    document.getElementById('overlay-dependency').classList.remove('visible');
+    document.getElementById('overlay-dataflow').classList.remove('visible');
+    document.getElementById('overlay-callchain').classList.remove('visible');
+    var heatmap = document.getElementById('heatmap-overlay');
+
+    if (mode === 'panorama') {
+      applyNodeDim([]);
+      dimEdgesByType([]);
+      heatmap.classList.remove('visible');
+    } else if (mode === 'dependency') {
+      document.getElementById('overlay-dependency').classList.add('visible');
+      dimEdgesByType(['edge-dataflow', 'edge-call']);
+      applyNodeDim([]);
+    } else if (mode === 'dataflow') {
+      document.getElementById('overlay-dataflow').classList.add('visible');
+      if (state.heatmapOn || true) heatmap.classList.add('visible');
+      dimEdgesByType([]);
+    } else if (mode === 'callchain') {
+      document.getElementById('overlay-callchain').classList.add('visible');
+      dimNodesByType(['node-packages', 'node-utils']);
+      dimEdgesByType(['edge-import', 'edge-export', 'edge-dataflow']);
+    }
+  }
+
+  // ─── AI Toast ─────────────────────────────────────────────
+  function showAiToast() {
+    showToast('&#129302; AI 功能需要設定 Provider — 請前往 AI 設定區段');
+    // Expand AI settings section
+    if (!state.sections[4]) {
+      openSection(4);
+      var sec = document.getElementById('sec-4');
+      if (sec) setTimeout(function() { sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+    }
+  }
+
+  function showSearchHint() {
+    showToast('&#128269; Search (Ctrl+K) — 搜尋檔案、符號、路徑');
+  }
+
+  // ─── Toast ────────────────────────────────────────────────
+  var toastTimeout = null;
+  function showToast(msg) {
+    var toast = document.getElementById('toast');
+    toast.innerHTML = msg;
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(function() {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(-50%) translateY(8px)';
+    }, 2200);
+  }
+
+  // ─── Init ─────────────────────────────────────────────────
+  (function init() {
+    // Range slider track fill update
+    var slider = document.getElementById('impact-depth');
+    function updateSliderFill() {
+      var pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+      slider.style.background = 'linear-gradient(to right, var(--cyan) ' + pct + '%, var(--bg-overlay) ' + pct + '%)';
+    }
+    slider.addEventListener('input', updateSliderFill);
+    updateSliderFill();
+
+    // Show welcome toast
+    setTimeout(function() {
+      showToast('&#127756; CodeAtlas Sprint 9 — 控制面板 G1 圖稿');
+    }, 500);
+  })();
+</script>
+</body>
+</html>

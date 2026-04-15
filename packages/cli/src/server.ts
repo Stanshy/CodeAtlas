@@ -21,6 +21,7 @@ import {
   buildOverviewPrompt,
   aggregateByDirectory,
   detectEndpoints,
+  detectEndpointsAsync,
   scanDirectory,
   exportWiki,
 } from '@codeatlas/core';
@@ -337,8 +338,13 @@ export async function startServer(options: ServerOptions): Promise<void> {
       // Sprint 12 / T2: compute directory-level graph from filtered nodes/edges
       const directoryGraph = aggregateByDirectory(filteredNodes, filteredEdges);
 
-      // Sprint 13 / T2: detect API endpoints and build request-chain graph
-      const endpointGraph = detectEndpoints(analysis);
+      // Sprint 24 T18: async endpoint detection with AI fallback
+      const aiProvider = createProvider(
+        currentAiProvider,
+        currentAiKey,
+        currentAiProvider === 'ollama' ? { ollamaModel: currentOllamaModel } : undefined,
+      );
+      const endpointGraph = await detectEndpointsAsync(analysis, aiProvider.isConfigured() ? aiProvider : null);
 
       // Sprint 15.1: Merge AI cache into response
       mergeAICache(filteredNodes, directoryGraph, endpointGraph, aiCache);
@@ -358,8 +364,13 @@ export async function startServer(options: ServerOptions): Promise<void> {
       analysis.graph.edges,
     );
 
-    // Sprint 13 / T2: detect API endpoints and build request-chain graph
-    const endpointGraph = detectEndpoints(analysis);
+    // Sprint 24 T18: async endpoint detection with AI fallback
+    const aiProvider2 = createProvider(
+      currentAiProvider,
+      currentAiKey,
+      currentAiProvider === 'ollama' ? { ollamaModel: currentOllamaModel } : undefined,
+    );
+    const endpointGraph = await detectEndpointsAsync(analysis, aiProvider2.isConfigured() ? aiProvider2 : null);
 
     // Sprint 15.1: Merge AI cache into response
     mergeAICache(analysis.graph.nodes, directoryGraph, endpointGraph, aiCache);
@@ -1679,13 +1690,12 @@ Response format: ["keyword1", "keyword2", ...]`;
     const fileNodes = analysis.graph.nodes.filter((n) => n.type === 'file');
     const allEdges = analysis.graph.edges;
     const directoryGraph = aggregateByDirectory(fileNodes, allEdges);
-    const endpointGraph = detectEndpoints(analysis);
-
     const wikiProvider = createProvider(
       currentAiProvider,
       currentAiKey,
       currentAiProvider === 'ollama' ? { ollamaModel: currentOllamaModel } : undefined,
     );
+    const endpointGraph = await detectEndpointsAsync(analysis, wikiProvider.isConfigured() ? wikiProvider : null);
 
     if (!wikiProvider.isConfigured()) {
       return reply.code(400).send({

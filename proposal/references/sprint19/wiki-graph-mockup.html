@@ -1,0 +1,2194 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprint 19 G1 — Wiki 知識圖 Tab UI 圖稿</title>
+  <style>
+    /* ═══════════════════════════════════════════
+       DESIGN TOKENS — White Paper + Obsidian Dark
+       ═══════════════════════════════════════════ */
+    :root {
+      /* Light theme */
+      --bg-paper: #fafafa;
+      --bg-surface: #ffffff;
+      --ink-primary: #1a1a2e;
+      --ink-secondary: #4a4a6a;
+      --ink-muted: #8888aa;
+      --ink-faint: #bbbbcc;
+      --border-default: #d0d0d8;
+      --border-light: #e8e8f0;
+      --shadow-card: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+      --shadow-hover: 0 4px 16px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
+
+      /* Dark theme */
+      --bg-paper-dark: #1e1e2e;
+      --bg-surface-dark: #2a2a3e;
+      --ink-primary-dark: #e0e0f0;
+      --ink-secondary-dark: #a0a0c0;
+      --ink-muted-dark: #6868aa;
+      --border-default-dark: #3a3a5a;
+      --shadow-card-dark: 0 1px 4px rgba(0,0,0,0.3);
+
+      /* SF blue */
+      --sf-blue: #1565c0;
+      --sf-blue-accent: #1976d2;
+      --sf-blue-bg: #e3f2fd;
+
+      /* LO purple */
+      --lo-purple: #7b1fa2;
+      --lo-purple-bg: #f3e5f5;
+
+      /* DJ green */
+      --dj-green: #2e7d32;
+      --dj-green-bg: #e8f5e9;
+
+      /* Wiki amber */
+      --wiki-amber: #f59e0b;
+      --wiki-amber-dark: #d97706;
+      --wiki-amber-bg: #fff8e1;
+      --wiki-amber-rgb: 245, 158, 11;
+
+      /* Status */
+      --error: #c62828;
+      --success: #2e7d32;
+
+      /* Radius */
+      --r4: 4px;
+      --r6: 6px;
+      --r8: 8px;
+      --r10: 10px;
+      --r16: 16px;
+
+      /* Graph node colors */
+      --node-module: #1565c0;
+      --node-file: #7b1fa2;
+      --node-endpoint: #2e7d32;
+      --node-method: #f59e0b;
+
+      /* Graph edge */
+      --edge-light: #9aa8bc;
+      --edge-dark: #4a4a6a;
+    }
+
+    /* ═══════════════════════════════════════════
+       GLOBAL RESET & BASE
+       ═══════════════════════════════════════════ */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      background: #f0f0f4;
+      color: var(--ink-primary);
+      padding: 40px;
+    }
+
+    code, .mono {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+
+    /* ═══════════════════════════════════════════
+       PAGE HEADER
+       ═══════════════════════════════════════════ */
+    .page-header {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--r16);
+      padding: 32px 40px;
+      margin-bottom: 48px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .page-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--ink-primary);
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .page-header p {
+      font-size: 13px;
+      color: var(--ink-muted);
+    }
+
+    .page-header .wiki-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(var(--wiki-amber-rgb), 0.1);
+      border: 1px solid rgba(var(--wiki-amber-rgb), 0.3);
+      color: var(--wiki-amber);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+
+    /* ═══════════════════════════════════════════
+       SCENE STRUCTURE
+       ═══════════════════════════════════════════ */
+    .scene {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--r16);
+      padding: 40px;
+      margin-bottom: 48px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .scene-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 1.5px solid var(--border-light);
+    }
+
+    .scene-number {
+      width: 32px;
+      height: 32px;
+      background: var(--wiki-amber);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .scene-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ink-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .scene-subtitle {
+      font-size: 13px;
+      color: var(--ink-muted);
+      margin-top: 2px;
+    }
+
+    /* Theme pair layout */
+    .theme-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .theme-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .theme-label .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .dot-light { background: #e0e0e0; border: 1.5px solid #999; }
+    .dot-dark  { background: #3a3a5a; }
+
+    /* Annotation tags */
+    .anno {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: var(--wiki-amber-dark);
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 1px 6px;
+      border-radius: 3px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* ═══════════════════════════════════════════
+       SCENE 1A — TABBAR
+       ═══════════════════════════════════════════ */
+    .tabbar-demo {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--r10);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+
+    .tabbar-label {
+      font-size: 10px;
+      color: var(--ink-muted);
+      font-family: 'JetBrains Mono', monospace;
+      padding: 6px 16px;
+      background: #f5f5f7;
+      border-bottom: 1px solid var(--border-light);
+      letter-spacing: 0.05em;
+    }
+
+    .tabbar {
+      display: flex;
+      align-items: flex-end;
+      padding: 0 24px;
+      gap: 4px;
+      height: 48px;
+      background: var(--bg-surface);
+      border-bottom: 1.5px solid var(--border-default);
+    }
+
+    .tab-btn {
+      height: 40px;
+      padding: 0 18px;
+      border: 1.5px solid transparent;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      background: transparent;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+      bottom: -1.5px;
+      white-space: nowrap;
+      transition: color 0.15s;
+    }
+
+    .tab-btn.active {
+      border-color: var(--border-default);
+      border-bottom: none;
+      background: var(--bg-surface);
+      font-weight: 600;
+      color: var(--ink-primary);
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 2.5px;
+      background: var(--bg-surface);
+    }
+
+    .tab-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .tab-dot-blue { background: #1565c0; }
+    .tab-dot-multi {
+      background: conic-gradient(#1565c0 0deg 120deg, #7b1fa2 120deg 240deg, #e65100 240deg 360deg);
+    }
+    .tab-dot-green { background: #2e7d32; }
+    .tab-dot-amber { background: #f59e0b; }
+
+    .tab-count {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-faint);
+      background: #f0f0f0;
+      border: 1px solid var(--border-default);
+      border-radius: 10px;
+      padding: 0 6px;
+      height: 18px;
+      line-height: 18px;
+      display: inline-block;
+    }
+
+    .tab-count.amber {
+      background: rgba(var(--wiki-amber-rgb), 0.1);
+      border-color: rgba(var(--wiki-amber-rgb), 0.3);
+      color: var(--wiki-amber);
+    }
+
+    /* ═══════════════════════════════════════════
+       SCENE 1B — GRAPH CANVAS
+       ═══════════════════════════════════════════ */
+    .graph-canvas-wrapper {
+      position: relative;
+      border-radius: var(--r10);
+      overflow: hidden;
+      border: 1px solid var(--border-default);
+    }
+
+    .graph-canvas {
+      position: relative;
+      height: 440px;
+      overflow: hidden;
+    }
+
+    .graph-canvas.light { background: #fafafa; }
+    .graph-canvas.dark  { background: #1e1e2e; }
+
+    .graph-canvas svg.edges {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
+
+    /* Graph nodes */
+    .gnode {
+      position: absolute;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    /* Module — 16px, blue */
+    .gnode-module {
+      width: 16px; height: 16px;
+      background: var(--node-module);
+      box-shadow: 0 0 8px rgba(21, 101, 192, 0.35);
+    }
+    .dark .gnode-module {
+      box-shadow: 0 0 14px rgba(21, 101, 192, 0.6);
+    }
+
+    /* File — 10px, purple */
+    .gnode-file {
+      width: 10px; height: 10px;
+      background: var(--node-file);
+      box-shadow: 0 0 6px rgba(123, 31, 162, 0.3);
+    }
+    .dark .gnode-file {
+      box-shadow: 0 0 10px rgba(123, 31, 162, 0.55);
+    }
+
+    /* Endpoint — 10px, green */
+    .gnode-endpoint {
+      width: 10px; height: 10px;
+      background: var(--node-endpoint);
+      box-shadow: 0 0 6px rgba(46, 125, 50, 0.3);
+    }
+    .dark .gnode-endpoint {
+      box-shadow: 0 0 10px rgba(46, 125, 50, 0.55);
+    }
+
+    /* Method — 6px, amber */
+    .gnode-method {
+      width: 6px; height: 6px;
+      background: var(--node-method);
+      box-shadow: 0 0 5px rgba(245, 158, 11, 0.35);
+    }
+    .dark .gnode-method {
+      box-shadow: 0 0 9px rgba(245, 158, 11, 0.6);
+    }
+
+    /* Node labels */
+    .gnode-label {
+      position: absolute;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      white-space: nowrap;
+      pointer-events: none;
+      transform: translateY(-50%);
+    }
+
+    .gnode-label.light  { color: #1a1a2e; }
+    .gnode-label.dark   { color: #c0c0e0; }
+
+    .gnode-label.module-label {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Legend */
+    .graph-legend {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 8px 14px;
+      border-radius: var(--r8);
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+    }
+
+    .graph-legend.light {
+      background: rgba(255,255,255,0.88);
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+    .graph-legend.dark {
+      background: rgba(30,30,46,0.88);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .legend-item .legend-dot {
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .legend-label.light { color: #4a4a6a; }
+    .legend-label.dark  { color: #a0a0c0; }
+
+    /* Graph canvas size annotation */
+    .canvas-anno {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      opacity: 0.55;
+    }
+    .canvas-anno.light { color: #8888aa; }
+    .canvas-anno.dark  { color: #6868aa; }
+
+    /* Panel placeholder area */
+    .canvas-panel-area {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 300px;
+      border-left: 1px dashed rgba(100,100,150,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .canvas-panel-area.light { background: rgba(250,250,250,0.5); }
+    .canvas-panel-area.dark  { background: rgba(42,42,62,0.5); }
+    .canvas-panel-area-label {
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      writing-mode: vertical-rl;
+      opacity: 0.35;
+    }
+
+    /* ═══════════════════════════════════════════
+       SCENE 1C — EMPTY STATE
+       ═══════════════════════════════════════════ */
+    .empty-state-canvas {
+      height: 320px;
+      background: #fafafa;
+      border: 1px solid var(--border-default);
+      border-radius: var(--r10);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .empty-state-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--r16);
+      padding: 40px 48px;
+      text-align: center;
+      box-shadow: var(--shadow-card);
+      max-width: 440px;
+    }
+
+    .empty-state-icon {
+      font-size: 40px;
+      margin-bottom: 16px;
+      opacity: 0.85;
+    }
+
+    .empty-state-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ink-primary);
+      margin-bottom: 16px;
+    }
+
+    .empty-state-body {
+      font-size: 13px;
+      color: var(--ink-secondary);
+      line-height: 1.7;
+      margin-bottom: 8px;
+    }
+
+    .empty-cmd {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: #f5f5f8;
+      border: 1px solid var(--border-default);
+      border-radius: var(--r6);
+      padding: 4px 10px;
+      color: #1565c0;
+      margin: 4px 0;
+    }
+
+    .empty-state-hint {
+      font-size: 12px;
+      color: var(--ink-muted);
+      margin-top: 12px;
+    }
+
+    /* ═══════════════════════════════════════════
+       SCENE 2 — MD PREVIEW PANEL
+       ═══════════════════════════════════════════ */
+    .panels-wrapper {
+      display: grid;
+      grid-template-columns: 300px 300px;
+      gap: 24px;
+      justify-content: start;
+    }
+
+    .wiki-panel {
+      width: 300px;
+      border-radius: var(--r10);
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      border: 1px solid var(--border-default);
+      box-shadow: var(--shadow-card);
+    }
+
+    .wiki-panel.light {
+      background: #ffffff;
+      color: var(--ink-primary);
+    }
+
+    .wiki-panel.dark {
+      background: #2a2a3e;
+      color: #e0e0f0;
+      border-color: var(--border-default-dark);
+    }
+
+    /* Panel header */
+    .wp-header {
+      padding: 12px 14px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid;
+    }
+    .wiki-panel.light .wp-header { border-color: #e8e8f0; }
+    .wiki-panel.dark  .wp-header { border-color: #3a3a5a; }
+
+    .wp-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .wp-type-icon {
+      font-size: 16px;
+    }
+
+    .wp-node-name {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .wiki-panel.light .wp-node-name { color: var(--ink-primary); }
+    .wiki-panel.dark  .wp-node-name { color: #e0e0f0; }
+
+    .wp-close {
+      font-size: 14px;
+      opacity: 0.45;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 3px;
+      line-height: 1;
+    }
+
+    .wp-badges {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px 8px;
+      border-bottom: 1px solid;
+    }
+    .wiki-panel.light .wp-badges { border-color: #f0f0f4; }
+    .wiki-panel.dark  .wp-badges { border-color: #3a3a5a; }
+
+    .wp-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+
+    .wp-badge-module {
+      background: rgba(21, 101, 192, 0.1);
+      color: #1565c0;
+    }
+    .wp-badge-ts {
+      background: rgba(100,100,150,0.08);
+      color: #6868aa;
+    }
+    .wiki-panel.dark .wp-badge-module {
+      background: rgba(21, 101, 192, 0.2);
+      color: #64b5f6;
+    }
+    .wiki-panel.dark .wp-badge-ts {
+      background: rgba(255,255,255,0.07);
+      color: #a0a0c0;
+    }
+
+    /* Panel sections */
+    .wp-section {
+      padding: 10px 14px;
+      border-bottom: 1px solid;
+    }
+    .wiki-panel.light .wp-section { border-color: #f0f0f4; }
+    .wiki-panel.dark  .wp-section { border-color: #343450; }
+
+    .wp-section-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 8px;
+      opacity: 0.55;
+    }
+
+    /* YAML block */
+    .wp-yaml {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      line-height: 1.7;
+      padding: 8px 10px;
+      border-radius: var(--r6);
+    }
+    .wiki-panel.light .wp-yaml {
+      background: #f5f5f8;
+      color: #4a4a6a;
+    }
+    .wiki-panel.dark .wp-yaml {
+      background: #1e1e2e;
+      color: #8888aa;
+    }
+
+    .wp-yaml .yaml-key { color: #1565c0; }
+    .wiki-panel.dark .wp-yaml .yaml-key { color: #64b5f6; }
+
+    /* Body text */
+    .wp-body {
+      font-size: 12px;
+      line-height: 1.65;
+    }
+    .wiki-panel.light .wp-body { color: var(--ink-secondary); }
+    .wiki-panel.dark  .wp-body { color: #a0a0c0; }
+
+    /* File list */
+    .wp-filelist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .wp-filelist li {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .wp-filename {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .wiki-panel.light .wp-filename { color: var(--ink-primary); }
+    .wiki-panel.dark  .wp-filename { color: #c0c0e0; }
+
+    .wp-file-desc {
+      font-size: 10px;
+    }
+    .wiki-panel.light .wp-file-desc { color: var(--ink-muted); }
+    .wiki-panel.dark  .wp-file-desc { color: #6868aa; }
+
+    /* Wiki links */
+    .wp-wiki-link {
+      display: inline;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      cursor: pointer;
+    }
+    .wiki-panel.light .wp-wiki-link { color: #1976d2; }
+    .wiki-panel.dark  .wp-wiki-link { color: #64b5f6; }
+
+    /* Cross-perspective buttons */
+    .wp-xpanel-btns {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .wp-xbtn {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: var(--r4);
+      border: 1px solid;
+      background: transparent;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .wp-xbtn-sf { border-color: #1565c0; color: #1565c0; }
+    .wp-xbtn-lo { border-color: #7b1fa2; color: #7b1fa2; }
+    .wp-xbtn-dj { border-color: #2e7d32; color: #2e7d32; }
+    .wiki-panel.dark .wp-xbtn-sf { border-color: #42a5f5; color: #42a5f5; }
+    .wiki-panel.dark .wp-xbtn-lo { border-color: #ba68c8; color: #ba68c8; }
+    .wiki-panel.dark .wp-xbtn-dj { border-color: #66bb6a; color: #66bb6a; }
+
+    /* AI analysis button */
+    .wp-ai-btn {
+      width: 100%;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 7px 12px;
+      border-radius: var(--r6);
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      text-align: center;
+      transition: background 0.15s;
+    }
+
+    .wp-ai-btn.idle {
+      border: 1px solid rgba(var(--wiki-amber-rgb), 0.45);
+      background: rgba(var(--wiki-amber-rgb), 0.06);
+      color: var(--wiki-amber);
+    }
+
+    .wp-ai-analyzed {
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .wiki-panel.light .wp-ai-analyzed { color: var(--ink-muted); }
+    .wiki-panel.dark  .wp-ai-analyzed { color: #6868aa; }
+
+    .wp-ai-reanalyze {
+      font-size: 10px;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+    .wiki-panel.light .wp-ai-reanalyze { color: var(--ink-muted); }
+    .wiki-panel.dark  .wp-ai-reanalyze { color: #6868aa; }
+
+    /* ═══════════════════════════════════════════
+       SCENE 3 — ZOOM LEVELS
+       ═══════════════════════════════════════════ */
+    .zoom-trio {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .zoom-frame {
+      border: 1px solid var(--border-default);
+      border-radius: var(--r10);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+
+    .zoom-label-bar {
+      background: #f5f5f8;
+      border-bottom: 1px solid var(--border-light);
+      padding: 6px 12px;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--ink-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .zoom-badge {
+      background: var(--wiki-amber);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    .zoom-canvas {
+      position: relative;
+      height: 280px;
+      background: #fafafa;
+    }
+
+    .zoom-canvas svg {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
+
+    /* Pulse ring for selected node */
+    .pulse-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 2px solid var(--wiki-amber);
+      transform: translate(-50%, -50%);
+      animation: pulse-anim 1.8s ease-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes pulse-anim {
+      0%   { opacity: 0.9; transform: translate(-50%,-50%) scale(1); }
+      100% { opacity: 0;   transform: translate(-50%,-50%) scale(2.8); }
+    }
+
+    /* Zoom ring indicator */
+    .zoom-expand-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px dashed rgba(245, 158, 11, 0.4);
+      background: rgba(245, 158, 11, 0.04);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    /* Node size spec callout */
+    .size-callout {
+      position: absolute;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      color: #8888aa;
+      white-space: nowrap;
+    }
+
+    /* Level visibility table */
+    .level-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 24px;
+    }
+
+    .level-table th {
+      text-align: left;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--ink-muted);
+      padding: 6px 12px;
+      border-bottom: 1.5px solid var(--border-default);
+    }
+
+    .level-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border-light);
+      vertical-align: middle;
+    }
+
+    .level-table tr:last-child td { border-bottom: none; }
+
+    .level-check { color: #2e7d32; font-size: 14px; }
+    .level-x     { color: #9e9e9e; font-size: 14px; }
+
+    .node-size-demo {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ns-circle {
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .ns-module   { width: 16px; height: 16px; background: #1565c0; box-shadow: 0 0 6px rgba(21,101,192,0.4); }
+    .ns-file     { width: 10px; height: 10px; background: #7b1fa2; box-shadow: 0 0 4px rgba(123,31,162,0.35); }
+    .ns-endpoint { width: 10px; height: 10px; background: #2e7d32; box-shadow: 0 0 4px rgba(46,125,50,0.35); }
+    .ns-method   { width: 6px;  height: 6px;  background: #f59e0b; box-shadow: 0 0 3px rgba(245,158,11,0.4); }
+
+    /* ═══════════════════════════════════════════
+       SCENE 4 — CROSS-PERSPECTIVE BUTTON
+       ═══════════════════════════════════════════ */
+    .panels-trio {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 20px;
+    }
+
+    .detail-panel-mini {
+      border: 1px solid var(--border-default);
+      border-radius: var(--r10);
+      overflow: hidden;
+      background: var(--bg-surface);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      color: var(--ink-primary);
+      box-shadow: var(--shadow-card);
+    }
+
+    .dpm-header {
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dpm-icon {
+      font-size: 14px;
+    }
+
+    .dpm-title {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .dpm-sf .dpm-title { color: #1565c0; }
+    .dpm-lo .dpm-title { color: #7b1fa2; }
+    .dpm-dj .dpm-title { color: #2e7d32; }
+
+    .dpm-placeholder {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .dpm-ph-row {
+      height: 8px;
+      background: #f0f0f4;
+      border-radius: 4px;
+      margin-bottom: 6px;
+    }
+
+    .dpm-ph-row:last-child { margin-bottom: 0; }
+    .dpm-ph-row.short { width: 65%; }
+    .dpm-ph-row.shorter { width: 45%; }
+    .dpm-ph-row.long { width: 90%; }
+
+    /* AI section mini */
+    .dpm-ai-section {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .dpm-ai-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--ink-muted);
+      margin-bottom: 6px;
+    }
+
+    .dpm-ai-result-ph {
+      height: 7px;
+      background: rgba(21, 101, 192, 0.08);
+      border-radius: 3px;
+      margin-bottom: 4px;
+    }
+    .dpm-ai-result-ph.mid { width: 80%; }
+    .dpm-ai-result-ph.short { width: 55%; }
+
+    /* Wiki button */
+    .wiki-cta-btn {
+      margin: 0 14px 14px;
+      padding: 8px 12px;
+      border-radius: var(--r6);
+      border: 1px solid rgba(var(--wiki-amber-rgb), 0.3);
+      background: rgba(var(--wiki-amber-rgb), 0.08);
+      cursor: pointer;
+      transition: background 0.15s;
+      display: block;
+    }
+
+    .wiki-cta-btn:hover {
+      background: rgba(var(--wiki-amber-rgb), 0.15);
+    }
+
+    .wiki-cta-main {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--wiki-amber);
+      display: block;
+    }
+
+    .wiki-cta-sub {
+      font-size: 11px;
+      color: var(--ink-muted);
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* NEW badge */
+    .new-badge {
+      display: inline-block;
+      background: var(--wiki-amber);
+      color: #fff;
+      font-size: 8px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 4px;
+      vertical-align: middle;
+      letter-spacing: 0.05em;
+    }
+
+    /* ═══════════════════════════════════════════
+       SPEC ANNOTATIONS
+       ═══════════════════════════════════════════ */
+    .spec-box {
+      background: rgba(var(--wiki-amber-rgb), 0.05);
+      border: 1px solid rgba(var(--wiki-amber-rgb), 0.2);
+      border-radius: var(--r8);
+      padding: 14px 18px;
+      margin-top: 20px;
+      font-size: 12px;
+    }
+
+    .spec-box-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--wiki-amber-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 8px;
+    }
+
+    .spec-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .spec-list li {
+      font-size: 11px;
+      color: var(--ink-secondary);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .spec-list li::before {
+      content: '▸';
+      color: var(--wiki-amber);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .spec-list code {
+      font-size: 10px;
+      background: rgba(0,0,0,0.05);
+      padding: 0 4px;
+      border-radius: 3px;
+    }
+
+    /* Dividers */
+    .sub-section-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 28px 0 20px;
+    }
+
+    .sub-section-divider::before,
+    .sub-section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-light);
+    }
+
+    .sub-section-divider span {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* Scroll indicator */
+    .scroll-hint {
+      font-size: 11px;
+      color: var(--ink-muted);
+      text-align: center;
+      margin-top: 8px;
+      font-style: italic;
+    }
+
+    /* ═══════════════════════════════════════════
+       ANIMATIONS
+       ═══════════════════════════════════════════ */
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid currentColor;
+      border-top-color: transparent;
+      display: inline-block;
+      animation: spin 0.7s linear infinite;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════
+       PAGE HEADER
+       ═══════════════════════════════════════════════ -->
+  <header class="page-header">
+    <h1>Sprint 19 G1 — Wiki 知識圖 Tab UI 圖稿</h1>
+    <p>Design Director 審核 · 2026-04-08 · CodeAtlas</p>
+    <div class="wiki-badge">📚 Wiki 知識圖 · G1 阻斷審核</div>
+  </header>
+
+
+  <!-- ═══════════════════════════════════════════════
+       SCENE 1 — 四 Tab 切換 + Obsidian 風格力導向圖
+       ═══════════════════════════════════════════════ -->
+  <section id="scene-1" class="scene">
+    <div class="scene-header">
+      <div class="scene-number">1</div>
+      <div>
+        <div class="scene-title">四 Tab 切換 + Obsidian 風格力導向圖</div>
+        <div class="scene-subtitle">TabBar 結構 · 力導向主畫布 · 未產生引導狀態</div>
+      </div>
+    </div>
+
+    <!-- 1A: TabBar -->
+    <div class="sub-section-divider"><span>1A — TabBar（Wiki Tab 為 Active）</span></div>
+    <div class="tabbar-demo">
+      <div class="tabbar-label">position: fixed; top: 48px; height: 48px; z-index: 39</div>
+      <div class="tabbar">
+        <!-- Tab 1: SF -->
+        <button class="tab-btn">
+          <span class="tab-dot tab-dot-blue"></span>
+          系統框架
+          <span class="tab-count">26</span>
+        </button>
+        <!-- Tab 2: LO -->
+        <button class="tab-btn">
+          <span class="tab-dot tab-dot-multi"></span>
+          邏輯運作
+          <span class="tab-count">48</span>
+        </button>
+        <!-- Tab 3: DJ -->
+        <button class="tab-btn">
+          <span class="tab-dot tab-dot-green"></span>
+          資料旅程
+          <span class="tab-count">48</span>
+        </button>
+        <!-- Tab 4: Wiki — ACTIVE -->
+        <button class="tab-btn active">
+          <span class="tab-dot tab-dot-amber"></span>
+          知識圖
+          <span class="tab-count amber">86</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="spec-box">
+      <div class="spec-box-title">TabBar 規格</div>
+      <ul class="spec-list">
+        <li>底部 <code>border-bottom: 1.5px solid #d0d0d8</code>，Active tab 白色底條遮蓋邊線</li>
+        <li>Wiki dot：<code>width: 8px; background: #f59e0b</code>（琥珀色單色，非 conic-gradient）</li>
+        <li>Wiki count badge：<code>background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); color: #f59e0b</code></li>
+        <li>Active tab：<code>font-weight: 600; border: 1.5px solid #d0d0d8; border-bottom: none; background: #fff</code></li>
+      </ul>
+    </div>
+
+    <!-- 1B: Graph Canvas — Light + Dark -->
+    <div class="sub-section-divider"><span>1B — Obsidian 風格力導向圖（亮色 / 暗色）</span></div>
+
+    <div class="theme-pair">
+
+      <!-- LIGHT THEME GRAPH -->
+      <div>
+        <div class="theme-label"><span class="dot dot-light"></span> 亮色主題 White Paper</div>
+        <div class="graph-canvas-wrapper">
+          <div class="graph-canvas light" id="graph-light">
+
+            <!-- SVG edges -->
+            <svg class="edges">
+              <!-- Module → file connections -->
+              <line x1="160" y1="110" x2="90"  y2="175" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <line x1="160" y1="110" x2="195" y2="185" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <line x1="160" y1="110" x2="255" y2="155" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <line x1="300" y1="200" x2="195" y2="185" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <line x1="300" y1="200" x2="340" y2="150" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <line x1="300" y1="200" x2="355" y2="260" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <line x1="420" y1="130" x2="340" y2="150" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <line x1="420" y1="130" x2="460" y2="185" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <!-- File → endpoint -->
+              <line x1="90"  y1="175" x2="75"  y2="260" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <line x1="195" y1="185" x2="165" y2="280" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <line x1="255" y1="155" x2="295" y2="320" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <line x1="355" y1="260" x2="390" y2="340" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <!-- File → method -->
+              <line x1="340" y1="150" x2="310" y2="95"  stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <line x1="460" y1="185" x2="485" y2="130" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <line x1="460" y1="185" x2="500" y2="230" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <line x1="90"  y1="175" x2="50"  y2="120" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+              <!-- Cross module -->
+              <line x1="160" y1="110" x2="300" y2="200" stroke="#9aa8bc" stroke-width="1" opacity="0.25"/>
+              <line x1="300" y1="200" x2="420" y2="130" stroke="#9aa8bc" stroke-width="1" opacity="0.25"/>
+            </svg>
+
+            <!-- MODULE NODES (16px, blue) -->
+            <div class="gnode gnode-module" style="left:160px; top:110px;">
+              <span class="gnode-label light module-label" style="left:20px; top:50%;">auth</span>
+            </div>
+            <div class="gnode gnode-module" style="left:300px; top:200px;">
+              <span class="gnode-label light module-label" style="left:20px; top:50%;">billing</span>
+            </div>
+            <div class="gnode gnode-module" style="left:420px; top:130px;">
+              <span class="gnode-label light module-label" style="left:20px; top:50%;">api</span>
+            </div>
+
+            <!-- FILE NODES (10px, purple) -->
+            <div class="gnode gnode-file" style="left:90px; top:175px;">
+              <span class="gnode-label light" style="left:14px; top:50%;">auth-service.ts</span>
+            </div>
+            <div class="gnode gnode-file" style="left:195px; top:185px;">
+              <span class="gnode-label light" style="left:14px; top:50%;">auth-middleware.ts</span>
+            </div>
+            <div class="gnode gnode-file" style="left:255px; top:155px;">
+              <span class="gnode-label light" style="left:14px; top:50%;">invoice.ts</span>
+            </div>
+            <div class="gnode gnode-file" style="left:340px; top:150px;">
+              <span class="gnode-label light" style="left:14px; top:50%;">router.ts</span>
+            </div>
+            <div class="gnode gnode-file" style="left:355px; top:260px;">
+              <span class="gnode-label light" style="left:14px; top:50%;">payment.ts</span>
+            </div>
+            <div class="gnode gnode-file" style="left:460px; top:185px;">
+              <span class="gnode-label light" style="left:14px; top:50%;">controller.ts</span>
+            </div>
+
+            <!-- ENDPOINT NODES (10px, green) -->
+            <div class="gnode gnode-endpoint" style="left:75px; top:260px;">
+              <span class="gnode-label light" style="left:14px; top:50%;">POST /login</span>
+            </div>
+            <div class="gnode gnode-endpoint" style="left:165px; top:280px;">
+              <span class="gnode-label light" style="left:14px; top:50%;">GET /me</span>
+            </div>
+            <div class="gnode gnode-endpoint" style="left:295px; top:320px;">
+              <span class="gnode-label light" style="left:14px; top:50%;">POST /charge</span>
+            </div>
+            <div class="gnode gnode-endpoint" style="left:390px; top:340px;">
+              <span class="gnode-label light" style="left:14px; top:50%;">GET /invoice</span>
+            </div>
+
+            <!-- METHOD NODES (6px, amber) -->
+            <div class="gnode gnode-method" style="left:310px; top:95px;">
+              <span class="gnode-label light" style="left:10px; top:50%;">verifyJwt()</span>
+            </div>
+            <div class="gnode gnode-method" style="left:485px; top:130px;">
+              <span class="gnode-label light" style="left:10px; top:50%;">handleReq()</span>
+            </div>
+            <div class="gnode gnode-method" style="left:500px; top:230px;">
+              <span class="gnode-label light" style="left:10px; top:50%;">parseBody()</span>
+            </div>
+            <div class="gnode gnode-method" style="left:50px; top:120px;">
+              <span class="gnode-label light" style="left:10px; top:50%;">hashPwd()</span>
+            </div>
+
+            <!-- Legend -->
+            <div class="graph-legend light">
+              <div class="legend-item">
+                <div class="legend-dot ns-circle ns-module"></div>
+                <span class="legend-label light">模組 (16px)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot ns-circle ns-file"></div>
+                <span class="legend-label light">檔案 (10px)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot ns-circle ns-endpoint"></div>
+                <span class="legend-label light">端點 (10px)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot ns-circle ns-method"></div>
+                <span class="legend-label light">方法 (6px)</span>
+              </div>
+            </div>
+
+            <!-- Panel area -->
+            <div class="canvas-panel-area light">
+              <span class="canvas-panel-area-label" style="color:#9aa8bc">300px 面板區域</span>
+            </div>
+
+            <!-- Annotations -->
+            <div class="canvas-anno light">bg: #fafafa · top: 96px (Toolbar 48px + TabBar 48px)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DARK THEME GRAPH -->
+      <div>
+        <div class="theme-label"><span class="dot dot-dark"></span> 暗色主題 Obsidian Dark</div>
+        <div class="graph-canvas-wrapper">
+          <div class="graph-canvas dark" id="graph-dark">
+
+            <!-- SVG edges dark -->
+            <svg class="edges">
+              <line x1="160" y1="110" x2="90"  y2="175" stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="160" y1="110" x2="195" y2="185" stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="160" y1="110" x2="255" y2="155" stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="300" y1="200" x2="195" y2="185" stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="300" y1="200" x2="340" y2="150" stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="300" y1="200" x2="355" y2="260" stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="420" y1="130" x2="340" y2="150" stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="420" y1="130" x2="460" y2="185" stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="90"  y1="175" x2="75"  y2="260" stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="195" y1="185" x2="165" y2="280" stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="255" y1="155" x2="295" y2="320" stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="355" y1="260" x2="390" y2="340" stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="340" y1="150" x2="310" y2="95"  stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="460" y1="185" x2="485" y2="130" stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="460" y1="185" x2="500" y2="230" stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="90"  y1="175" x2="50"  y2="120" stroke="#4a4a6a" stroke-width="1" opacity="0.45"/>
+              <line x1="160" y1="110" x2="300" y2="200" stroke="#4a4a6a" stroke-width="1" opacity="0.25"/>
+              <line x1="300" y1="200" x2="420" y2="130" stroke="#4a4a6a" stroke-width="1" opacity="0.25"/>
+            </svg>
+
+            <!-- MODULE NODES dark -->
+            <div class="gnode gnode-module dark" style="left:160px; top:110px;">
+              <span class="gnode-label dark module-label" style="left:20px; top:50%;">auth</span>
+            </div>
+            <div class="gnode gnode-module dark" style="left:300px; top:200px;">
+              <span class="gnode-label dark module-label" style="left:20px; top:50%;">billing</span>
+            </div>
+            <div class="gnode gnode-module dark" style="left:420px; top:130px;">
+              <span class="gnode-label dark module-label" style="left:20px; top:50%;">api</span>
+            </div>
+
+            <!-- FILE NODES dark -->
+            <div class="gnode gnode-file dark" style="left:90px; top:175px;">
+              <span class="gnode-label dark" style="left:14px; top:50%;">auth-service.ts</span>
+            </div>
+            <div class="gnode gnode-file dark" style="left:195px; top:185px;">
+              <span class="gnode-label dark" style="left:14px; top:50%;">auth-middleware.ts</span>
+            </div>
+            <div class="gnode gnode-file dark" style="left:255px; top:155px;">
+              <span class="gnode-label dark" style="left:14px; top:50%;">invoice.ts</span>
+            </div>
+            <div class="gnode gnode-file dark" style="left:340px; top:150px;">
+              <span class="gnode-label dark" style="left:14px; top:50%;">router.ts</span>
+            </div>
+            <div class="gnode gnode-file dark" style="left:355px; top:260px;">
+              <span class="gnode-label dark" style="left:14px; top:50%;">payment.ts</span>
+            </div>
+            <div class="gnode gnode-file dark" style="left:460px; top:185px;">
+              <span class="gnode-label dark" style="left:14px; top:50%;">controller.ts</span>
+            </div>
+
+            <!-- ENDPOINT NODES dark -->
+            <div class="gnode gnode-endpoint dark" style="left:75px; top:260px;">
+              <span class="gnode-label dark" style="left:14px; top:50%;">POST /login</span>
+            </div>
+            <div class="gnode gnode-endpoint dark" style="left:165px; top:280px;">
+              <span class="gnode-label dark" style="left:14px; top:50%;">GET /me</span>
+            </div>
+            <div class="gnode gnode-endpoint dark" style="left:295px; top:320px;">
+              <span class="gnode-label dark" style="left:14px; top:50%;">POST /charge</span>
+            </div>
+            <div class="gnode gnode-endpoint dark" style="left:390px; top:340px;">
+              <span class="gnode-label dark" style="left:14px; top:50%;">GET /invoice</span>
+            </div>
+
+            <!-- METHOD NODES dark -->
+            <div class="gnode gnode-method dark" style="left:310px; top:95px;">
+              <span class="gnode-label dark" style="left:10px; top:50%;">verifyJwt()</span>
+            </div>
+            <div class="gnode gnode-method dark" style="left:485px; top:130px;">
+              <span class="gnode-label dark" style="left:10px; top:50%;">handleReq()</span>
+            </div>
+            <div class="gnode gnode-method dark" style="left:500px; top:230px;">
+              <span class="gnode-label dark" style="left:10px; top:50%;">parseBody()</span>
+            </div>
+            <div class="gnode gnode-method dark" style="left:50px; top:120px;">
+              <span class="gnode-label dark" style="left:10px; top:50%;">hashPwd()</span>
+            </div>
+
+            <!-- Legend dark -->
+            <div class="graph-legend dark">
+              <div class="legend-item">
+                <div class="legend-dot ns-circle ns-module"></div>
+                <span class="legend-label dark">模組 (16px)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot ns-circle ns-file"></div>
+                <span class="legend-label dark">檔案 (10px)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot ns-circle ns-endpoint"></div>
+                <span class="legend-label dark">端點 (10px)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot ns-circle ns-method"></div>
+                <span class="legend-label dark">方法 (6px)</span>
+              </div>
+            </div>
+
+            <!-- Panel area dark -->
+            <div class="canvas-panel-area dark">
+              <span class="canvas-panel-area-label" style="color:#4a4a6a">300px 面板區域</span>
+            </div>
+
+            <div class="canvas-anno dark">bg: #1e1e2e · edge: #4a4a6a opacity 0.4</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Node glow spec -->
+    <div class="spec-box" style="margin-top:20px;">
+      <div class="spec-box-title">節點渲染規格</div>
+      <ul class="spec-list">
+        <li>節點為<strong>實心圓點</strong>（不是卡片），使用 <code>border-radius: 50%</code></li>
+        <li>連線：<code>stroke="#9aa8bc" opacity="0.4"</code>（亮色）/ <code>stroke="#4a4a6a" opacity="0.4"</code>（暗色）</li>
+        <li>標籤：每個節點旁<strong>常駐顯示</strong>（Inter 11px，module 用 13px 600weight）</li>
+        <li>亮色 glow：<code>box-shadow: 0 0 8px rgba(color, 0.3)</code>；暗色 glow：<code>box-shadow: 0 0 12px rgba(color, 0.5)</code></li>
+        <li>Hover：圓點放大 1.3x + glow 增強；點擊後顯示脈衝動畫環（pulse ring）</li>
+        <li>畫布起點：<code>top: 96px</code>（Toolbar 48px + TabBar 48px）；右側預留 300px 面板</li>
+      </ul>
+    </div>
+
+    <!-- 1C: Empty State -->
+    <div class="sub-section-divider"><span>1C — Wiki 未產生引導狀態</span></div>
+
+    <div class="empty-state-canvas">
+      <div class="empty-state-card">
+        <div class="empty-state-icon">📚</div>
+        <div class="empty-state-title">尚未產生知識文件</div>
+        <div class="empty-state-body">請先在終端機執行：</div>
+        <div style="margin: 10px 0;">
+          <div class="empty-cmd">$ codeatlas wiki</div>
+        </div>
+        <div class="empty-state-hint">加入 --ai 可產生深度分析：</div>
+        <div style="margin: 8px 0 0;">
+          <div class="empty-cmd">$ codeatlas wiki --ai</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spec-box" style="margin-top:16px;">
+      <div class="spec-box-title">空狀態規格</div>
+      <ul class="spec-list">
+        <li>置中顯示白色圓角卡片，背景 <code>#fafafa</code>，<code>borderRadius: 16px</code>，<code>padding: 40px 48px</code></li>
+        <li>指令使用 <code>JetBrains Mono</code>，灰底圓角框</li>
+        <li>同樣支援暗色主題（深色背景 <code>#1e1e2e</code>，指令框 <code>#2a2a3e</code>）</li>
+      </ul>
+    </div>
+
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       SCENE 2 — 點擊節點 → MD 預覽面板
+       ═══════════════════════════════════════════════ -->
+  <section id="scene-2" class="scene">
+    <div class="scene-header">
+      <div class="scene-number">2</div>
+      <div>
+        <div class="scene-title">點擊節點 → MD 預覽面板（WikiPreviewPanel）</div>
+        <div class="scene-subtitle">300px 右側面板 · Markdown 渲染 · wiki-link · 三視角跳轉 · AI 分析</div>
+      </div>
+    </div>
+
+    <div class="panels-wrapper">
+
+      <!-- LIGHT PANEL -->
+      <div>
+        <div class="theme-label"><span class="dot dot-light"></span> 亮色主題</div>
+        <div class="wiki-panel light">
+
+          <!-- Header -->
+          <div class="wp-header">
+            <div class="wp-header-left">
+              <span class="wp-type-icon">📦</span>
+              <span class="wp-node-name">auth</span>
+            </div>
+            <span class="wp-close">✕</span>
+          </div>
+
+          <!-- Badges -->
+          <div class="wp-badges">
+            <span class="wp-badge wp-badge-module">模組</span>
+            <span class="wp-badge wp-badge-ts">TypeScript</span>
+          </div>
+
+          <!-- YAML Frontmatter -->
+          <div class="wp-section">
+            <div class="wp-section-title">YAML Frontmatter</div>
+            <div class="wp-yaml">
+              <span class="yaml-key">id</span>: module:src/auth<br>
+              <span class="yaml-key">type</span>: module<br>
+              <span class="yaml-key">path</span>: src/auth
+            </div>
+          </div>
+
+          <!-- 職責摘要 -->
+          <div class="wp-section">
+            <div class="wp-section-title">職責摘要</div>
+            <div class="wp-body">
+              負責使用者身份驗證與授權，包含 JWT 簽發與驗證、角色權限檢查。
+            </div>
+          </div>
+
+          <!-- 核心檔案 -->
+          <div class="wp-section">
+            <div class="wp-section-title">核心檔案</div>
+            <ul class="wp-filelist">
+              <li>
+                <span class="wp-filename">auth-service.ts</span>
+                <span class="wp-file-desc">JWT 簽發與驗證服務</span>
+              </li>
+              <li>
+                <span class="wp-filename">auth-middleware.ts</span>
+                <span class="wp-file-desc">請求驗證中間件</span>
+              </li>
+              <li>
+                <span class="wp-filename">auth-guard.ts</span>
+                <span class="wp-file-desc">角色權限守衛</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- 依賴關係 -->
+          <div class="wp-section">
+            <div class="wp-section-title">依賴關係</div>
+            <div class="wp-body" style="line-height:1.8;">
+              <a class="wp-wiki-link">[[billing|計費模組]]</a><br>
+              <a class="wp-wiki-link">[[user-service|使用者服務]]</a>
+            </div>
+          </div>
+
+          <!-- 三視角跳轉 -->
+          <div class="wp-section">
+            <div class="wp-section-title">三視角跳轉</div>
+            <div class="wp-xpanel-btns">
+              <button class="wp-xbtn wp-xbtn-sf">SF 系統框架 →</button>
+              <button class="wp-xbtn wp-xbtn-lo">LO 邏輯運作 →</button>
+              <button class="wp-xbtn wp-xbtn-dj">DJ 資料旅程 →</button>
+            </div>
+          </div>
+
+          <!-- AI 分析 — 未分析狀態 -->
+          <div class="wp-section" style="border-bottom: none;">
+            <div class="wp-section-title">AI 分析</div>
+            <button class="wp-ai-btn idle">✨ AI 深度分析</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- DARK PANEL -->
+      <div>
+        <div class="theme-label"><span class="dot dot-dark"></span> 暗色主題</div>
+        <div class="wiki-panel dark">
+
+          <!-- Header -->
+          <div class="wp-header">
+            <div class="wp-header-left">
+              <span class="wp-type-icon">📦</span>
+              <span class="wp-node-name">auth</span>
+            </div>
+            <span class="wp-close" style="color:#e0e0f0;">✕</span>
+          </div>
+
+          <!-- Badges -->
+          <div class="wp-badges">
+            <span class="wp-badge wp-badge-module">模組</span>
+            <span class="wp-badge wp-badge-ts">TypeScript</span>
+          </div>
+
+          <!-- YAML Frontmatter -->
+          <div class="wp-section">
+            <div class="wp-section-title" style="color:#6868aa;">YAML Frontmatter</div>
+            <div class="wp-yaml">
+              <span class="yaml-key">id</span>: module:src/auth<br>
+              <span class="yaml-key">type</span>: module<br>
+              <span class="yaml-key">path</span>: src/auth
+            </div>
+          </div>
+
+          <!-- 職責摘要 -->
+          <div class="wp-section">
+            <div class="wp-section-title" style="color:#6868aa;">職責摘要</div>
+            <div class="wp-body">
+              負責使用者身份驗證與授權，包含 JWT 簽發與驗證、角色權限檢查。
+            </div>
+          </div>
+
+          <!-- 核心檔案 -->
+          <div class="wp-section">
+            <div class="wp-section-title" style="color:#6868aa;">核心檔案</div>
+            <ul class="wp-filelist">
+              <li>
+                <span class="wp-filename">auth-service.ts</span>
+                <span class="wp-file-desc">JWT 簽發與驗證服務</span>
+              </li>
+              <li>
+                <span class="wp-filename">auth-middleware.ts</span>
+                <span class="wp-file-desc">請求驗證中間件</span>
+              </li>
+              <li>
+                <span class="wp-filename">auth-guard.ts</span>
+                <span class="wp-file-desc">角色權限守衛</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- 依賴關係 -->
+          <div class="wp-section">
+            <div class="wp-section-title" style="color:#6868aa;">依賴關係</div>
+            <div class="wp-body" style="line-height:1.8;">
+              <a class="wp-wiki-link">[[billing|計費模組]]</a><br>
+              <a class="wp-wiki-link">[[user-service|使用者服務]]</a>
+            </div>
+          </div>
+
+          <!-- 三視角跳轉 -->
+          <div class="wp-section">
+            <div class="wp-section-title" style="color:#6868aa;">三視角跳轉</div>
+            <div class="wp-xpanel-btns">
+              <button class="wp-xbtn wp-xbtn-sf" style="border-color:#42a5f5;color:#42a5f5;">SF 系統框架 →</button>
+              <button class="wp-xbtn wp-xbtn-lo" style="border-color:#ba68c8;color:#ba68c8;">LO 邏輯運作 →</button>
+              <button class="wp-xbtn wp-xbtn-dj" style="border-color:#66bb6a;color:#66bb6a;">DJ 資料旅程 →</button>
+            </div>
+          </div>
+
+          <!-- AI 分析 — 已分析狀態 -->
+          <div class="wp-section" style="border-bottom: none;">
+            <div class="wp-section-title" style="color:#6868aa;">AI 分析</div>
+            <div class="wp-ai-analyzed">
+              <span>✨ claude · 1 分鐘前</span>
+              <span class="wp-ai-reanalyze">🔄 重新分析</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Spec notes -->
+    <div class="spec-box" style="margin-top:24px;">
+      <div class="spec-box-title">WikiPreviewPanel 規格</div>
+      <ul class="spec-list">
+        <li><strong>寬度</strong>：300px，與現有 SF/LO/DJ 面板一致</li>
+        <li><strong>wiki-link 格式</strong>：<code>[[target|顯示名]]</code>，藍色帶底線，亮色 <code>#1976d2</code>／暗色 <code>#64b5f6</code></li>
+        <li><strong>YAML 區塊</strong>：灰底 <code>#f5f5f8</code>（亮）/ <code>#1e1e2e</code>（暗），<code>JetBrains Mono 10px</code></li>
+        <li><strong>正文</strong>：Inter 12px，行高 1.65；h3 標題 13px 600weight，上方 12px 間距</li>
+        <li><strong>三視角按鈕</strong>：<code>border: 1px solid</code> 對應色，<code>bg: transparent</code>，<code>padding: 4px 10px</code>，<code>fontSize: 11px</code>，<code>borderRadius: 4px</code></li>
+        <li><strong>AI 按鈕 — 未分析</strong>：琥珀色邊框 <code>rgba(245,158,11,0.45)</code>，淡底 <code>rgba(245,158,11,0.06)</code></li>
+        <li><strong>AI 按鈕 — 已分析</strong>：不顯示按鈕，改顯示 <code>✨ provider · 時間 · 🔄 重新分析</code></li>
+        <li><strong>AI 按鈕 — 分析中</strong>：spinner + <code>分析中...</code>，<code>cursor: not-allowed</code></li>
+      </ul>
+    </div>
+
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       SCENE 3 — Level 1/2/3 圓點大小 + Zoom 展開
+       ═══════════════════════════════════════════════ -->
+  <section id="scene-3" class="scene">
+    <div class="scene-header">
+      <div class="scene-number">3</div>
+      <div>
+        <div class="scene-title">Level 1/2/3 圓點大小 + Zoom 展開機制</div>
+        <div class="scene-subtitle">預設 zoom（L1+L2）· zoom in（L1+L2+L3）· zoom out（僅 L1）</div>
+      </div>
+    </div>
+
+    <!-- Level table -->
+    <table class="level-table">
+      <thead>
+        <tr>
+          <th>Level</th>
+          <th>類型</th>
+          <th>圓點直徑</th>
+          <th>預設顯示</th>
+          <th>標籤</th>
+          <th>節點顏色</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>L1</strong></td>
+          <td>module（模組）</td>
+          <td>
+            <div class="node-size-demo">
+              <div class="ns-circle ns-module"></div>
+              <span>16px</span>
+            </div>
+          </td>
+          <td><span class="level-check">✓</span> 始終顯示</td>
+          <td>常駐（Inter 13px 600）</td>
+          <td><code style="color:#1565c0;">#1565c0</code> 藍</td>
+        </tr>
+        <tr>
+          <td><strong>L2</strong></td>
+          <td>file + endpoint</td>
+          <td>
+            <div class="node-size-demo">
+              <div class="ns-circle ns-file"></div>
+              <div class="ns-circle ns-endpoint"></div>
+              <span>10px</span>
+            </div>
+          </td>
+          <td><span class="level-check">✓</span> 預設顯示</td>
+          <td>常駐（Inter 11px 400）</td>
+          <td><code style="color:#7b1fa2;">#7b1fa2</code> 紫 / <code style="color:#2e7d32;">#2e7d32</code> 綠</td>
+        </tr>
+        <tr>
+          <td><strong>L3</strong></td>
+          <td>method（方法）</td>
+          <td>
+            <div class="node-size-demo">
+              <div class="ns-circle ns-method"></div>
+              <span>6px</span>
+            </div>
+          </td>
+          <td><span class="level-x">✗</span> zoom in 展開</td>
+          <td>hover 才顯示</td>
+          <td><code style="color:#f59e0b;">#f59e0b</code> 琥珀</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Three zoom views -->
+    <div class="zoom-trio">
+
+      <!-- Zoom: Default (L1 + L2) -->
+      <div class="zoom-frame">
+        <div class="zoom-label-bar">
+          <span>圖1：預設 zoom</span>
+          <span class="zoom-badge">L1 + L2</span>
+        </div>
+        <div class="zoom-canvas" id="zoom-default">
+          <svg>
+            <!-- edges L1-L2 -->
+            <line x1="120" y1="80"  x2="70"  y2="150" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <line x1="120" y1="80"  x2="160" y2="160" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <line x1="120" y1="80"  x2="200" y2="100" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <line x1="230" y1="170" x2="160" y2="160" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <line x1="230" y1="170" x2="260" y2="100" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <line x1="230" y1="170" x2="280" y2="220" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <!-- endpoint edges -->
+            <line x1="70"  y1="150" x2="60"  y2="230" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <line x1="160" y1="160" x2="145" y2="240" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <!-- cross-module -->
+            <line x1="120" y1="80"  x2="230" y2="170" stroke="#9aa8bc" stroke-width="1" opacity="0.2"/>
+          </svg>
+
+          <!-- L1 modules -->
+          <div class="gnode gnode-module" style="left:120px;top:80px;">
+            <span class="gnode-label light module-label" style="left:20px;top:50%;">auth</span>
+          </div>
+          <div class="gnode gnode-module" style="left:230px;top:170px;">
+            <span class="gnode-label light module-label" style="left:20px;top:50%;">billing</span>
+          </div>
+
+          <!-- L2 files -->
+          <div class="gnode gnode-file" style="left:70px;top:150px;">
+            <span class="gnode-label light" style="left:13px;top:50%;">auth-svc.ts</span>
+          </div>
+          <div class="gnode gnode-file" style="left:160px;top:160px;">
+            <span class="gnode-label light" style="left:13px;top:50%;">middleware.ts</span>
+          </div>
+          <div class="gnode gnode-file" style="left:200px;top:100px;">
+            <span class="gnode-label light" style="left:13px;top:50%;">invoice.ts</span>
+          </div>
+          <div class="gnode gnode-file" style="left:260px;top:100px;">
+            <span class="gnode-label light" style="left:13px;top:50%;">router.ts</span>
+          </div>
+          <div class="gnode gnode-file" style="left:280px;top:220px;">
+            <span class="gnode-label light" style="left:13px;top:50%;">payment.ts</span>
+          </div>
+
+          <!-- L2 endpoints -->
+          <div class="gnode gnode-endpoint" style="left:60px;top:230px;">
+            <span class="gnode-label light" style="left:13px;top:50%;">POST /login</span>
+          </div>
+          <div class="gnode gnode-endpoint" style="left:145px;top:240px;">
+            <span class="gnode-label light" style="left:13px;top:50%;">GET /me</span>
+          </div>
+
+          <!-- Size callout L1 -->
+          <div class="size-callout" style="left:130px;top:66px;">← 16px module</div>
+          <!-- Size callout L2 -->
+          <div class="size-callout" style="left:8px;top:148px;">10px →</div>
+        </div>
+      </div>
+
+      <!-- Zoom: In (L1 + L2 + L3) -->
+      <div class="zoom-frame">
+        <div class="zoom-label-bar">
+          <span>圖2：zoom in</span>
+          <span class="zoom-badge">L1 + L2 + L3</span>
+        </div>
+        <div class="zoom-canvas" id="zoom-in">
+          <svg>
+            <!-- edges -->
+            <line x1="110" y1="90"  x2="65"  y2="160" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <line x1="110" y1="90"  x2="155" y2="155" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <line x1="110" y1="90"  x2="185" y2="105" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <line x1="220" y1="165" x2="155" y2="155" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <line x1="220" y1="165" x2="250" y2="105" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <line x1="220" y1="165" x2="268" y2="215" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <!-- file → method edges -->
+            <line x1="185" y1="105" x2="175" y2="52"  stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <line x1="250" y1="105" x2="295" y2="58"  stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <line x1="65"  y1="160" x2="35"  y2="105" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <!-- endpoint edges -->
+            <line x1="65"  y1="160" x2="55"  y2="235" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+            <line x1="155" y1="155" x2="140" y2="240" stroke="#9aa8bc" stroke-width="1" opacity="0.4"/>
+          </svg>
+
+          <!-- Zoom expand ring around a cluster -->
+          <div class="zoom-expand-ring" style="left:230px;top:145px;width:100px;height:100px;"></div>
+
+          <!-- L1 modules -->
+          <div class="gnode gnode-module" style="left:110px;top:90px;">
+            <span class="gnode-label light module-label" style="left:20px;top:50%;">auth</span>
+          </div>
+          <div class="gnode gnode-module" style="left:220px;top:165px;">
+            <span class="gnode-label light module-label" style="left:20px;top:50%;">billing</span>
+          </div>
+
+          <!-- L2 files -->
+          <div class="gnode gnode-file" style="left:65px;top:160px;">
+            <span class="gnode-label light" style="left:13px;top:50%;">auth-svc.ts</span>
+          </div>
+          <div class="gnode gnode-file" style="left:155px;top:155px;">
+            <span class="gnode-label light" style="left:13px;top:50%;">middleware.ts</span>
+          </div>
+          <div class="gnode gnode-file" style="left:185px;top:105px;">
+            <span class="gnode-label light" style="left:13px;top:50%;">invoice.ts</span>
+          </div>
+          <div class="gnode gnode-file" style="left:250px;top:105px;">
+            <span class="gnode-label light" style="left:13px;top:50%;">router.ts</span>
+          </div>
+          <div class="gnode gnode-file" style="left:268px;top:215px;">
+            <span class="gnode-label light" style="left:13px;top:50%;">payment.ts</span>
+          </div>
+
+          <!-- L2 endpoints -->
+          <div class="gnode gnode-endpoint" style="left:55px;top:235px;">
+            <span class="gnode-label light" style="left:13px;top:50%;">POST /login</span>
+          </div>
+          <div class="gnode gnode-endpoint" style="left:140px;top:240px;">
+            <span class="gnode-label light" style="left:13px;top:50%;">GET /me</span>
+          </div>
+
+          <!-- L3 methods (NEW — zoom展開) -->
+          <div class="gnode gnode-method" style="left:175px;top:52px;">
+            <span class="gnode-label light" style="left:9px;top:50%;font-size:9px;">verifyJwt()</span>
+          </div>
+          <div class="gnode gnode-method" style="left:295px;top:58px;">
+            <span class="gnode-label light" style="left:9px;top:50%;font-size:9px;">calcFee()</span>
+          </div>
+          <div class="gnode gnode-method" style="left:35px;top:105px;">
+            <span class="gnode-label light" style="left:9px;top:50%;font-size:9px;">hashPwd()</span>
+          </div>
+
+          <!-- Pulse ring on selected -->
+          <div class="pulse-ring" style="left:250px;top:105px;width:22px;height:22px;"></div>
+
+          <!-- Size callouts -->
+          <div class="size-callout" style="left:118px;top:74px;">← 16px</div>
+          <div class="size-callout" style="left:8px;top:157px;">10px →</div>
+          <div class="size-callout" style="left:165px;top:38px;">← 6px method</div>
+          <div class="size-callout" style="left:193px;top:128px;color:#f59e0b;">zoom 展開圈</div>
+        </div>
+      </div>
+
+      <!-- Zoom: Out (L1 only) -->
+      <div class="zoom-frame">
+        <div class="zoom-label-bar">
+          <span>圖3：zoom out</span>
+          <span class="zoom-badge">僅 L1</span>
+        </div>
+        <div class="zoom-canvas" id="zoom-out">
+          <svg>
+            <!-- Cross-module connections only -->
+            <line x1="100" y1="120" x2="200" y2="160" stroke="#9aa8bc" stroke-width="1.5" opacity="0.35"/>
+            <line x1="200" y1="160" x2="280" y2="100" stroke="#9aa8bc" stroke-width="1.5" opacity="0.35"/>
+            <line x1="100" y1="120" x2="280" y2="100" stroke="#9aa8bc" stroke-width="1.5" opacity="0.2"/>
+          </svg>
+
+          <!-- L1 only modules — larger visual weight -->
+          <div class="gnode gnode-module" style="left:100px;top:120px;">
+            <span class="gnode-label light module-label" style="left:22px;top:50%;">auth</span>
+          </div>
+          <div class="gnode gnode-module" style="left:200px;top:160px;">
+            <span class="gnode-label light module-label" style="left:22px;top:50%;">billing</span>
+          </div>
+          <div class="gnode gnode-module" style="left:280px;top:100px;">
+            <span class="gnode-label light module-label" style="left:22px;top:50%;">api</span>
+          </div>
+
+          <!-- Annotation — hidden nodes -->
+          <div class="size-callout" style="left:12px;top:240px;color:#9aa8bc;font-size:9px;">L2 file/endpoint: 隱藏</div>
+          <div class="size-callout" style="left:12px;top:255px;color:#9aa8bc;font-size:9px;">L3 method: 隱藏</div>
+          <div class="size-callout" style="left:108px;top:104px;">← 16px module</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="spec-box" style="margin-top:20px;">
+      <div class="spec-box-title">Zoom 機制規格</div>
+      <ul class="spec-list">
+        <li><strong>zoom out（&lt; 0.4）</strong>：只顯示 L1 module 節點（16px），L2/L3 隱藏</li>
+        <li><strong>預設 zoom（0.4–1.2）</strong>：顯示 L1 module + L2 file/endpoint；L3 method 隱藏</li>
+        <li><strong>zoom in（&gt; 1.2）</strong>：全部顯示，L3 method（6px）出現在對應 file 附近；method 標籤 hover 才顯示</li>
+        <li><strong>Zoom 展開圈</strong>：虛線圓環標示展開區域，<code>border: 1.5px dashed rgba(245,158,11,0.4)</code></li>
+        <li><strong>Pulse ring</strong>：點擊選中的節點顯示脈衝動畫，<code>border: 2px solid #f59e0b</code>，fade-out scale 動畫</li>
+        <li><strong>Hover 效果</strong>：圓點 <code>transform: scale(1.3)</code>，glow 增強到 <code>0 0 16px rgba(color, 0.6)</code></li>
+      </ul>
+    </div>
+
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       SCENE 4 — 三視角「查看知識文件」按鈕
+       ═══════════════════════════════════════════════ -->
+  <section id="scene-4" class="scene">
+    <div class="scene-header">
+      <div class="scene-number">4</div>
+      <div>
+        <div class="scene-title">三視角右面板「📚 查看知識文件」按鈕</div>
+        <div class="scene-subtitle">SF / LO / DJ 三視角面板底部統一新增琥珀色 CTA 按鈕</div>
+      </div>
+    </div>
+
+    <div class="panels-trio">
+
+      <!-- SF Panel -->
+      <div>
+        <div class="theme-label" style="color:#1565c0;font-weight:700;font-size:12px;margin-bottom:10px;">
+          SF 系統框架 面板
+        </div>
+        <div class="detail-panel-mini dpm-sf">
+          <div class="dpm-header">
+            <span class="dpm-icon">📂</span>
+            <span class="dpm-title">src/auth</span>
+          </div>
+
+          <!-- Stats placeholder -->
+          <div class="dpm-placeholder">
+            <div style="font-size:11px;color:#1565c0;font-weight:600;margin-bottom:8px;">統計</div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
+              <span style="color:#616161;">檔案</span><span style="font-family:monospace;font-weight:600;">8</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
+              <span style="color:#616161;">函式</span><span style="font-family:monospace;font-weight:600;">24</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;">
+              <span style="color:#616161;">行數</span><span style="font-family:monospace;font-weight:600;">~1360</span>
+            </div>
+          </div>
+
+          <!-- File list placeholder -->
+          <div class="dpm-placeholder">
+            <div style="font-size:10px;font-weight:600;color:#757575;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">檔案列表</div>
+            <div class="dpm-ph-row"></div>
+            <div class="dpm-ph-row short"></div>
+            <div class="dpm-ph-row long"></div>
+            <div class="dpm-ph-row shorter"></div>
+          </div>
+
+          <!-- Dependencies placeholder -->
+          <div class="dpm-placeholder">
+            <div style="font-size:10px;font-weight:600;color:#757575;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">依賴關係</div>
+            <div class="dpm-ph-row short"></div>
+            <div class="dpm-ph-row shorter"></div>
+          </div>
+
+          <!-- AI section -->
+          <div class="dpm-ai-section">
+            <div class="dpm-ai-label">AI 分析</div>
+            <div class="dpm-ai-result-ph"></div>
+            <div class="dpm-ai-result-ph mid"></div>
+            <div class="dpm-ai-result-ph short"></div>
+          </div>
+
+          <!-- NEW: Wiki CTA button -->
+          <a class="wiki-cta-btn">
+            <span class="wiki-cta-main">📚 查看知識文件 <span class="new-badge">NEW</span></span>
+            <span class="wiki-cta-sub">在知識圖中查看完整文件</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- LO Panel -->
+      <div>
+        <div class="theme-label" style="color:#7b1fa2;font-weight:700;font-size:12px;margin-bottom:10px;">
+          LO 邏輯運作 面板
+        </div>
+        <div class="detail-panel-mini dpm-lo">
+          <div class="dpm-header">
+            <span class="dpm-icon">⚙️</span>
+            <span class="dpm-title">AuthService</span>
+          </div>
+
+          <!-- Category placeholder -->
+          <div class="dpm-placeholder">
+            <div style="font-size:11px;color:#7b1fa2;font-weight:600;margin-bottom:8px;">類別分組</div>
+            <div class="dpm-ph-row" style="background:rgba(123,31,162,0.08);"></div>
+            <div class="dpm-ph-row short" style="background:rgba(123,31,162,0.06);"></div>
+            <div class="dpm-ph-row long" style="background:rgba(123,31,162,0.08);"></div>
+          </div>
+
+          <!-- Call chain placeholder -->
+          <div class="dpm-placeholder">
+            <div style="font-size:10px;font-weight:600;color:#757575;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">呼叫鏈</div>
+            <div class="dpm-ph-row shorter" style="background:#f3e5f5;"></div>
+            <div class="dpm-ph-row long" style="background:#f3e5f5;"></div>
+            <div class="dpm-ph-row short" style="background:#f3e5f5;"></div>
+          </div>
+
+          <!-- Deps placeholder -->
+          <div class="dpm-placeholder">
+            <div style="font-size:10px;font-weight:600;color:#757575;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">依賴</div>
+            <div class="dpm-ph-row short"></div>
+            <div class="dpm-ph-row shorter"></div>
+          </div>
+
+          <!-- AI section -->
+          <div class="dpm-ai-section">
+            <div class="dpm-ai-label">AI 分析</div>
+            <div class="dpm-ai-result-ph" style="background:rgba(123,31,162,0.08);"></div>
+            <div class="dpm-ai-result-ph mid" style="background:rgba(123,31,162,0.06);"></div>
+          </div>
+
+          <!-- NEW: Wiki CTA button -->
+          <a class="wiki-cta-btn">
+            <span class="wiki-cta-main">📚 查看知識文件 <span class="new-badge">NEW</span></span>
+            <span class="wiki-cta-sub">在知識圖中查看完整文件</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- DJ Panel -->
+      <div>
+        <div class="theme-label" style="color:#2e7d32;font-weight:700;font-size:12px;margin-bottom:10px;">
+          DJ 資料旅程 面板
+        </div>
+        <div class="detail-panel-mini dpm-dj">
+          <div class="dpm-header">
+            <span class="dpm-icon">🔄</span>
+            <span class="dpm-title">POST /api/charge</span>
+          </div>
+
+          <!-- Journey steps placeholder -->
+          <div class="dpm-placeholder">
+            <div style="font-size:11px;color:#2e7d32;font-weight:600;margin-bottom:8px;">旅程步驟</div>
+            <div class="dpm-ph-row" style="background:#e8f5e9;"></div>
+            <div class="dpm-ph-row short" style="background:#e8f5e9;"></div>
+            <div class="dpm-ph-row long" style="background:#e8f5e9;"></div>
+            <div class="dpm-ph-row shorter" style="background:#e8f5e9;"></div>
+          </div>
+
+          <!-- Transforms placeholder -->
+          <div class="dpm-placeholder">
+            <div style="font-size:10px;font-weight:600;color:#757575;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">資料轉換</div>
+            <div class="dpm-ph-row shorter"></div>
+            <div class="dpm-ph-row long"></div>
+          </div>
+
+          <!-- Output placeholder -->
+          <div class="dpm-placeholder">
+            <div style="font-size:10px;font-weight:600;color:#757575;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">輸出節點</div>
+            <div class="dpm-ph-row short"></div>
+          </div>
+
+          <!-- AI section -->
+          <div class="dpm-ai-section">
+            <div class="dpm-ai-label">AI 分析</div>
+            <div class="dpm-ai-result-ph" style="background:rgba(46,125,50,0.08);"></div>
+            <div class="dpm-ai-result-ph mid" style="background:rgba(46,125,50,0.06);"></div>
+            <div class="dpm-ai-result-ph short" style="background:rgba(46,125,50,0.08);"></div>
+          </div>
+
+          <!-- NEW: Wiki CTA button -->
+          <a class="wiki-cta-btn">
+            <span class="wiki-cta-main">📚 查看知識文件 <span class="new-badge">NEW</span></span>
+            <span class="wiki-cta-sub">在知識圖中查看完整文件</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="spec-box" style="margin-top:24px;">
+      <div class="spec-box-title">「查看知識文件」按鈕規格（統一套用於 SF / LO / DJ 三個面板）</div>
+      <ul class="spec-list">
+        <li><strong>位置</strong>：AI 分析區塊下方，面板底部，<code>margin: 0 14px 14px</code></li>
+        <li><strong>背景</strong>：<code>rgba(245, 158, 11, 0.08)</code>（琥珀色淡底）</li>
+        <li><strong>邊框</strong>：<code>1px solid rgba(245, 158, 11, 0.3)</code></li>
+        <li><strong>主文字</strong>：<code>color: #f59e0b; fontSize: 12px; fontWeight: 500</code></li>
+        <li><strong>副文字</strong>：<code>color: #8888aa; fontSize: 11px</code></li>
+        <li><strong>圓角</strong>：<code>borderRadius: 6px; padding: 8px 12px</code></li>
+        <li><strong>hover</strong>：背景加深至 <code>rgba(245, 158, 11, 0.15)</code></li>
+        <li><strong>點擊行為</strong>：切換至 Wiki 知識圖 Tab，並聚焦到對應節點</li>
+        <li><strong>暗色主題</strong>：邊框 <code>rgba(245, 158, 11, 0.25)</code>，底色 <code>rgba(245, 158, 11, 0.06)</code>，主文字保持 <code>#f59e0b</code>，副文字 <code>#6868aa</code></li>
+      </ul>
+    </div>
+
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════ -->
+  <footer style="border-top:1.5px solid var(--border-default);padding-top:28px;margin-top:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div style="font-size:13px;font-weight:600;color:var(--ink-primary);">Sprint 19 G1 — Wiki 知識圖 Tab UI 圖稿</div>
+      <div style="font-size:12px;color:var(--ink-muted);margin-top:4px;">CodeAtlas · 2026-04-08 · 4 Scenes · 亮色 + 暗色雙主題</div>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <div style="font-size:11px;color:var(--ink-muted);">Scene 1 — TabBar + 力導向圖</div>
+      <div style="font-size:11px;color:var(--ink-muted);">Scene 2 — MD 預覽面板</div>
+      <div style="font-size:11px;color:var(--ink-muted);">Scene 3 — Zoom Level</div>
+      <div style="font-size:11px;color:var(--ink-muted);">Scene 4 — 三視角 CTA</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:10px;height:10px;border-radius:50%;background:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,0.5);"></div>
+      <span style="font-size:12px;font-weight:600;color:var(--wiki-amber);">Wiki 知識圖 Tab</span>
+      <span style="font-size:11px;color:var(--ink-muted);">#f59e0b Amber</span>
+    </div>
+  </footer>
+
+</body>
+</html>

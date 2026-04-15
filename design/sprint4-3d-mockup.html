@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeAtlas — 3D Star Map Preview</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #050510;
+      overflow: hidden;
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      color: #e8eaf6;
+    }
+
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    /* Label overlay */
+    #label-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .node-label {
+      position: absolute;
+      transform: translate(-50%, 0);
+      white-space: nowrap;
+      font-size: 11px;
+      color: #e8eaf6;
+      background: rgba(5, 5, 16, 0.75);
+      padding: 2px 7px;
+      border-radius: 4px;
+      pointer-events: none;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      letter-spacing: 0.02em;
+      transition: opacity 0.25s ease;
+    }
+
+    /* Title block — top left */
+    #ui-title {
+      position: absolute;
+      top: 24px;
+      left: 28px;
+      z-index: 10;
+      pointer-events: none;
+      line-height: 1.4;
+    }
+
+    #ui-title .title-main {
+      font-size: 18px;
+      font-weight: 600;
+      color: #e8eaf6;
+      letter-spacing: 0.01em;
+    }
+
+    #ui-title .title-sub {
+      font-size: 12px;
+      color: #9e9ec8;
+      margin-top: 3px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    /* Controls hint — bottom right */
+    #ui-controls {
+      position: absolute;
+      bottom: 24px;
+      right: 28px;
+      z-index: 10;
+      pointer-events: none;
+      font-size: 12px;
+      color: #9e9ec8;
+      text-align: right;
+      line-height: 1.6;
+      letter-spacing: 0.03em;
+    }
+
+    /* Legend — bottom left */
+    #ui-legend {
+      position: absolute;
+      bottom: 24px;
+      left: 28px;
+      z-index: 10;
+      pointer-events: none;
+      font-size: 11px;
+      color: #9e9ec8;
+      line-height: 1.9;
+    }
+
+    .legend-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      margin-right: 7px;
+      vertical-align: middle;
+      box-shadow: 0 0 6px currentColor;
+    }
+
+    /* Hover tooltip */
+    #tooltip {
+      position: absolute;
+      z-index: 20;
+      background: rgba(5, 5, 16, 0.92);
+      border: 1px solid rgba(0, 212, 255, 0.25);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12px;
+      color: #e8eaf6;
+      pointer-events: none;
+      display: none;
+      line-height: 1.6;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.12);
+    }
+
+    #tooltip .tt-name {
+      font-weight: 600;
+      font-size: 13px;
+      color: #00d4ff;
+    }
+
+    #tooltip .tt-name.dir {
+      color: #bd00ff;
+    }
+
+    #tooltip .tt-type {
+      font-size: 11px;
+      color: #9e9ec8;
+      margin-top: 1px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- UI overlays -->
+<div id="ui-title">
+  <div class="title-main">CodeAtlas — 3D Star Map Preview</div>
+  <div class="title-sub">Sprint 4 Visual Design Mockup</div>
+</div>
+
+<div id="ui-controls">
+  Drag to rotate | Scroll to zoom | Right-click to pan
+</div>
+
+<div id="ui-legend">
+  <div>
+    <span class="legend-dot" style="background:#bd00ff; color:#bd00ff;"></span>
+    Directory node
+  </div>
+  <div>
+    <span class="legend-dot" style="background:#00d4ff; color:#00d4ff;"></span>
+    File node
+  </div>
+  <div>
+    <span class="legend-dot" style="background:#00ff88; color:#00ff88; width:6px; height:6px;"></span>
+    Data flow particle
+  </div>
+</div>
+
+<div id="tooltip">
+  <div class="tt-name" id="tt-name"></div>
+  <div class="tt-type" id="tt-type"></div>
+</div>
+
+<div id="canvas-container">
+  <div id="label-layer"></div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ─────────────────────────────────────────────
+// Color constants — sprint2-theme-draft.ts
+// ─────────────────────────────────────────────
+const COLORS = {
+  bg:              '#050510',
+  nodeBg:          '#0f0f1a',
+  fileEmissive:    0x00d4ff,
+  fileEmissiveStr: '#00d4ff',
+  fileActive:      0x00ffff,
+  dirEmissive:     0xbd00ff,
+  dirEmissiveStr:  '#bd00ff',
+  dirActive:       0xff00ff,
+  edgeNormal:      0x00cc66,
+  edgeHover:       0x00ff88,
+  particle:        0x00ff88,
+  ambientLight:    0x1a1a2e,
+  textPrimary:     '#e8eaf6',
+  textSecondary:   '#9e9ec8',
+};
+
+// ─────────────────────────────────────────────
+// Scene setup
+// ─────────────────────────────────────────────
+const container = document.getElementById('canvas-container');
+const W = container.clientWidth;
+const H = container.clientHeight;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(COLORS.bg);
+scene.fog = new THREE.FogExp2(COLORS.bg, 0.002);
+
+const camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 2000);
+camera.position.set(0, 150, 250);
+camera.lookAt(0, 80, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(W, H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+container.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 80, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.minDistance = 50;
+controls.maxDistance = 600;
+controls.update();
+
+// ─────────────────────────────────────────────
+// Lights
+// ─────────────────────────────────────────────
+const ambientLight = new THREE.AmbientLight(COLORS.ambientLight, 0.4);
+scene.add(ambientLight);
+
+const cyanLight = new THREE.PointLight(0x00d4ff, 0.6, 800);
+cyanLight.position.set(100, 100, 100);
+scene.add(cyanLight);
+
+const magentaLight = new THREE.PointLight(0xbd00ff, 0.4, 800);
+magentaLight.position.set(-100, -50, -100);
+scene.add(magentaLight);
+
+// ─────────────────────────────────────────────
+// Glow sprite texture factory
+// ─────────────────────────────────────────────
+function makeGlowTexture(rgbaCore) {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const cx = size / 2, cy = size / 2;
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, cx);
+  grad.addColorStop(0, rgbaCore);
+  grad.addColorStop(0.4, rgbaCore.replace(/[\d.]+\)$/, '0.12)'));
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  return new THREE.CanvasTexture(canvas);
+}
+
+const glowTexFile = makeGlowTexture('rgba(0,212,255,0.3)');
+const glowTexDir  = makeGlowTexture('rgba(189,0,255,0.3)');
+
+// ─────────────────────────────────────────────
+// Node definitions
+// ─────────────────────────────────────────────
+const NODE_DATA = [
+  // Directories
+  { id: 0, name: 'packages/',                    type: 'dir',  x:   0, y:  40, z:   0 },
+  { id: 1, name: 'packages/core/',               type: 'dir',  x: -60, y:  80, z:   0 },
+  { id: 2, name: 'packages/web/',                type: 'dir',  x:  60, y:  80, z:   0 },
+  { id: 3, name: 'packages/cli/',                type: 'dir',  x:   0, y:  80, z:  60 },
+  // Files
+  { id: 4, name: 'core/index.ts',                type: 'file', x: -60, y: 120, z: -20 },
+  { id: 5, name: 'core/graph-builder.ts',        type: 'file', x: -80, y: 120, z:  20 },
+  { id: 6, name: 'core/import-resolver.ts',      type: 'file', x: -40, y: 120, z:  20 },
+  { id: 7, name: 'web/App.tsx',                  type: 'file', x:  40, y: 120, z: -20 },
+  { id: 8, name: 'web/GraphCanvas.tsx',          type: 'file', x:  80, y: 120, z: -20 },
+  { id: 9, name: 'cli/index.ts',                 type: 'file', x:   0, y: 120, z:  80 },
+];
+
+// ─────────────────────────────────────────────
+// Build nodes
+// ─────────────────────────────────────────────
+const nodeMeshes   = [];   // inner sphere
+const nodeGlows    = [];   // sprite
+const nodeObjects  = [];   // combined group ref per node index
+
+NODE_DATA.forEach((nd, i) => {
+  const isDir = nd.type === 'dir';
+  const radius = isDir ? 6 : 4;
+
+  // Inner sphere
+  const geo = new THREE.SphereGeometry(radius, 32, 32);
+  const mat = new THREE.MeshStandardMaterial({
+    color:             new THREE.Color(COLORS.nodeBg),
+    emissive:          new THREE.Color(isDir ? COLORS.dirEmissive : COLORS.fileEmissive),
+    emissiveIntensity: 0.6,
+    transparent:       true,
+    opacity:           0.9,
+    metalness:         0.2,
+    roughness:         0.5,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(nd.x, nd.y, nd.z);
+  mesh.userData = { nodeIndex: i, type: nd.type, name: nd.name };
+  scene.add(mesh);
+  nodeMeshes.push(mesh);
+
+  // Glow sprite
+  const glowMat = new THREE.SpriteMaterial({
+    map:         isDir ? glowTexDir : glowTexFile,
+    blending:    THREE.AdditiveBlending,
+    transparent: true,
+    opacity:     0.3,
+    depthWrite:  false,
+  });
+  const sprite = new THREE.Sprite(glowMat);
+  const spriteScale = isDir ? 36 : 24;
+  sprite.scale.set(spriteScale, spriteScale, 1);
+  sprite.position.set(nd.x, nd.y, nd.z);
+  scene.add(sprite);
+  nodeGlows.push(sprite);
+
+  nodeObjects.push({ mesh, sprite, data: nd, baseRadius: radius });
+});
+
+// ─────────────────────────────────────────────
+// Edges
+// ─────────────────────────────────────────────
+const EDGE_DATA = [
+  { src: 4, tgt: 5 },  // core/index.ts → core/graph-builder.ts
+  { src: 4, tgt: 6 },  // core/index.ts → core/import-resolver.ts
+  { src: 7, tgt: 8 },  // web/App.tsx → web/GraphCanvas.tsx
+  { src: 8, tgt: 4 },  // web/GraphCanvas.tsx → core/index.ts
+  { src: 9, tgt: 4 },  // cli/index.ts → core/index.ts
+  { src: 5, tgt: 6 },  // core/graph-builder.ts → core/import-resolver.ts
+];
+
+const edgeLines = [];
+
+EDGE_DATA.forEach((ed, i) => {
+  const srcPos = new THREE.Vector3(NODE_DATA[ed.src].x, NODE_DATA[ed.src].y, NODE_DATA[ed.src].z);
+  const tgtPos = new THREE.Vector3(NODE_DATA[ed.tgt].x, NODE_DATA[ed.tgt].y, NODE_DATA[ed.tgt].z);
+
+  const points = [srcPos.clone(), tgtPos.clone()];
+  const geo = new THREE.BufferGeometry().setFromPoints(points);
+  const mat = new THREE.LineBasicMaterial({
+    color:       COLORS.edgeNormal,
+    opacity:     0.5,
+    transparent: true,
+  });
+  const line = new THREE.Line(geo, mat);
+  line.userData = { edgeIndex: i, src: ed.src, tgt: ed.tgt };
+  scene.add(line);
+  edgeLines.push({ line, mat, src: ed.src, tgt: ed.tgt });
+});
+
+// ─────────────────────────────────────────────
+// Flow particles
+// ─────────────────────────────────────────────
+const PARTICLES_PER_EDGE = 4;
+const PARTICLE_SPEED = 1 / 2.5; // fraction per second (full traversal ~2.5s)
+
+const particleGroups = [];
+
+EDGE_DATA.forEach((ed, edgeIdx) => {
+  const srcPos = new THREE.Vector3(NODE_DATA[ed.src].x, NODE_DATA[ed.src].y, NODE_DATA[ed.src].z);
+  const tgtPos = new THREE.Vector3(NODE_DATA[ed.tgt].x, NODE_DATA[ed.tgt].y, NODE_DATA[ed.tgt].z);
+
+  const particles = [];
+  for (let p = 0; p < PARTICLES_PER_EDGE; p++) {
+    const geo = new THREE.SphereGeometry(0.3, 8, 8);
+    const mat = new THREE.MeshBasicMaterial({
+      color:       COLORS.particle,
+      transparent: true,
+      opacity:     0.85,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    // staggered start offset
+    const t = p / PARTICLES_PER_EDGE;
+    mesh.position.lerpVectors(srcPos, tgtPos, t);
+    scene.add(mesh);
+    particles.push({ mesh, t });
+  }
+  particleGroups.push({ particles, srcPos, tgtPos, edgeIdx });
+});
+
+// ─────────────────────────────────────────────
+// Node HTML labels
+// ─────────────────────────────────────────────
+const labelLayer = document.getElementById('label-layer');
+const labelEls = [];
+
+NODE_DATA.forEach((nd, i) => {
+  const el = document.createElement('div');
+  el.className = 'node-label';
+  // Show just the filename/last segment for brevity
+  const parts = nd.name.replace(/\/$/, '').split('/');
+  el.textContent = parts[parts.length - 1] + (nd.type === 'dir' ? '/' : '');
+  labelLayer.appendChild(el);
+  labelEls.push(el);
+});
+
+// Project world-pos → screen
+const tmpVec = new THREE.Vector3();
+function worldToScreen(pos) {
+  tmpVec.copy(pos).project(camera);
+  return {
+    x: (tmpVec.x  *  0.5 + 0.5) * renderer.domElement.clientWidth,
+    y: (-tmpVec.y * 0.5 + 0.5) * renderer.domElement.clientHeight,
+    behind: tmpVec.z > 1,
+  };
+}
+
+// ─────────────────────────────────────────────
+// Hover / Raycaster
+// ─────────────────────────────────────────────
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2(-9999, -9999);
+let hoveredIndex = -1;
+
+const tooltip    = document.getElementById('tooltip');
+const ttName     = document.getElementById('tt-name');
+const ttType     = document.getElementById('tt-type');
+
+window.addEventListener('mousemove', (e) => {
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+  mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+
+  // Update tooltip position
+  tooltip.style.left = (e.clientX + 18) + 'px';
+  tooltip.style.top  = (e.clientY - 10) + 'px';
+});
+
+function getConnectedNodes(nodeIndex) {
+  const connected = new Set([nodeIndex]);
+  edgeLines.forEach(({ src, tgt }) => {
+    if (src === nodeIndex) connected.add(tgt);
+    if (tgt === nodeIndex) connected.add(src);
+  });
+  return connected;
+}
+
+function getConnectedEdges(nodeIndex) {
+  return edgeLines.map((e, i) => (e.src === nodeIndex || e.tgt === nodeIndex) ? i : -1)
+                  .filter(i => i !== -1);
+}
+
+function applyHover(index) {
+  if (index === hoveredIndex) return;
+  hoveredIndex = index;
+
+  if (index === -1) {
+    // Reset all
+    nodeObjects.forEach(({ mesh, sprite }) => {
+      mesh.scale.setScalar(1);
+      mesh.material.emissiveIntensity = 0.6;
+      mesh.material.opacity = 0.9;
+      sprite.material.opacity = 0.3;
+    });
+    edgeLines.forEach(({ line, mat }) => {
+      mat.color.set(COLORS.edgeNormal);
+      mat.opacity = 0.5;
+    });
+    labelEls.forEach(el => { el.style.opacity = '1'; });
+    tooltip.style.display = 'none';
+    return;
+  }
+
+  const connected = getConnectedNodes(index);
+  const connectedEdges = new Set(getConnectedEdges(index));
+
+  // Nodes
+  nodeObjects.forEach(({ mesh, sprite }, i) => {
+    if (i === index) {
+      mesh.scale.setScalar(1.5);
+      mesh.material.emissiveIntensity = 1.2;
+      mesh.material.opacity = 1.0;
+      sprite.material.opacity = 0.5;
+    } else if (connected.has(i)) {
+      mesh.scale.setScalar(1.0);
+      mesh.material.emissiveIntensity = 0.8;
+      mesh.material.opacity = 0.9;
+      sprite.material.opacity = 0.3;
+    } else {
+      mesh.scale.setScalar(1.0);
+      mesh.material.emissiveIntensity = 0.1;
+      mesh.material.opacity = 0.15;
+      sprite.material.opacity = 0.0;
+    }
+  });
+
+  // Edges
+  edgeLines.forEach(({ line, mat }, i) => {
+    if (connectedEdges.has(i)) {
+      mat.color.set(COLORS.edgeHover);
+      mat.opacity = 1.0;
+    } else {
+      mat.color.set(COLORS.edgeNormal);
+      mat.opacity = 0.06;
+    }
+  });
+
+  // Labels
+  labelEls.forEach((el, i) => {
+    el.style.opacity = connected.has(i) ? '1' : '0.15';
+  });
+
+  // Tooltip
+  const nd = NODE_DATA[index];
+  ttName.textContent  = nd.name;
+  ttName.className    = nd.type === 'dir' ? 'tt-name dir' : 'tt-name';
+  ttType.textContent  = nd.type === 'dir' ? 'Directory' : 'TypeScript / TSX file';
+  tooltip.style.display = 'block';
+}
+
+// ─────────────────────────────────────────────
+// Star field background
+// ─────────────────────────────────────────────
+(function buildStars() {
+  const count = 600;
+  const positions = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    positions[i * 3]     = (Math.random() - 0.5) * 1200;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 800;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 1200;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const mat = new THREE.PointsMaterial({
+    color:       0x9e9ec8,
+    size:        0.6,
+    transparent: true,
+    opacity:     0.5,
+    sizeAttenuation: true,
+  });
+  scene.add(new THREE.Points(geo, mat));
+})();
+
+// ─────────────────────────────────────────────
+// Animation loop
+// ─────────────────────────────────────────────
+let lastTime = performance.now();
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const now = performance.now();
+  const delta = (now - lastTime) / 1000; // seconds
+  lastTime = now;
+
+  // Move flow particles
+  particleGroups.forEach(({ particles, srcPos, tgtPos }) => {
+    particles.forEach(p => {
+      p.t += PARTICLE_SPEED * delta;
+      if (p.t > 1) p.t -= 1;
+      p.mesh.position.lerpVectors(srcPos, tgtPos, p.t);
+
+      // Pulse opacity
+      p.mesh.material.opacity = 0.5 + 0.45 * Math.sin(p.t * Math.PI * 2);
+    });
+  });
+
+  // Raycaster — only hit test sphere meshes
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(nodeMeshes);
+  if (intersects.length > 0) {
+    const hit = intersects[0].object;
+    const idx = hit.userData.nodeIndex;
+    applyHover(idx);
+    renderer.domElement.style.cursor = 'pointer';
+  } else {
+    if (hoveredIndex !== -1) applyHover(-1);
+    renderer.domElement.style.cursor = 'default';
+  }
+
+  // Update HTML labels
+  NODE_DATA.forEach((nd, i) => {
+    const radius = nodeObjects[i].baseRadius;
+    const labelOffset = radius + 2;
+    const worldPos = new THREE.Vector3(nd.x, nd.y - labelOffset, nd.z);
+    const screen = worldToScreen(worldPos);
+
+    if (screen.behind) {
+      labelEls[i].style.display = 'none';
+    } else {
+      labelEls[i].style.display = 'block';
+      labelEls[i].style.left = screen.x + 'px';
+      labelEls[i].style.top  = (screen.y + 12) + 'px';
+    }
+  });
+
+  // Gentle idle rotation for atmosphere (very slow)
+  const t = now * 0.0001;
+  cyanLight.position.x    = 100 * Math.cos(t);
+  cyanLight.position.z    = 100 * Math.sin(t);
+  magentaLight.position.x = -100 * Math.cos(t + Math.PI);
+  magentaLight.position.z = -100 * Math.sin(t + Math.PI);
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+// ─────────────────────────────────────────────
+// Resize handler
+// ─────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+});
+
+animate();
+</script>
+</body>
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeAtlas — Directory View</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0f;
+      font-family: 'Inter', system-ui, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* ── Canvas ── */
+    #canvas {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at 50% 50%, #0f0f1a 0%, #0a0a0f 60%, #070710 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #canvas::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+    }
+    #canvas::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(7,7,16,0.6) 100%);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* ── SVG edges ── */
+    #edges-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* ── Nodes layer ── */
+    #nodes {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+    }
+
+    /* ── Directory node (large, zoom-out view) ── */
+    .node-dir {
+      position: absolute;
+      border-radius: 10px;
+      border: 1.5px solid #8855ff;
+      background: rgba(136,85,255,0.08);
+      box-shadow: 0 0 8px rgba(189,0,255,0.25), 0 0 16px rgba(189,0,255,0.10);
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform 150ms ease-out, box-shadow 150ms ease-out, border-color 150ms ease-out, background 150ms ease-out;
+      user-select: none;
+    }
+    .node-dir:hover {
+      border-color: #bd00ff;
+      border-width: 2px;
+      background: rgba(189,0,255,0.13);
+      box-shadow: 0 0 12px rgba(189,0,255,0.50), 0 0 24px rgba(189,0,255,0.25), 0 0 40px rgba(189,0,255,0.10);
+      transform: scale(1.02);
+      z-index: 20;
+    }
+    .node-dir:hover .toggle-btn {
+      border-color: #bd00ff;
+      color: #bd00ff;
+    }
+
+    /* accent bar */
+    .dir-accent {
+      width: 100%;
+      height: 3px;
+      background: #bd00ff;
+    }
+
+    /* body */
+    .dir-body {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      gap: 12px;
+      position: relative;
+    }
+
+    /* folder icon (larger) */
+    .dir-icon {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+      color: #bd00ff;
+    }
+
+    .dir-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      overflow: hidden;
+    }
+    .dir-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 600;
+      color: #e8eaf6;
+      white-space: nowrap;
+    }
+    .dir-count {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 400;
+      color: #9e9ec8;
+    }
+
+    /* stats row */
+    .dir-stats {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 0 16px 14px;
+    }
+    .stat-chip {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: #5c5c88;
+    }
+    .stat-chip .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .dot-cyan   { background: #00d4ff; }
+    .dot-purple { background: #8855ff; }
+    .dot-green  { background: #00cc66; }
+
+    /* toggle button */
+    .toggle-btn {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1.5px solid #8855ff;
+      background: transparent;
+      color: #8855ff;
+      font-size: 12px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 150ms, color 150ms, background 150ms;
+      font-weight: 600;
+    }
+    .toggle-btn:hover {
+      background: rgba(136,85,255,0.20);
+    }
+
+    /* ── Zoom level indicator ── */
+    #zoom-indicator {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(26,26,46,0.85);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 6px 16px;
+      backdrop-filter: blur(8px);
+      font-size: 12px;
+      color: #9e9ec8;
+    }
+    .zoom-level {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .zoom-level.active { background: #bd00ff; }
+    .zoom-level.inactive { background: rgba(255,255,255,0.15); }
+
+    /* ── Toolbar ── */
+    #toolbar {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(26,26,46,0.90);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 6px;
+      backdrop-filter: blur(8px);
+    }
+    .toolbar-title { font-size: 24px; font-weight: 700; color: #e8eaf6; padding: 0 10px 0 6px; }
+    .toolbar-title span { color: #00d4ff; }
+    .toolbar-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.10); margin: 0 4px; }
+    .toolbar-btn {
+      width: 32px; height: 32px; border: none; background: transparent;
+      border-radius: 6px; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; color: #9e9ec8; font-size: 16px; font-weight: 600;
+      transition: background 100ms, color 100ms;
+    }
+    .toolbar-btn:hover { background: rgba(255,255,255,0.06); color: #e8eaf6; }
+
+    /* ── Aggregation edge label ── */
+    .edge-label {
+      fill: #5c5c88;
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+    }
+
+    /* ── Minimap ── */
+    #minimap {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      width: 160px;
+      height: 120px;
+      background: rgba(10,10,15,0.85);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      backdrop-filter: blur(4px);
+      z-index: 30;
+      overflow: hidden;
+    }
+    #minimap-svg { width: 100%; height: 100%; }
+    #minimap-label {
+      position: absolute;
+      top: 6px; left: 8px;
+      font-size: 9px; font-weight: 500;
+      color: #5c5c88;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+<div id="canvas">
+
+  <svg id="edges-svg" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+        <path d="M1,1 L1,7 L7,4 z" fill="#00cc66" opacity="0.75"/>
+      </marker>
+    </defs>
+  </svg>
+
+  <div id="nodes">
+
+    <!-- shared/ (top-left) -->
+    <div class="node-dir" id="n-shared" style="left:140px;top:180px;width:240px;">
+      <div class="dir-accent"></div>
+      <div class="dir-body">
+        <svg class="dir-icon" viewBox="0 0 28 28" fill="none">
+          <path d="M2 7A3 3 0 015 4h5.76l2.8 3H23A3 3 0 0126 10v12a3 3 0 01-3 3H5a3 3 0 01-3-3V7z"
+                stroke="currentColor" stroke-width="1.5" fill="rgba(189,0,255,0.12)"/>
+        </svg>
+        <div class="dir-text">
+          <span class="dir-name">shared/</span>
+          <span class="dir-count">4 files</span>
+        </div>
+        <button class="toggle-btn">−</button>
+      </div>
+      <div class="dir-stats">
+        <span class="stat-chip"><span class="dot dot-cyan"></span>4 .ts</span>
+        <span class="stat-chip"><span class="dot dot-green"></span>2 exports</span>
+      </div>
+    </div>
+
+    <!-- core/ (center) -->
+    <div class="node-dir" id="n-core" style="left:440px;top:240px;width:260px;">
+      <div class="dir-accent"></div>
+      <div class="dir-body">
+        <svg class="dir-icon" viewBox="0 0 28 28" fill="none">
+          <path d="M2 7A3 3 0 015 4h5.76l2.8 3H23A3 3 0 0126 10v12a3 3 0 01-3 3H5a3 3 0 01-3-3V7z"
+                stroke="currentColor" stroke-width="1.5" fill="rgba(189,0,255,0.12)"/>
+        </svg>
+        <div class="dir-text">
+          <span class="dir-name">core/</span>
+          <span class="dir-count">12 files</span>
+        </div>
+        <button class="toggle-btn">−</button>
+      </div>
+      <div class="dir-stats">
+        <span class="stat-chip"><span class="dot dot-cyan"></span>12 .ts</span>
+        <span class="stat-chip"><span class="dot dot-green"></span>8 exports</span>
+        <span class="stat-chip"><span class="dot dot-purple"></span>3 deps</span>
+      </div>
+    </div>
+
+    <!-- cli/ (top-right) -->
+    <div class="node-dir" id="n-cli" style="left:780px;top:130px;width:240px;">
+      <div class="dir-accent"></div>
+      <div class="dir-body">
+        <svg class="dir-icon" viewBox="0 0 28 28" fill="none">
+          <path d="M2 7A3 3 0 015 4h5.76l2.8 3H23A3 3 0 0126 10v12a3 3 0 01-3 3H5a3 3 0 01-3-3V7z"
+                stroke="currentColor" stroke-width="1.5" fill="rgba(189,0,255,0.12)"/>
+        </svg>
+        <div class="dir-text">
+          <span class="dir-name">cli/</span>
+          <span class="dir-count">6 files</span>
+        </div>
+        <button class="toggle-btn">−</button>
+      </div>
+      <div class="dir-stats">
+        <span class="stat-chip"><span class="dot dot-cyan"></span>6 .ts</span>
+        <span class="stat-chip"><span class="dot dot-green"></span>1 entry</span>
+      </div>
+    </div>
+
+    <!-- web/ (bottom-right) -->
+    <div class="node-dir" id="n-web" style="left:780px;top:390px;width:240px;">
+      <div class="dir-accent"></div>
+      <div class="dir-body">
+        <svg class="dir-icon" viewBox="0 0 28 28" fill="none">
+          <path d="M2 7A3 3 0 015 4h5.76l2.8 3H23A3 3 0 0126 10v12a3 3 0 01-3 3H5a3 3 0 01-3-3V7z"
+                stroke="currentColor" stroke-width="1.5" fill="rgba(189,0,255,0.12)"/>
+        </svg>
+        <div class="dir-text">
+          <span class="dir-name">web/</span>
+          <span class="dir-count">18 files</span>
+        </div>
+        <button class="toggle-btn">+</button>
+      </div>
+      <div class="dir-stats">
+        <span class="stat-chip"><span class="dot dot-cyan"></span>14 .tsx</span>
+        <span class="stat-chip"><span class="dot dot-purple"></span>2 deps</span>
+        <span class="stat-chip"><span class="dot dot-green"></span>5 routes</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toolbar -->
+  <div id="toolbar">
+    <span class="toolbar-title">Code<span>Atlas</span></span>
+    <div class="toolbar-divider"></div>
+    <button class="toolbar-btn">+</button>
+    <button class="toolbar-btn">−</button>
+    <div class="toolbar-divider"></div>
+    <button class="toolbar-btn" style="font-size:13px;">⌂</button>
+    <button class="toolbar-btn" style="font-size:11px;">[ ]</button>
+  </div>
+
+  <!-- Zoom level indicator -->
+  <div id="zoom-indicator">
+    <span class="zoom-level inactive"></span>
+    <span style="color:#5c5c88;font-size:11px;">file</span>
+    <span class="zoom-level active"></span>
+    <span style="color:#e8eaf6;font-size:11px;font-weight:500;">directory</span>
+    <span class="zoom-level inactive"></span>
+    <span style="color:#5c5c88;font-size:11px;">package</span>
+  </div>
+
+  <!-- Minimap -->
+  <div id="minimap">
+    <span id="minimap-label">Minimap</span>
+    <svg id="minimap-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640">
+      <!-- edges in minimap -->
+      <line x1="380" y1="280" x2="570" y2="300" stroke="#00cc66" stroke-width="2.5" opacity="0.6"/>
+      <line x1="700" y1="300" x2="900" y2="210" stroke="#00cc66" stroke-width="2.5" opacity="0.6"/>
+      <line x1="700" y1="300" x2="900" y2="460" stroke="#00cc66" stroke-width="2.5" opacity="0.6"/>
+      <!-- dir nodes in minimap -->
+      <rect x="140" y="230" width="240" height="60" rx="4" fill="rgba(136,85,255,0.50)"/>
+      <rect x="140" y="230" width="240" height="4" rx="2" fill="#bd00ff"/>
+      <rect x="440" y="250" width="260" height="60" rx="4" fill="rgba(136,85,255,0.60)"/>
+      <rect x="440" y="250" width="260" height="4" rx="2" fill="#bd00ff"/>
+      <rect x="780" y="160" width="240" height="60" rx="4" fill="rgba(136,85,255,0.50)"/>
+      <rect x="780" y="160" width="240" height="4" rx="2" fill="#bd00ff"/>
+      <rect x="780" y="400" width="240" height="60" rx="4" fill="rgba(136,85,255,0.50)"/>
+      <rect x="780" y="400" width="240" height="4" rx="2" fill="#bd00ff"/>
+      <rect x="10" y="10" width="1180" height="620" rx="4" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="3"/>
+    </svg>
+  </div>
+
+</div>
+
+<script>
+  const svg = document.getElementById('edges-svg');
+  const canvas = document.getElementById('canvas');
+
+  function nc(id) {
+    const el = document.getElementById(id);
+    const r  = el.getBoundingClientRect();
+    const cr = canvas.getBoundingClientRect();
+    return { x: r.left - cr.left + r.width/2, y: r.top - cr.top + r.height/2 };
+  }
+
+  function drawEdge(x1, y1, x2, y2, label, thickness=2) {
+    const dx = x2-x1, dy = y2-y1;
+    const mid = { x: (x1+x2)/2, y: (y1+y2)/2 };
+    const d = `M${x1},${y1} C${x1+dx*0.45},${y1} ${x1+dx*0.55},${y2} ${x2},${y2}`;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', d);
+    path.setAttribute('stroke','#00cc66');
+    path.setAttribute('stroke-width', thickness);
+    path.setAttribute('opacity','0.7');
+    path.setAttribute('fill','none');
+    path.setAttribute('marker-end','url(#arrow)');
+    svg.appendChild(path);
+
+    if(label) {
+      const bg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      bg.setAttribute('x', mid.x - 22);
+      bg.setAttribute('y', mid.y - 9);
+      bg.setAttribute('width', 44);
+      bg.setAttribute('height', 16);
+      bg.setAttribute('rx', 4);
+      bg.setAttribute('fill','rgba(10,10,15,0.8)');
+      svg.appendChild(bg);
+
+      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x', mid.x);
+      txt.setAttribute('y', mid.y + 2);
+      txt.setAttribute('text-anchor','middle');
+      txt.setAttribute('class','edge-label');
+      txt.textContent = label;
+      svg.appendChild(txt);
+    }
+  }
+
+  window.addEventListener('load', () => {
+    const edges = [
+      { from:'n-shared', to:'n-core',  label:'imports' },
+      { from:'n-core',   to:'n-cli',   label:'imports' },
+      { from:'n-core',   to:'n-web',   label:'imports' },
+    ];
+
+    edges.forEach(e => {
+      const p = nc(e.from), q = nc(e.to);
+      drawEdge(p.x, p.y, q.x, q.y, e.label, 2.5);
+    });
+  });
+</script>
+</body>
+</html>

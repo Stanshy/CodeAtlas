@@ -1,0 +1,2114 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprint 20 G1 — 啟動體驗改造 UI 圖稿</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ─── Design Tokens ─── */
+    :root {
+      --bg-paper: #fafafa;
+      --bg-surface: #ffffff;
+      --ink-primary: #1a1a2e;
+      --ink-secondary: #4a4a6a;
+      --ink-muted: #8888aa;
+      --ink-faint: #bbbbcc;
+      --border-default: #d0d0d8;
+      --shadow-card: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+
+      --bg-paper-dark: #1a1a2e;
+      --bg-surface-dark: #252540;
+      --ink-primary-dark: #e8e8f0;
+      --ink-secondary-dark: #a0a0c0;
+      --ink-muted-dark: #6868aa;
+      --border-default-dark: #3a3a5a;
+
+      --color-scanning: #3b82f6;
+      --color-parsing: #8b5cf6;
+      --color-building: #22c55e;
+      --color-ai: #f59e0b;
+      --color-error: #ef4444;
+      --color-primary: #1976d2;
+    }
+
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #e8e8f0;
+      color: #1a1a2e;
+      line-height: 1.5;
+    }
+
+    /* ─── Page Header ─── */
+    .page-header {
+      background: #1a1a2e;
+      color: rgba(255,255,255,0.9);
+      padding: 16px 32px;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .page-header span { color: rgba(255,255,255,0.4); margin: 0 8px; }
+
+    /* ─── Nav ─── */
+    nav.scene-nav {
+      background: #252540;
+      padding: 12px 32px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    nav.scene-nav a {
+      color: rgba(255,255,255,0.55);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    nav.scene-nav a:hover {
+      color: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    /* ─── Scene Wrapper ─── */
+    .scene {
+      padding: 48px 32px;
+      border-bottom: 2px solid #d0d0d8;
+    }
+    .scene:last-child { border-bottom: none; }
+
+    .scene-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #8888aa;
+      margin-bottom: 6px;
+    }
+    .scene-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 4px;
+    }
+    .scene-filename {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: #1a1a2e;
+      color: #f59e0b;
+      padding: 3px 10px;
+      border-radius: 4px;
+      margin-bottom: 28px;
+    }
+
+    .variant-row {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .variant-row.single { justify-content: center; }
+
+    .variant-box {
+      flex: 1;
+      min-width: 560px;
+      max-width: 760px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
+    }
+    .variant-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .variant-label.light {
+      background: #e8e8f0;
+      color: #8888aa;
+      border-bottom-color: rgba(0,0,0,0.08);
+    }
+    .variant-label.dark {
+      background: #0f0f1e;
+      color: #6868aa;
+      border-bottom-color: rgba(255,255,255,0.06);
+    }
+
+    /* ─── Welcome Page Shell ─── */
+    .welcome-shell {
+      min-height: 520px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 32px;
+      gap: 32px;
+    }
+    .welcome-shell.light { background: var(--bg-paper); }
+    .welcome-shell.dark  { background: var(--bg-paper-dark); }
+
+    /* Logo */
+    .logo-area {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo-mark {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      background: linear-gradient(135deg, #1976d2 0%, #8b5cf6 100%);
+      border-radius: 10px;
+      color: white;
+      margin-bottom: 4px;
+      box-shadow: 0 2px 8px rgba(25,118,210,0.3);
+    }
+    .logo-name {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .light .logo-name { color: var(--ink-primary); }
+    .dark  .logo-name { color: var(--ink-primary-dark); }
+    .logo-sub {
+      font-size: 14px;
+      font-weight: 400;
+    }
+    .light .logo-sub { color: var(--ink-muted); }
+    .dark  .logo-sub { color: var(--ink-muted-dark); }
+
+    /* Input Row */
+    .input-area { width: 100%; max-width: 480px; }
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .path-input-wrap {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .path-input-icon {
+      position: absolute;
+      left: 12px;
+      font-size: 16px;
+      opacity: 0.45;
+      pointer-events: none;
+    }
+    .path-input {
+      width: 100%;
+      height: 44px;
+      padding: 0 12px 0 38px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .light .path-input {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      color: var(--ink-primary);
+    }
+    .light .path-input::placeholder { color: var(--ink-faint); }
+    .light .path-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(25,118,210,0.08); }
+    .dark .path-input {
+      background: var(--bg-surface-dark);
+      border: 1px solid var(--border-default-dark);
+      color: var(--ink-primary-dark);
+    }
+    .dark .path-input::placeholder { color: var(--ink-muted-dark); }
+    .dark .path-input:focus { border-color: #4a90d9; box-shadow: 0 0 0 3px rgba(74,144,217,0.12); }
+
+    .path-input.error-state {
+      border-color: var(--color-error) !important;
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.08) !important;
+    }
+
+    .btn-analyze {
+      height: 44px;
+      padding: 0 20px;
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn-analyze:hover { background: #1565c0; }
+
+    .error-msg {
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--color-error);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Recent Projects */
+    .recent-section { width: 100%; max-width: 480px; }
+    .recent-header {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .light .recent-header { color: var(--ink-muted); }
+    .dark  .recent-header { color: var(--ink-muted-dark); }
+
+    .recent-empty {
+      border-radius: 10px;
+      padding: 24px;
+      text-align: center;
+      font-size: 13px;
+    }
+    .light .recent-empty { background: #f5f5f5; color: var(--ink-muted); }
+    .dark  .recent-empty { background: rgba(255,255,255,0.04); color: var(--ink-muted-dark); }
+
+    .recent-list { display: flex; flex-direction: column; gap: 6px; }
+
+    .recent-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.12s;
+      border: 1px solid transparent;
+    }
+    .light .recent-item {
+      background: var(--bg-surface);
+      border-color: var(--border-default);
+    }
+    .light .recent-item:hover { background: #f5f8ff; border-color: rgba(25,118,210,0.2); }
+    .dark .recent-item {
+      background: var(--bg-surface-dark);
+      border-color: var(--border-default-dark);
+    }
+    .dark .recent-item:hover { background: #2e2e50; border-color: rgba(74,144,217,0.25); }
+
+    .recent-icon { font-size: 18px; flex-shrink: 0; }
+    .recent-info { flex: 1; min-width: 0; }
+    .recent-name {
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .light .recent-name { color: var(--ink-primary); }
+    .dark  .recent-name { color: var(--ink-primary-dark); }
+    .recent-path {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .light .recent-path { color: var(--ink-muted); }
+    .dark  .recent-path { color: var(--ink-muted-dark); }
+
+    .recent-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .lang-badges { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+    .lang-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 99px;
+      white-space: nowrap;
+    }
+    .badge-ts   { background: rgba(59,130,246,0.1);  color: #2563eb; border: 1px solid rgba(59,130,246,0.25); }
+    .badge-js   { background: rgba(245,158,11,0.1);  color: #d97706; border: 1px solid rgba(245,158,11,0.25); }
+    .badge-py   { background: rgba(34,197,94,0.1);   color: #16a34a; border: 1px solid rgba(34,197,94,0.25); }
+    .badge-java { background: rgba(230,81,0,0.1);    color: #e65100; border: 1px solid rgba(230,81,0,0.25); }
+    .dark .badge-ts   { background: rgba(59,130,246,0.15);  color: #60a5fa; border-color: rgba(59,130,246,0.3); }
+    .dark .badge-js   { background: rgba(245,158,11,0.15);  color: #fbbf24; border-color: rgba(245,158,11,0.3); }
+    .dark .badge-py   { background: rgba(34,197,94,0.15);   color: #4ade80; border-color: rgba(34,197,94,0.3); }
+    .dark .badge-java { background: rgba(230,81,0,0.15);    color: #fb923c; border-color: rgba(230,81,0,0.3); }
+
+    .file-count {
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .light .file-count { color: var(--ink-muted); }
+    .dark  .file-count { color: var(--ink-muted-dark); }
+
+    .time-label {
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .light .time-label { color: var(--ink-faint); }
+    .dark  .time-label { color: var(--ink-muted-dark); opacity: 0.7; }
+
+    .btn-open {
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      white-space: nowrap;
+      transition: all 0.12s;
+    }
+    .light .btn-open {
+      background: transparent;
+      color: var(--ink-secondary);
+      border: 1px solid var(--border-default);
+    }
+    .light .btn-open:hover { background: #f0f0f8; border-color: #b0b0c0; }
+    .dark .btn-open {
+      background: transparent;
+      color: var(--ink-secondary-dark);
+      border: 1px solid var(--border-default-dark);
+    }
+    .dark .btn-open:hover { background: rgba(255,255,255,0.06); border-color: #5a5a7a; }
+
+    /* Version */
+    .version-label {
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .light .version-label { color: var(--ink-faint); }
+    .dark  .version-label { color: var(--ink-muted-dark); opacity: 0.6; }
+
+    /* AI Setup Block */
+    .ai-setup-block {
+      width: 100%;
+      max-width: 480px;
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .light .ai-setup-block {
+      background: rgba(21,101,192,0.04);
+      border: 1px solid rgba(21,101,192,0.15);
+    }
+    .dark .ai-setup-block {
+      background: rgba(59,130,246,0.06);
+      border: 1px solid rgba(59,130,246,0.2);
+    }
+    .ai-setup-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .light .ai-setup-title { color: var(--ink-primary); }
+    .dark  .ai-setup-title { color: var(--ink-primary-dark); }
+    .ai-setup-desc {
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+    .light .ai-setup-desc { color: var(--ink-secondary); }
+    .dark  .ai-setup-desc { color: var(--ink-secondary-dark); }
+    .ai-setup-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .provider-select {
+      flex: 1;
+      min-width: 160px;
+      height: 36px;
+      padding: 0 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+    }
+    .light .provider-select {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      color: var(--ink-primary);
+    }
+    .dark .provider-select {
+      background: var(--bg-surface-dark);
+      border: 1px solid var(--border-default-dark);
+      color: var(--ink-primary-dark);
+    }
+    .badge-recommend {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: rgba(245,158,11,0.12);
+      color: #d97706;
+      border: 1px solid rgba(245,158,11,0.3);
+      white-space: nowrap;
+    }
+    .badge-private {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: rgba(46,125,50,0.08);
+      color: #2e7d32;
+      border: 1px solid rgba(46,125,50,0.2);
+      white-space: nowrap;
+    }
+    .dark .badge-recommend { background: rgba(245,158,11,0.15); color: #fbbf24; border-color: rgba(245,158,11,0.35); }
+    .dark .badge-private   { background: rgba(46,125,50,0.12); color: #4ade80; border-color: rgba(46,125,50,0.3); }
+
+    .btn-test {
+      height: 34px;
+      padding: 0 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.12s;
+    }
+    .light .btn-test { background: #e3f0fd; color: #1565c0; border: 1px solid rgba(21,101,192,0.2); }
+    .light .btn-test:hover { background: #c9e0fb; }
+    .dark .btn-test  { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+    .conn-success { font-size: 12px; color: #16a34a; font-weight: 500; }
+    .dark .conn-success { color: #4ade80; }
+
+    .ai-setup-footer {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 14px;
+      padding-top: 12px;
+    }
+    .light .ai-setup-footer { border-top: 1px solid rgba(21,101,192,0.1); }
+    .dark  .ai-setup-footer { border-top: 1px solid rgba(59,130,246,0.15); }
+
+    .btn-ghost {
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.12s;
+    }
+    .light .btn-ghost { background: transparent; color: var(--ink-muted); border: 1px solid var(--border-default); }
+    .light .btn-ghost:hover { background: #f0f0f8; }
+    .dark .btn-ghost  { background: transparent; color: var(--ink-muted-dark); border: 1px solid var(--border-default-dark); }
+    .dark .btn-ghost:hover  { background: rgba(255,255,255,0.05); }
+
+    .btn-primary {
+      padding: 7px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      transition: all 0.12s;
+    }
+    .btn-primary:hover { background: #1565c0; }
+
+    /* ─── Error Scene ─── */
+    .error-list { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 480px; }
+    .error-case { display: flex; flex-direction: column; gap: 6px; }
+    .error-case-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding-bottom: 6px;
+      border-bottom: 1px solid;
+      margin-bottom: 4px;
+    }
+    .light .error-case-label { color: var(--ink-faint); border-color: var(--border-default); }
+    .dark  .error-case-label { color: var(--ink-muted-dark); border-color: var(--border-default-dark); }
+
+    /* ─── Progress Page ─── */
+    .progress-shell {
+      min-height: 520px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 32px;
+      gap: 32px;
+    }
+    .light.progress-shell { background: var(--bg-paper); }
+    .dark.progress-shell  { background: var(--bg-paper-dark); }
+
+    .progress-project-name {
+      font-size: 18px;
+      font-weight: 600;
+      text-align: center;
+    }
+    .light .progress-project-name { color: var(--ink-primary); }
+    .dark  .progress-project-name { color: var(--ink-primary-dark); }
+    .progress-project-path {
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      text-align: center;
+    }
+    .light .progress-project-path { color: var(--ink-muted); }
+    .dark  .progress-project-path { color: var(--ink-muted-dark); }
+
+    .progress-stages { display: flex; flex-direction: column; gap: 18px; width: 100%; max-width: 500px; }
+
+    .stage-row { display: flex; align-items: center; gap: 14px; }
+
+    /* Stage badge */
+    .stage-badge {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      position: relative;
+    }
+    .stage-badge.running {
+      animation: pulse-ring 1.6s ease-out infinite;
+    }
+    .stage-badge.pending   { border: 2px solid; }
+    .light .stage-badge.pending { border-color: var(--ink-faint); color: var(--ink-faint); }
+    .dark  .stage-badge.pending { border-color: var(--ink-muted-dark); color: var(--ink-muted-dark); }
+    .stage-badge.completed { background: #22c55e; color: white; }
+    .stage-badge.failed    { background: var(--color-error); color: white; }
+    .stage-badge.skipped   { border: 2px solid; }
+    .light .stage-badge.skipped { border-color: var(--ink-faint); color: var(--ink-muted); }
+    .dark  .stage-badge.skipped { border-color: var(--ink-muted-dark); color: var(--ink-muted-dark); }
+
+    .badge-scan    { background: var(--color-scanning); color: white; }
+    .badge-parse   { background: var(--color-parsing);  color: white; }
+    .badge-build   { background: var(--color-building); color: white; }
+    .badge-ai      { background: var(--color-ai);       color: white; }
+
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); }
+      60%  { box-shadow: 0 0 0 6px rgba(59,130,246,0); }
+      100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+    }
+    @keyframes pulse-ring-parse {
+      0%   { box-shadow: 0 0 0 0 rgba(139,92,246,0.5); }
+      60%  { box-shadow: 0 0 0 6px rgba(139,92,246,0); }
+      100% { box-shadow: 0 0 0 0 rgba(139,92,246,0); }
+    }
+
+    .running.badge-scan  { animation-name: pulse-ring; }
+    .running.badge-parse { animation-name: pulse-ring-parse; animation-timing-function: ease-out; animation-duration: 1.6s; animation-iteration-count: infinite; }
+
+    .stage-body { flex: 1; min-width: 0; }
+    .stage-top-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .stage-name { font-size: 14px; font-weight: 600; }
+    .light .stage-name { color: var(--ink-primary); }
+    .dark  .stage-name { color: var(--ink-primary-dark); }
+    .stage-pct { font-size: 13px; font-weight: 600; margin-left: auto; }
+
+    .progress-track {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .light .progress-track { background: #f0f0f4; }
+    .dark  .progress-track { background: #2a2a3e; }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+    .fill-scan  { background: var(--color-scanning); }
+    .fill-parse { background: var(--color-parsing); }
+    .fill-build { background: var(--color-building); }
+    .fill-ai    { background: var(--color-ai); }
+    .fill-done  { background: #22c55e; }
+
+    .stage-sub {
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 5px;
+    }
+    .light .stage-sub { color: var(--ink-muted); }
+    .dark  .stage-sub { color: var(--ink-muted-dark); }
+    .stage-sub.dim {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+    }
+    .light .stage-sub.dim { color: var(--ink-faint); }
+    .dark  .stage-sub.dim { color: var(--ink-muted-dark); opacity: 0.6; }
+
+    .btn-cancel {
+      padding: 8px 20px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      background: transparent;
+      color: var(--color-error);
+      border: 1px solid var(--color-error);
+      transition: all 0.12s;
+    }
+    .btn-cancel:hover { background: rgba(239,68,68,0.06); }
+
+    /* Completed footer */
+    .completed-footer {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .completed-headline {
+      font-size: 18px;
+      font-weight: 600;
+      color: #22c55e;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .completed-stats {
+      font-size: 13px;
+    }
+    .light .completed-stats { color: var(--ink-secondary); }
+    .dark  .completed-stats { color: var(--ink-secondary-dark); }
+    .completed-countdown {
+      font-size: 12px;
+    }
+    .light .completed-countdown { color: var(--ink-muted); }
+    .dark  .completed-countdown { color: var(--ink-muted-dark); }
+    .btn-view-now {
+      margin-top: 4px;
+      padding: 10px 28px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      background: #22c55e;
+      color: white;
+      border: none;
+      transition: all 0.12s;
+      box-shadow: 0 2px 8px rgba(34,197,94,0.3);
+    }
+    .btn-view-now:hover { background: #16a34a; }
+
+    /* Failed block */
+    .failed-headline {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-error);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .error-detail-card {
+      width: 100%;
+      max-width: 500px;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .light .error-detail-card {
+      background: rgba(239,68,68,0.05);
+      border: 1px solid rgba(239,68,68,0.15);
+    }
+    .dark .error-detail-card {
+      background: rgba(239,68,68,0.07);
+      border: 1px solid rgba(239,68,68,0.2);
+    }
+    .error-detail-text {
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1.6;
+    }
+    .light .error-detail-text { color: #b91c1c; }
+    .dark  .error-detail-text { color: #fca5a5; }
+    .failed-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+    .btn-retry {
+      padding: 9px 22px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      transition: all 0.12s;
+    }
+    .btn-retry:hover { background: #1565c0; }
+    .btn-back {
+      padding: 9px 22px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      background: transparent;
+      border: 1px solid;
+      transition: all 0.12s;
+    }
+    .light .btn-back { color: var(--ink-secondary); border-color: var(--border-default); }
+    .light .btn-back:hover { background: #f0f0f8; }
+    .dark  .btn-back { color: var(--ink-secondary-dark); border-color: var(--border-default-dark); }
+    .dark  .btn-back:hover { background: rgba(255,255,255,0.05); }
+
+    /* ─── Toolbar Scene ─── */
+    .toolbar-shell {
+      background: #10101e;
+      padding: 48px 32px;
+    }
+    .toolbar-demo-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #6868aa;
+      margin-bottom: 12px;
+    }
+    .toolbar-bar {
+      height: 48px;
+      background: rgba(26,26,46,0.90);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      gap: 4px;
+    }
+    .tb-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.12s;
+      white-space: nowrap;
+    }
+    .tb-btn:hover, .tb-btn.hover-demo {
+      color: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.08);
+    }
+    .tb-btn .tb-icon { font-size: 15px; }
+    .tb-btn .tb-text { font-size: 12px; }
+
+    .tb-search {
+      flex: 1;
+      height: 32px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+      color: rgba(255,255,255,0.35);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+    }
+    .tb-search-icon { font-size: 13px; }
+    .tb-shortcut {
+      margin-left: auto;
+      font-size: 11px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 4px;
+      padding: 1px 6px;
+      color: rgba(255,255,255,0.3);
+    }
+    .tb-divider {
+      width: 1px;
+      height: 20px;
+      background: rgba(255,255,255,0.08);
+      flex-shrink: 0;
+      margin: 0 4px;
+    }
+
+    /* new switch btn highlight */
+    .tb-btn.switch-project {
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .tb-btn.switch-project:hover, .tb-btn.switch-project.hover-demo {
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    .toolbar-variants {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .toolbar-state-label {
+      font-size: 11px;
+      color: #6868aa;
+      margin-bottom: 6px;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─────────────────────────────── PAGE HEADER ─────────────────────────────── -->
+<header class="page-header">
+  Sprint 20 G1
+  <span>·</span>
+  啟動體驗改造 UI 圖稿
+  <span>·</span>
+  9 個場景截圖基準
+  <span>·</span>
+  2026-04-09
+</header>
+
+<!-- ─────────────────────────────── NAV ─────────────────────────────── -->
+<nav class="scene-nav">
+  <a href="#01-welcome-empty">01 歡迎頁·空白</a>
+  <a href="#02-welcome-recent">02 歡迎頁·最近專案</a>
+  <a href="#03-welcome-ai-setup">03 歡迎頁·AI 設定</a>
+  <a href="#04-welcome-error">04 歡迎頁·路徑錯誤</a>
+  <a href="#05-progress-scanning">05 進度頁·掃描中</a>
+  <a href="#06-progress-parsing">06 進度頁·解析中</a>
+  <a href="#07-progress-completed">07 進度頁·完成</a>
+  <a href="#08-progress-failed">08 進度頁·失敗</a>
+  <a href="#09-toolbar-switch">09 Toolbar·切換專案</a>
+</nav>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- SCENE 01 — 歡迎頁：首次使用（空白）                                         -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="scene" id="01-welcome-empty">
+  <div class="scene-label">Scene 01</div>
+  <div class="scene-title">歡迎頁 — 首次使用（空白）</div>
+  <div class="scene-filename">01-welcome-empty.png</div>
+
+  <div class="variant-row">
+    <!-- Light -->
+    <div class="variant-box">
+      <div class="variant-label light">亮色 Light</div>
+      <div class="welcome-shell light">
+        <div class="logo-area">
+          <div class="logo-mark">◆</div>
+          <div class="logo-name">CodeAtlas</div>
+          <div class="logo-sub">讓任何人在 5 分鐘內看懂一個專案</div>
+        </div>
+
+        <div class="input-area">
+          <div class="input-row">
+            <div class="path-input-wrap">
+              <span class="path-input-icon">📂</span>
+              <input class="path-input" type="text" placeholder="輸入或貼上專案路徑...">
+            </div>
+            <button class="btn-analyze">開始分析</button>
+          </div>
+        </div>
+
+        <div class="recent-section">
+          <div class="recent-header">最近開啟的專案</div>
+          <div class="recent-empty">
+            尚無最近開啟的專案 · 輸入路徑開始你的第一個分析
+          </div>
+        </div>
+
+        <div class="version-label">CodeAtlas v20.0.0</div>
+      </div>
+    </div>
+
+    <!-- Dark -->
+    <div class="variant-box">
+      <div class="variant-label dark">暗色 Dark</div>
+      <div class="welcome-shell dark">
+        <div class="logo-area">
+          <div class="logo-mark">◆</div>
+          <div class="logo-name">CodeAtlas</div>
+          <div class="logo-sub">讓任何人在 5 分鐘內看懂一個專案</div>
+        </div>
+
+        <div class="input-area">
+          <div class="input-row">
+            <div class="path-input-wrap">
+              <span class="path-input-icon">📂</span>
+              <input class="path-input" type="text" placeholder="輸入或貼上專案路徑...">
+            </div>
+            <button class="btn-analyze">開始分析</button>
+          </div>
+        </div>
+
+        <div class="recent-section">
+          <div class="recent-header">最近開啟的專案</div>
+          <div class="recent-empty">
+            尚無最近開啟的專案 · 輸入路徑開始你的第一個分析
+          </div>
+        </div>
+
+        <div class="version-label">CodeAtlas v20.0.0</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- SCENE 02 — 歡迎頁：有最近專案清單                                            -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="scene" id="02-welcome-recent">
+  <div class="scene-label">Scene 02</div>
+  <div class="scene-title">歡迎頁 — 有最近專案清單</div>
+  <div class="scene-filename">02-welcome-recent.png</div>
+
+  <div class="variant-row">
+    <!-- Light -->
+    <div class="variant-box">
+      <div class="variant-label light">亮色 Light</div>
+      <div class="welcome-shell light">
+        <div class="logo-area">
+          <div class="logo-mark">◆</div>
+          <div class="logo-name">CodeAtlas</div>
+          <div class="logo-sub">讓任何人在 5 分鐘內看懂一個專案</div>
+        </div>
+
+        <div class="input-area">
+          <div class="input-row">
+            <div class="path-input-wrap">
+              <span class="path-input-icon">📂</span>
+              <input class="path-input" type="text" placeholder="輸入或貼上專案路徑...">
+            </div>
+            <button class="btn-analyze">開始分析</button>
+          </div>
+        </div>
+
+        <div class="recent-section">
+          <div class="recent-header">最近開啟的專案</div>
+          <div class="recent-list">
+            <!-- Item 1 -->
+            <div class="recent-item">
+              <span class="recent-icon">📁</span>
+              <div class="recent-info">
+                <div class="recent-name">my-project</div>
+                <div class="recent-path">~/workspace/my-project</div>
+              </div>
+              <div class="recent-meta">
+                <div class="lang-badges">
+                  <span class="lang-badge badge-ts">TypeScript</span>
+                  <span class="lang-badge badge-js">JavaScript</span>
+                </div>
+                <span class="file-count">450 檔案</span>
+                <span class="time-label">3 分鐘前</span>
+                <button class="btn-open">開啟</button>
+              </div>
+            </div>
+            <!-- Item 2 -->
+            <div class="recent-item">
+              <span class="recent-icon">📁</span>
+              <div class="recent-info">
+                <div class="recent-name">api-service</div>
+                <div class="recent-path">~/workspace/api-service</div>
+              </div>
+              <div class="recent-meta">
+                <div class="lang-badges">
+                  <span class="lang-badge badge-py">Python</span>
+                </div>
+                <span class="file-count">128 檔案</span>
+                <span class="time-label">1 小時前</span>
+                <button class="btn-open">開啟</button>
+              </div>
+            </div>
+            <!-- Item 3 -->
+            <div class="recent-item">
+              <span class="recent-icon">📁</span>
+              <div class="recent-info">
+                <div class="recent-name">spring-app</div>
+                <div class="recent-path">~/workspace/spring-app</div>
+              </div>
+              <div class="recent-meta">
+                <div class="lang-badges">
+                  <span class="lang-badge badge-java">Java</span>
+                </div>
+                <span class="file-count">320 檔案</span>
+                <span class="time-label">昨天</span>
+                <button class="btn-open">開啟</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="version-label">CodeAtlas v20.0.0</div>
+      </div>
+    </div>
+
+    <!-- Dark -->
+    <div class="variant-box">
+      <div class="variant-label dark">暗色 Dark</div>
+      <div class="welcome-shell dark">
+        <div class="logo-area">
+          <div class="logo-mark">◆</div>
+          <div class="logo-name">CodeAtlas</div>
+          <div class="logo-sub">讓任何人在 5 分鐘內看懂一個專案</div>
+        </div>
+
+        <div class="input-area">
+          <div class="input-row">
+            <div class="path-input-wrap">
+              <span class="path-input-icon">📂</span>
+              <input class="path-input" type="text" placeholder="輸入或貼上專案路徑...">
+            </div>
+            <button class="btn-analyze">開始分析</button>
+          </div>
+        </div>
+
+        <div class="recent-section">
+          <div class="recent-header">最近開啟的專案</div>
+          <div class="recent-list">
+            <div class="recent-item">
+              <span class="recent-icon">📁</span>
+              <div class="recent-info">
+                <div class="recent-name">my-project</div>
+                <div class="recent-path">~/workspace/my-project</div>
+              </div>
+              <div class="recent-meta">
+                <div class="lang-badges">
+                  <span class="lang-badge badge-ts">TypeScript</span>
+                  <span class="lang-badge badge-js">JavaScript</span>
+                </div>
+                <span class="file-count">450 檔案</span>
+                <span class="time-label">3 分鐘前</span>
+                <button class="btn-open">開啟</button>
+              </div>
+            </div>
+            <div class="recent-item">
+              <span class="recent-icon">📁</span>
+              <div class="recent-info">
+                <div class="recent-name">api-service</div>
+                <div class="recent-path">~/workspace/api-service</div>
+              </div>
+              <div class="recent-meta">
+                <div class="lang-badges">
+                  <span class="lang-badge badge-py">Python</span>
+                </div>
+                <span class="file-count">128 檔案</span>
+                <span class="time-label">1 小時前</span>
+                <button class="btn-open">開啟</button>
+              </div>
+            </div>
+            <div class="recent-item">
+              <span class="recent-icon">📁</span>
+              <div class="recent-info">
+                <div class="recent-name">spring-app</div>
+                <div class="recent-path">~/workspace/spring-app</div>
+              </div>
+              <div class="recent-meta">
+                <div class="lang-badges">
+                  <span class="lang-badge badge-java">Java</span>
+                </div>
+                <span class="file-count">320 檔案</span>
+                <span class="time-label">昨天</span>
+                <button class="btn-open">開啟</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="version-label">CodeAtlas v20.0.0</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- SCENE 03 — 歡迎頁：首次 AI 設定引導                                          -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="scene" id="03-welcome-ai-setup">
+  <div class="scene-label">Scene 03</div>
+  <div class="scene-title">歡迎頁 — 首次 AI 設定引導</div>
+  <div class="scene-filename">03-welcome-ai-setup.png</div>
+
+  <div class="variant-row">
+    <!-- Light -->
+    <div class="variant-box">
+      <div class="variant-label light">亮色 Light</div>
+      <div class="welcome-shell light">
+        <div class="logo-area">
+          <div class="logo-mark">◆</div>
+          <div class="logo-name">CodeAtlas</div>
+          <div class="logo-sub">讓任何人在 5 分鐘內看懂一個專案</div>
+        </div>
+
+        <div class="input-area">
+          <div class="input-row">
+            <div class="path-input-wrap">
+              <span class="path-input-icon">📂</span>
+              <input class="path-input" type="text" placeholder="輸入或貼上專案路徑...">
+            </div>
+            <button class="btn-analyze">開始分析</button>
+          </div>
+        </div>
+
+        <!-- AI Setup Block -->
+        <div class="ai-setup-block">
+          <div class="ai-setup-title">✨ 設定 AI 分析（推薦）</div>
+          <div class="ai-setup-desc">
+            AI 分析可以幫助你更快理解專案架構。選擇一個 AI 提供者：
+          </div>
+          <div class="ai-setup-row">
+            <select class="provider-select">
+              <option>Claude (Anthropic)</option>
+              <option>OpenAI GPT-4</option>
+              <option>本地模型 (Ollama)</option>
+            </select>
+            <span class="badge-recommend">⭐ 推薦</span>
+            <span class="badge-private">🔒 本地處理</span>
+          </div>
+          <div class="ai-setup-row">
+            <button class="btn-test">測試連線</button>
+            <span class="conn-success">✓ 連線成功</span>
+          </div>
+          <div class="ai-setup-footer">
+            <button class="btn-ghost">跳過</button>
+            <button class="btn-primary">儲存設定</button>
+          </div>
+        </div>
+
+        <div class="version-label">CodeAtlas v20.0.0</div>
+      </div>
+    </div>
+
+    <!-- Dark -->
+    <div class="variant-box">
+      <div class="variant-label dark">暗色 Dark</div>
+      <div class="welcome-shell dark">
+        <div class="logo-area">
+          <div class="logo-mark">◆</div>
+          <div class="logo-name">CodeAtlas</div>
+          <div class="logo-sub">讓任何人在 5 分鐘內看懂一個專案</div>
+        </div>
+
+        <div class="input-area">
+          <div class="input-row">
+            <div class="path-input-wrap">
+              <span class="path-input-icon">📂</span>
+              <input class="path-input" type="text" placeholder="輸入或貼上專案路徑...">
+            </div>
+            <button class="btn-analyze">開始分析</button>
+          </div>
+        </div>
+
+        <div class="ai-setup-block">
+          <div class="ai-setup-title">✨ 設定 AI 分析（推薦）</div>
+          <div class="ai-setup-desc">
+            AI 分析可以幫助你更快理解專案架構。選擇一個 AI 提供者：
+          </div>
+          <div class="ai-setup-row">
+            <select class="provider-select">
+              <option>Claude (Anthropic)</option>
+              <option>OpenAI GPT-4</option>
+              <option>本地模型 (Ollama)</option>
+            </select>
+            <span class="badge-recommend">⭐ 推薦</span>
+            <span class="badge-private">🔒 本地處理</span>
+          </div>
+          <div class="ai-setup-row">
+            <button class="btn-test">測試連線</button>
+            <span class="conn-success">✓ 連線成功</span>
+          </div>
+          <div class="ai-setup-footer">
+            <button class="btn-ghost">跳過</button>
+            <button class="btn-primary">儲存設定</button>
+          </div>
+        </div>
+
+        <div class="version-label">CodeAtlas v20.0.0</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- SCENE 04 — 歡迎頁：路徑輸入錯誤（4 種）                                       -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="scene" id="04-welcome-error">
+  <div class="scene-label">Scene 04</div>
+  <div class="scene-title">歡迎頁 — 路徑輸入錯誤</div>
+  <div class="scene-filename">04-welcome-error.png</div>
+
+  <div class="variant-row">
+    <!-- Light -->
+    <div class="variant-box">
+      <div class="variant-label light">亮色 Light — 4 種錯誤狀態</div>
+      <div class="welcome-shell light" style="justify-content: flex-start; padding-top: 40px;">
+        <div class="logo-area" style="margin-bottom: 0;">
+          <div class="logo-mark">◆</div>
+          <div class="logo-name">CodeAtlas</div>
+          <div class="logo-sub">讓任何人在 5 分鐘內看懂一個專案</div>
+        </div>
+
+        <div class="input-area" style="max-width: 480px; width: 100%;">
+          <div class="error-list">
+            <!-- Error 1 -->
+            <div class="error-case">
+              <div class="error-case-label">錯誤 1 — 路徑不存在</div>
+              <div class="input-row">
+                <div class="path-input-wrap">
+                  <span class="path-input-icon">📂</span>
+                  <input class="path-input error-state" type="text" value="/Users/chris/nonexistent-project">
+                </div>
+                <button class="btn-analyze">開始分析</button>
+              </div>
+              <div class="error-msg">❌ 路徑不存在 — 請確認路徑是否正確</div>
+            </div>
+            <!-- Error 2 -->
+            <div class="error-case">
+              <div class="error-case-label">錯誤 2 — 不是目錄</div>
+              <div class="input-row">
+                <div class="path-input-wrap">
+                  <span class="path-input-icon">📂</span>
+                  <input class="path-input error-state" type="text" value="/Users/chris/documents/readme.md">
+                </div>
+                <button class="btn-analyze">開始分析</button>
+              </div>
+              <div class="error-msg">❌ 不是目錄 — 請指定一個資料夾，而非檔案</div>
+            </div>
+            <!-- Error 3 -->
+            <div class="error-case">
+              <div class="error-case-label">錯誤 3 — 找不到原始碼</div>
+              <div class="input-row">
+                <div class="path-input-wrap">
+                  <span class="path-input-icon">📂</span>
+                  <input class="path-input error-state" type="text" value="/Users/chris/empty-folder">
+                </div>
+                <button class="btn-analyze">開始分析</button>
+              </div>
+              <div class="error-msg">❌ 找不到可分析的原始碼 — 此目錄沒有 .ts/.js/.py/.java 檔案</div>
+            </div>
+            <!-- Error 4 -->
+            <div class="error-case">
+              <div class="error-case-label">錯誤 4 — 路徑過長</div>
+              <div class="input-row">
+                <div class="path-input-wrap">
+                  <span class="path-input-icon">📂</span>
+                  <input class="path-input error-state" type="text" value="/Users/chris/a/very/deeply/nested/directory/path/that/exceeds...">
+                </div>
+                <button class="btn-analyze">開始分析</button>
+              </div>
+              <div class="error-msg">❌ 路徑過長 — 路徑長度超過限制</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dark -->
+    <div class="variant-box">
+      <div class="variant-label dark">暗色 Dark — 4 種錯誤狀態</div>
+      <div class="welcome-shell dark" style="justify-content: flex-start; padding-top: 40px;">
+        <div class="logo-area" style="margin-bottom: 0;">
+          <div class="logo-mark">◆</div>
+          <div class="logo-name">CodeAtlas</div>
+          <div class="logo-sub">讓任何人在 5 分鐘內看懂一個專案</div>
+        </div>
+
+        <div class="input-area" style="max-width: 480px; width: 100%;">
+          <div class="error-list">
+            <div class="error-case">
+              <div class="error-case-label">錯誤 1 — 路徑不存在</div>
+              <div class="input-row">
+                <div class="path-input-wrap">
+                  <span class="path-input-icon">📂</span>
+                  <input class="path-input error-state" type="text" value="/Users/chris/nonexistent-project">
+                </div>
+                <button class="btn-analyze">開始分析</button>
+              </div>
+              <div class="error-msg">❌ 路徑不存在 — 請確認路徑是否正確</div>
+            </div>
+            <div class="error-case">
+              <div class="error-case-label">錯誤 2 — 不是目錄</div>
+              <div class="input-row">
+                <div class="path-input-wrap">
+                  <span class="path-input-icon">📂</span>
+                  <input class="path-input error-state" type="text" value="/Users/chris/documents/readme.md">
+                </div>
+                <button class="btn-analyze">開始分析</button>
+              </div>
+              <div class="error-msg">❌ 不是目錄 — 請指定一個資料夾，而非檔案</div>
+            </div>
+            <div class="error-case">
+              <div class="error-case-label">錯誤 3 — 找不到原始碼</div>
+              <div class="input-row">
+                <div class="path-input-wrap">
+                  <span class="path-input-icon">📂</span>
+                  <input class="path-input error-state" type="text" value="/Users/chris/empty-folder">
+                </div>
+                <button class="btn-analyze">開始分析</button>
+              </div>
+              <div class="error-msg">❌ 找不到可分析的原始碼 — 此目錄沒有 .ts/.js/.py/.java 檔案</div>
+            </div>
+            <div class="error-case">
+              <div class="error-case-label">錯誤 4 — 路徑過長</div>
+              <div class="input-row">
+                <div class="path-input-wrap">
+                  <span class="path-input-icon">📂</span>
+                  <input class="path-input error-state" type="text" value="/Users/chris/a/very/deeply/nested/directory/path/that/exceeds...">
+                </div>
+                <button class="btn-analyze">開始分析</button>
+              </div>
+              <div class="error-msg">❌ 路徑過長 — 路徑長度超過限制</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- SCENE 05 — 進度頁：掃描中                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="scene" id="05-progress-scanning">
+  <div class="scene-label">Scene 05</div>
+  <div class="scene-title">進度頁 — 掃描中</div>
+  <div class="scene-filename">05-progress-scanning.png</div>
+
+  <div class="variant-row">
+    <!-- Light -->
+    <div class="variant-box">
+      <div class="variant-label light">亮色 Light</div>
+      <div class="progress-shell light">
+        <div>
+          <div class="progress-project-name">my-project</div>
+          <div class="progress-project-path">/Users/chris/workspace/my-project</div>
+        </div>
+
+        <div class="progress-stages">
+          <!-- Stage 1: scanning running -->
+          <div class="stage-row">
+            <div class="stage-badge running badge-scan">1</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">掃描檔案</span>
+                <span class="stage-pct" style="color: var(--color-scanning);">60%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-scan" style="width: 60%;"></div>
+              </div>
+              <div class="stage-sub">正在掃描 src/services/auth-service.ts &nbsp;·&nbsp; 270 / 450 個檔案</div>
+            </div>
+          </div>
+          <!-- Stage 2: pending -->
+          <div class="stage-row">
+            <div class="stage-badge pending">2</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">解析結構</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-parse" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">等待中</div>
+            </div>
+          </div>
+          <!-- Stage 3: pending -->
+          <div class="stage-row">
+            <div class="stage-badge pending">3</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">建立圖譜</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-build" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">等待中</div>
+            </div>
+          </div>
+          <!-- Stage 4: pending -->
+          <div class="stage-row">
+            <div class="stage-badge pending">4</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">AI 分析（可選）</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-ai" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">等待中</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-cancel">取消分析</button>
+      </div>
+    </div>
+
+    <!-- Dark -->
+    <div class="variant-box">
+      <div class="variant-label dark">暗色 Dark</div>
+      <div class="progress-shell dark">
+        <div>
+          <div class="progress-project-name">my-project</div>
+          <div class="progress-project-path">/Users/chris/workspace/my-project</div>
+        </div>
+
+        <div class="progress-stages">
+          <div class="stage-row">
+            <div class="stage-badge running badge-scan">1</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">掃描檔案</span>
+                <span class="stage-pct" style="color: var(--color-scanning);">60%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-scan" style="width: 60%;"></div>
+              </div>
+              <div class="stage-sub">正在掃描 src/services/auth-service.ts &nbsp;·&nbsp; 270 / 450 個檔案</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge pending">2</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">解析結構</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-parse" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">等待中</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge pending">3</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">建立圖譜</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-build" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">等待中</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge pending">4</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">AI 分析（可選）</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-ai" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">等待中</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-cancel">取消分析</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- SCENE 06 — 進度頁：解析中                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="scene" id="06-progress-parsing">
+  <div class="scene-label">Scene 06</div>
+  <div class="scene-title">進度頁 — 解析中</div>
+  <div class="scene-filename">06-progress-parsing.png</div>
+
+  <div class="variant-row">
+    <!-- Light -->
+    <div class="variant-box">
+      <div class="variant-label light">亮色 Light</div>
+      <div class="progress-shell light">
+        <div>
+          <div class="progress-project-name">my-project</div>
+          <div class="progress-project-path">/Users/chris/workspace/my-project</div>
+        </div>
+
+        <div class="progress-stages">
+          <!-- Stage 1: completed -->
+          <div class="stage-row">
+            <div class="stage-badge completed">✓</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">掃描檔案</span>
+                <span class="stage-pct" style="color: #22c55e;">100%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-done" style="width: 100%;"></div>
+              </div>
+              <div class="stage-sub">完成掃描 450 個檔案</div>
+            </div>
+          </div>
+          <!-- Stage 2: parsing running -->
+          <div class="stage-row">
+            <div class="stage-badge running badge-parse">2</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">解析結構</span>
+                <span class="stage-pct" style="color: var(--color-parsing);">45%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-parse" style="width: 45%;"></div>
+              </div>
+              <div class="stage-sub">正在解析 auth-service.ts &nbsp;·&nbsp; 203 / 450 個檔案</div>
+            </div>
+          </div>
+          <!-- Stage 3 -->
+          <div class="stage-row">
+            <div class="stage-badge pending">3</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">建立圖譜</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-build" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">等待中</div>
+            </div>
+          </div>
+          <!-- Stage 4 -->
+          <div class="stage-row">
+            <div class="stage-badge pending">4</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">AI 分析（可選）</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-ai" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">等待中</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-cancel">取消分析</button>
+      </div>
+    </div>
+
+    <!-- Dark -->
+    <div class="variant-box">
+      <div class="variant-label dark">暗色 Dark</div>
+      <div class="progress-shell dark">
+        <div>
+          <div class="progress-project-name">my-project</div>
+          <div class="progress-project-path">/Users/chris/workspace/my-project</div>
+        </div>
+
+        <div class="progress-stages">
+          <div class="stage-row">
+            <div class="stage-badge completed">✓</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">掃描檔案</span>
+                <span class="stage-pct" style="color: #22c55e;">100%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-done" style="width: 100%;"></div>
+              </div>
+              <div class="stage-sub">完成掃描 450 個檔案</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge running badge-parse">2</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">解析結構</span>
+                <span class="stage-pct" style="color: var(--color-parsing);">45%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-parse" style="width: 45%;"></div>
+              </div>
+              <div class="stage-sub">正在解析 auth-service.ts &nbsp;·&nbsp; 203 / 450 個檔案</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge pending">3</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">建立圖譜</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-build" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">等待中</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge pending">4</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">AI 分析（可選）</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-ai" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">等待中</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-cancel">取消分析</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- SCENE 07 — 進度頁：完成                                                      -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="scene" id="07-progress-completed">
+  <div class="scene-label">Scene 07</div>
+  <div class="scene-title">進度頁 — 完成</div>
+  <div class="scene-filename">07-progress-completed.png</div>
+
+  <div class="variant-row">
+    <!-- Light -->
+    <div class="variant-box">
+      <div class="variant-label light">亮色 Light</div>
+      <div class="progress-shell light">
+        <div>
+          <div class="progress-project-name">my-project</div>
+          <div class="progress-project-path">/Users/chris/workspace/my-project</div>
+        </div>
+
+        <div class="progress-stages">
+          <div class="stage-row">
+            <div class="stage-badge completed">✓</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">掃描檔案</span>
+                <span class="stage-pct" style="color: #22c55e;">100%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-done" style="width: 100%;"></div>
+              </div>
+              <div class="stage-sub">完成掃描 450 個檔案</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge completed">✓</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">解析結構</span>
+                <span class="stage-pct" style="color: #22c55e;">100%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-done" style="width: 100%;"></div>
+              </div>
+              <div class="stage-sub">完成解析 450 個檔案，126 個模組</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge completed">✓</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">建立圖譜</span>
+                <span class="stage-pct" style="color: #22c55e;">100%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-done" style="width: 100%;"></div>
+              </div>
+              <div class="stage-sub">圖譜已建立，35 個端點</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge skipped" style="font-size: 13px;">⏭</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">AI 分析（可選）</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">已跳過</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="completed-footer">
+          <div class="completed-headline">✅ 分析完成！</div>
+          <div class="completed-stats">450 個檔案 · 126 個模組 · 35 個端點 · 4 種語言</div>
+          <div class="completed-countdown">即將自動跳轉... (3 秒)</div>
+          <button class="btn-view-now">立即查看</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dark -->
+    <div class="variant-box">
+      <div class="variant-label dark">暗色 Dark</div>
+      <div class="progress-shell dark">
+        <div>
+          <div class="progress-project-name">my-project</div>
+          <div class="progress-project-path">/Users/chris/workspace/my-project</div>
+        </div>
+
+        <div class="progress-stages">
+          <div class="stage-row">
+            <div class="stage-badge completed">✓</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">掃描檔案</span>
+                <span class="stage-pct" style="color: #22c55e;">100%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-done" style="width: 100%;"></div>
+              </div>
+              <div class="stage-sub">完成掃描 450 個檔案</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge completed">✓</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">解析結構</span>
+                <span class="stage-pct" style="color: #22c55e;">100%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-done" style="width: 100%;"></div>
+              </div>
+              <div class="stage-sub">完成解析 450 個檔案，126 個模組</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge completed">✓</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">建立圖譜</span>
+                <span class="stage-pct" style="color: #22c55e;">100%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-done" style="width: 100%;"></div>
+              </div>
+              <div class="stage-sub">圖譜已建立，35 個端點</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge skipped" style="font-size: 13px;">⏭</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">AI 分析（可選）</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">已跳過</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="completed-footer">
+          <div class="completed-headline">✅ 分析完成！</div>
+          <div class="completed-stats">450 個檔案 · 126 個模組 · 35 個端點 · 4 種語言</div>
+          <div class="completed-countdown">即將自動跳轉... (3 秒)</div>
+          <button class="btn-view-now">立即查看</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- SCENE 08 — 進度頁：失敗                                                      -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="scene" id="08-progress-failed">
+  <div class="scene-label">Scene 08</div>
+  <div class="scene-title">進度頁 — 失敗</div>
+  <div class="scene-filename">08-progress-failed.png</div>
+
+  <div class="variant-row">
+    <!-- Light -->
+    <div class="variant-box">
+      <div class="variant-label light">亮色 Light</div>
+      <div class="progress-shell light">
+        <div>
+          <div class="progress-project-name">my-project</div>
+          <div class="progress-project-path">/Users/chris/workspace/my-project</div>
+        </div>
+
+        <div class="progress-stages">
+          <div class="stage-row">
+            <div class="stage-badge completed">✓</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">掃描檔案</span>
+                <span class="stage-pct" style="color: #22c55e;">100%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-done" style="width: 100%;"></div>
+              </div>
+              <div class="stage-sub">完成掃描 450 個檔案</div>
+            </div>
+          </div>
+          <!-- Failed stage -->
+          <div class="stage-row">
+            <div class="stage-badge failed">✕</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name" style="color: var(--color-error);">解析結構</span>
+                <span class="stage-pct" style="color: var(--color-error);">失敗</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 30%; background: var(--color-error); opacity: 0.5;"></div>
+              </div>
+              <div class="stage-sub" style="color: var(--color-error);">Tree-sitter parser 初始化失敗</div>
+            </div>
+          </div>
+          <!-- Cancelled stages -->
+          <div class="stage-row">
+            <div class="stage-badge skipped" style="font-size: 13px;">—</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">建立圖譜</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">已取消</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge skipped" style="font-size: 13px;">—</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">AI 分析（可選）</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">已取消</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="failed-headline">❌ 分析失敗</div>
+        <div class="error-detail-card">
+          <div class="error-detail-text">
+            解析階段發生錯誤：Tree-sitter parser 初始化失敗。<br>
+            請確認 Node.js 版本 ≥ 18 且已正確安裝 native 模組。
+          </div>
+        </div>
+        <div class="failed-actions">
+          <button class="btn-retry">重試</button>
+          <button class="btn-back">返回歡迎頁</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dark -->
+    <div class="variant-box">
+      <div class="variant-label dark">暗色 Dark</div>
+      <div class="progress-shell dark">
+        <div>
+          <div class="progress-project-name">my-project</div>
+          <div class="progress-project-path">/Users/chris/workspace/my-project</div>
+        </div>
+
+        <div class="progress-stages">
+          <div class="stage-row">
+            <div class="stage-badge completed">✓</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">掃描檔案</span>
+                <span class="stage-pct" style="color: #22c55e;">100%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill fill-done" style="width: 100%;"></div>
+              </div>
+              <div class="stage-sub">完成掃描 450 個檔案</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge failed">✕</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name" style="color: var(--color-error);">解析結構</span>
+                <span class="stage-pct" style="color: var(--color-error);">失敗</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 30%; background: var(--color-error); opacity: 0.5;"></div>
+              </div>
+              <div class="stage-sub" style="color: #fca5a5;">Tree-sitter parser 初始化失敗</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge skipped" style="font-size: 13px;">—</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">建立圖譜</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">已取消</div>
+            </div>
+          </div>
+          <div class="stage-row">
+            <div class="stage-badge skipped" style="font-size: 13px;">—</div>
+            <div class="stage-body">
+              <div class="stage-top-row">
+                <span class="stage-name">AI 分析（可選）</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 0%;"></div>
+              </div>
+              <div class="stage-sub dim">已取消</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="failed-headline">❌ 分析失敗</div>
+        <div class="error-detail-card">
+          <div class="error-detail-text">
+            解析階段發生錯誤：Tree-sitter parser 初始化失敗。<br>
+            請確認 Node.js 版本 ≥ 18 且已正確安裝 native 模組。
+          </div>
+        </div>
+        <div class="failed-actions">
+          <button class="btn-retry">重試</button>
+          <button class="btn-back">返回歡迎頁</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- SCENE 09 — Toolbar：切換專案按鈕（暗色唯一）                                   -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<section class="scene" id="09-toolbar-switch">
+  <div class="scene-label">Scene 09</div>
+  <div class="scene-title">Toolbar — 切換專案按鈕</div>
+  <div class="scene-filename">09-toolbar-switch.png</div>
+
+  <div class="variant-row single">
+    <div class="variant-box" style="max-width: 900px; flex: none; width: 100%;">
+      <div class="variant-label dark">暗色 Dark（Toolbar 固定暗色風格）</div>
+      <div class="toolbar-shell">
+        <div class="toolbar-variants">
+
+          <!-- Normal state -->
+          <div>
+            <div class="toolbar-state-label">Normal 狀態 — 所有按鈕預設色</div>
+            <div class="toolbar-bar">
+              <button class="tb-btn">
+                <span class="tb-icon">⚙️</span>
+              </button>
+              <div class="tb-divider"></div>
+              <div class="tb-search">
+                <span class="tb-search-icon">🔍</span>
+                <span>搜尋檔案或方法...</span>
+                <span class="tb-shortcut">⌘K</span>
+              </div>
+              <div class="tb-divider"></div>
+              <button class="tb-btn">
+                <span class="tb-icon">📊</span>
+                <span class="tb-text">概覽</span>
+              </button>
+              <button class="tb-btn switch-project">
+                <span class="tb-icon">📂</span>
+                <span class="tb-text">切換專案</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Hover state on switch button -->
+          <div>
+            <div class="toolbar-state-label">Hover 狀態 — 「切換專案」按鈕 hover 中</div>
+            <div class="toolbar-bar">
+              <button class="tb-btn">
+                <span class="tb-icon">⚙️</span>
+              </button>
+              <div class="tb-divider"></div>
+              <div class="tb-search">
+                <span class="tb-search-icon">🔍</span>
+                <span>搜尋檔案或方法...</span>
+                <span class="tb-shortcut">⌘K</span>
+              </div>
+              <div class="tb-divider"></div>
+              <button class="tb-btn">
+                <span class="tb-icon">📊</span>
+                <span class="tb-text">概覽</span>
+              </button>
+              <!-- Switch project in hover state -->
+              <button class="tb-btn switch-project hover-demo" style="color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2);">
+                <span class="tb-icon">📂</span>
+                <span class="tb-text">切換專案</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Spec annotation -->
+        <div style="margin-top: 24px; padding: 14px 18px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; max-width: 860px; margin-left: auto; margin-right: auto;">
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #6868aa; margin-bottom: 10px;">元件規格</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; font-family: 'JetBrains Mono', monospace; color: rgba(255,255,255,0.5);">
+            <div>toolbar height: <span style="color: #f59e0b;">48px</span></div>
+            <div>toolbar bg: <span style="color: #f59e0b;">rgba(26,26,46,0.90)</span></div>
+            <div>btn padding: <span style="color: #f59e0b;">6px 12px</span></div>
+            <div>btn border-radius: <span style="color: #f59e0b;">6px</span></div>
+            <div>btn color: <span style="color: #f59e0b;">rgba(255,255,255,0.6)</span></div>
+            <div>btn hover color: <span style="color: #f59e0b;">rgba(255,255,255,0.9)</span></div>
+            <div>btn hover bg: <span style="color: #f59e0b;">rgba(255,255,255,0.08)</span></div>
+            <div>text size: <span style="color: #f59e0b;">12px 500</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

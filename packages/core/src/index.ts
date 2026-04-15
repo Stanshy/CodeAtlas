@@ -28,7 +28,7 @@ export type {
 } from './analyzers/directory-aggregator.js';
 
 // Sprint 13 / T2 — API endpoint detector
-export { detectEndpoints } from './analyzers/endpoint-detector.js';
+export { detectEndpoints, detectEndpointsAsync, buildAdapterContext } from './analyzers/endpoint-detector.js';
 export type {
   ApiEndpoint,
   EndpointGraph,
@@ -36,6 +36,18 @@ export type {
   ChainStep,
   HttpMethod,
 } from './analyzers/endpoint-detector.js';
+
+// Sprint 24 — Framework Adapter plugin system
+export type {
+  FrameworkAdapter,
+  AdapterContext,
+  FrameworkDetection,
+  MiddlewareDescriptor,
+  MiddlewareScope,
+  AdapterRegistryEntry,
+} from './analyzers/adapters/types.js';
+export { AdapterRegistry, createDefaultRegistry } from './analyzers/adapters/registry.js';
+export { BaseAdapter } from './analyzers/adapters/base-adapter.js';
 
 // Sprint 20 — Launch Experience types
 export type {

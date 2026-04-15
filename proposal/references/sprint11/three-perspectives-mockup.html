@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CodeAtlas — 三種故事視角 Preview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg-base:       #0a0a0f;
+    --bg-surface:    #0f0f1a;
+    --bg-elevated:   #13131f;
+    --bg-overlay:    #1a1a2e;
+    --cyan:          #00d4ff;
+    --cyan-bright:   #00ffff;
+    --cyan-dim:      #0099cc;
+    --magenta:       #bd00ff;
+    --magenta-bright:#ff00ff;
+    --green:         #00cc66;
+    --green-bright:  #00ff88;
+    --amber:         #ff8800;
+    --text-primary:  #e8eaf6;
+    --text-secondary:#9e9ec8;
+    --text-muted:    #5c5c88;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── Header ── */
+  .header {
+    padding: 18px 32px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    background: linear-gradient(180deg, rgba(15,15,26,0.95) 0%, rgba(10,10,15,0.8) 100%);
+    backdrop-filter: blur(12px);
+    flex-shrink: 0;
+  }
+  .header-title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    background: linear-gradient(135deg, var(--cyan) 0%, var(--magenta) 50%, var(--green-bright) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Tab Bar ── */
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    padding: 12px 32px 0;
+    background: var(--bg-base);
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .tab-btn {
+    position: relative;
+    padding: 8px 20px 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    border-radius: 6px 6px 0 0;
+    transition: color 150ms ease, background 150ms ease;
+    letter-spacing: 0.1px;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text-secondary); background: rgba(255,255,255,0.03); }
+  .tab-btn.active { color: var(--text-primary); background: rgba(255,255,255,0.04); }
+  .tab-btn .tab-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 10%;
+    width: 80%;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
+    opacity: 0;
+    transition: opacity 200ms ease;
+  }
+  .tab-btn.active .tab-indicator { opacity: 1; }
+  .tab-btn[data-tab="0"] .tab-indicator { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+  .tab-btn[data-tab="1"] .tab-indicator { background: linear-gradient(90deg, var(--cyan), var(--magenta)); box-shadow: 0 0 8px var(--magenta); }
+  .tab-btn[data-tab="2"] .tab-indicator { background: var(--green-bright); box-shadow: 0 0 8px var(--green-bright); }
+
+  /* ── Canvas Wrapper ── */
+  .canvas-wrapper {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tab-canvas {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+  }
+  .tab-canvas.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* Dot grid background */
+  .canvas-bg {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .canvas-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(10,10,15,0.85) 100%);
+    pointer-events: none;
+  }
+
+  /* ── Nodes ── */
+  .node {
+    position: absolute;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 11.5px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    transition: all 200ms ease-out;
+    cursor: pointer;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 10;
+  }
+  .node-label { font-weight: 500; line-height: 1; }
+  .node-meta { font-size: 10px; color: var(--text-muted); font-weight: 400; }
+
+  /* SVG edge overlay */
+  .edge-svg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    overflow: visible;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    padding: 10px 32px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    background: rgba(10,10,15,0.95);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    min-height: 40px;
+  }
+  .footer-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    max-width: 600px;
+    line-height: 1.5;
+  }
+  .footer-stats {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    gap: 16px;
+  }
+  .footer-stat { display: flex; gap: 5px; align-items: center; }
+  .footer-stat-val { color: var(--text-secondary); }
+
+  /* ════════════════════════════
+     TAB 1 — STRUCTURAL
+  ═════════════════════════════ */
+  #canvas-0 .dir-node {
+    width: 150px;
+    min-height: 68px;
+    background: var(--bg-surface);
+    border: 2px solid var(--cyan-dim);
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px 14px;
+    gap: 3px;
+    border-radius: 10px;
+    transition: border-color 200ms, box-shadow 200ms;
+  }
+  #canvas-0 .dir-node:hover,
+  #canvas-0 .dir-node.hover-active {
+    border-color: var(--cyan);
+    box-shadow: 0 0 18px rgba(0, 212, 255, 0.35);
+  }
+  #canvas-0 .dir-node .node-label {
+    font-size: 12px;
+    color: var(--cyan);
+    font-weight: 600;
+  }
+  #canvas-0 .dir-node .node-meta { font-size: 10px; margin-top: 1px; }
+  #canvas-0 .dir-node .meta-row { display: flex; gap: 10px; }
+
+  #canvas-0 .file-node {
+    height: 34px;
+    background: rgba(0, 212, 255, 0.04);
+    border: 1px solid #0d5e7a;
+    color: var(--text-secondary);
+    border-radius: 6px;
+    transition: border-color 200ms, color 200ms, box-shadow 200ms;
+  }
+  #canvas-0 .file-node:hover {
+    border-color: var(--cyan-dim);
+    color: var(--text-primary);
+  }
+  #canvas-0 .file-node.lit {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 12px rgba(0,212,255,0.25);
+  }
+
+  /* TAB 1 package label badges */
+  .pkg-label {
+    position: absolute;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* ════════════════════════════
+     TAB 2 — LOGIC
+  ═════════════════════════════ */
+  #canvas-1 .file-node {
+    background: rgba(0, 212, 255, 0.07);
+    border: 1.5px solid var(--cyan-dim);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    height: 34px;
+    transition: all 200ms ease-out;
+  }
+  #canvas-1 .dir-node {
+    background: rgba(189, 0, 255, 0.08);
+    border: 1.5px solid rgba(189,0,255,0.5);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    height: 34px;
+    padding: 6px 14px;
+    transition: all 200ms ease-out;
+  }
+  #canvas-1 .node.faded {
+    opacity: 0.12;
+    transition: opacity 150ms ease-out;
+  }
+  #canvas-1 .node.highlighted {
+    opacity: 1 !important;
+    border-color: var(--green-bright) !important;
+    color: var(--green-bright) !important;
+    box-shadow: 0 0 16px rgba(0,255,136,0.4) !important;
+    transition: all 150ms ease-out;
+  }
+
+  /* Particle animation along edges */
+  @keyframes flow-particle {
+    0%   { offset-distance: 0%;   opacity: 0.9; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { offset-distance: 100%; opacity: 0; }
+  }
+  .particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--green-bright);
+    box-shadow: 0 0 6px var(--green-bright);
+    pointer-events: none;
+    z-index: 20;
+    animation: flow-particle 2.4s linear infinite;
+    offset-rotate: 0deg;
+  }
+  .particle.p2 { animation-delay: 0.8s; }
+  .particle.p3 { animation-delay: 1.6s; }
+
+  /* ════════════════════════════
+     TAB 3 — JOURNEY
+  ═════════════════════════════ */
+  #canvas-2 .node {
+    opacity: 0.15;
+    transition: opacity 300ms ease, border-color 300ms ease, box-shadow 300ms ease, transform 200ms ease;
+  }
+  #canvas-2 .file-node {
+    background: rgba(0, 255, 136, 0.03);
+    border: 1.5px solid rgba(0,204,102,0.3);
+    color: rgba(232, 234, 246, 0.4);
+    border-radius: 8px;
+    height: 34px;
+  }
+  #canvas-2 .dir-node {
+    background: rgba(0, 255, 136, 0.02);
+    border: 1.5px solid rgba(0,204,102,0.2);
+    color: rgba(232, 234, 246, 0.3);
+    border-radius: 8px;
+    height: 34px;
+    padding: 6px 14px;
+  }
+  #canvas-2 .node.path-lit {
+    opacity: 1;
+    border-color: var(--green-bright) !important;
+    color: var(--green-bright) !important;
+    box-shadow: 0 0 20px rgba(0,255,136,0.5), 0 0 40px rgba(0,255,136,0.2) !important;
+    background: rgba(0,255,136,0.10) !important;
+  }
+
+  @keyframes pulse-node {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.14); }
+    100% { transform: scale(1); }
+  }
+  .node.pulse-once {
+    animation: pulse-node 280ms ease-out forwards;
+  }
+
+  /* E2E Panel */
+  .e2e-panel {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 230px;
+    background: rgba(13,13,26,0.95);
+    border: 1px solid rgba(0,255,136,0.25);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    z-index: 30;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 24px rgba(0,255,136,0.12), 0 4px 32px rgba(0,0,0,0.6);
+  }
+  .e2e-panel-title {
+    font-size: 11px;
+    color: var(--green-bright);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .e2e-divider {
+    height: 1px;
+    background: rgba(0,255,136,0.2);
+    margin-bottom: 10px;
+  }
+  .e2e-step {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    opacity: 0;
+    transition: opacity 300ms ease;
+  }
+  .e2e-step.visible { opacity: 1; }
+  .e2e-step-main {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--text-muted);
+    padding: 2px 0;
+  }
+  .e2e-step.visible .e2e-step-main {
+    color: var(--green-bright);
+  }
+  .e2e-step-num { color: var(--green); font-weight: 600; min-width: 14px; }
+  .e2e-step-name { color: inherit; }
+  .e2e-step-tag {
+    font-size: 9px;
+    color: var(--text-muted);
+    margin-left: 21px;
+    padding: 1px 0;
+  }
+  .e2e-arrow {
+    color: rgba(0,255,136,0.35);
+    margin-left: 21px;
+    line-height: 1.2;
+    font-size: 10px;
+    padding: 1px 0;
+  }
+  .e2e-footer {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0,255,136,0.15);
+    color: var(--text-muted);
+    font-size: 10px;
+    display: flex;
+    gap: 10px;
+  }
+  .e2e-footer span { color: var(--green); font-weight: 600; }
+
+  /* Replay button */
+  .replay-btn {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 20px;
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.35);
+    border-radius: 20px;
+    color: var(--green-bright);
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 200ms ease;
+    z-index: 30;
+    letter-spacing: 0.2px;
+    opacity: 0;
+  }
+  .replay-btn:hover {
+    background: rgba(0,255,136,0.15);
+    box-shadow: 0 0 16px rgba(0,255,136,0.3);
+  }
+  .replay-btn.visible { opacity: 1; }
+
+  /* SVG edge draw animation */
+  @keyframes draw-edge {
+    from { stroke-dashoffset: var(--dash-len); }
+    to   { stroke-dashoffset: 0; }
+  }
+  .edge-draw {
+    stroke-dasharray: var(--dash-len);
+    stroke-dashoffset: var(--dash-len);
+  }
+  .edge-draw.animate {
+    animation: draw-edge 280ms ease-out forwards;
+  }
+
+  /* Tab 3 path particles */
+  @keyframes flow-path-particle {
+    0%   { offset-distance: 0%;   opacity: 0; }
+    5%   { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { offset-distance: 100%; opacity: 0; }
+  }
+  .path-particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green-bright);
+    box-shadow: 0 0 10px var(--green-bright), 0 0 20px rgba(0,255,136,0.6);
+    pointer-events: none;
+    z-index: 25;
+    animation: flow-path-particle 2s linear infinite;
+    offset-rotate: 0deg;
+  }
+  .path-particle.pp2 { animation-delay: 0.67s; }
+  .path-particle.pp3 { animation-delay: 1.33s; }
+
+  /* Misc */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="header">
+  <div class="header-title">CodeAtlas — 三種故事視角 Preview</div>
+  <div class="header-sub">Sprint 11 Visual Direction Mockup · 2026-03-31</div>
+</div>
+
+<!-- ── Tab Bar ── -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="0" onclick="switchTab(0)">
+    🏗 系統框架
+    <span class="tab-indicator"></span>
+  </button>
+  <button class="tab-btn" data-tab="1" onclick="switchTab(1)">
+    ⚙ 邏輯運作
+    <span class="tab-indicator"></span>
+  </button>
+  <button class="tab-btn" data-tab="2" onclick="switchTab(2)">
+    🔗 資料旅程
+    <span class="tab-indicator"></span>
+  </button>
+</div>
+
+<!-- ── Canvas Wrapper ── -->
+<div class="canvas-wrapper">
+
+  <!-- ══════════ TAB 0: Structural ══════════ -->
+  <div class="tab-canvas active" id="canvas-0">
+    <div class="canvas-bg"></div>
+    <div class="canvas-vignette"></div>
+
+    <!-- SVG edges -->
+    <svg class="edge-svg" id="svg-0"></svg>
+
+    <!-- Root node -->
+    <div class="node dir-node" id="n-root"
+         style="left:50%; top:40px; transform:translateX(-50%);"
+         onmouseenter="tab0HoverDir('root')"
+         onmouseleave="tab0ClearHover()">
+      <div class="node-label">packages/</div>
+      <div class="node-meta">
+        <div class="meta-row">
+          <span>3 packages</span>
+          <span style="color:var(--cyan-dim)">·</span>
+          <span>13 nodes</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dir nodes -->
+    <div class="node dir-node" id="n-core"
+         style="left:18%; top:170px; transform:translateX(-50%);"
+         onmouseenter="tab0HoverDir('core')"
+         onmouseleave="tab0ClearHover()">
+      <div class="node-label">core/</div>
+      <div class="node-meta">
+        <div class="meta-row"><span>5 files</span><span style="color:var(--cyan-dim)">·</span><span>~800 LOC</span></div>
+      </div>
+    </div>
+
+    <div class="node dir-node" id="n-web"
+         style="left:50%; top:170px; transform:translateX(-50%);"
+         onmouseenter="tab0HoverDir('web')"
+         onmouseleave="tab0ClearHover()">
+      <div class="node-label">web/</div>
+      <div class="node-meta">
+        <div class="meta-row"><span>3 files</span><span style="color:var(--cyan-dim)">·</span><span>~600 LOC</span></div>
+      </div>
+    </div>
+
+    <div class="node dir-node" id="n-cli"
+         style="left:82%; top:170px; transform:translateX(-50%);"
+         onmouseenter="tab0HoverDir('cli')"
+         onmouseleave="tab0ClearHover()">
+      <div class="node-label">cli/</div>
+      <div class="node-meta">
+        <div class="meta-row"><span>2 files</span><span style="color:var(--cyan-dim)">·</span><span>~300 LOC</span></div>
+      </div>
+    </div>
+
+    <!-- core files -->
+    <div class="node file-node" id="n-core-index"    style="left:3%;   top:310px;" data-pkg="core"><span class="node-label">index.ts</span><span class="node-meta">dep:5</span></div>
+    <div class="node file-node" id="n-core-graph"    style="left:12%;  top:310px;" data-pkg="core"><span class="node-label">graph-builder.ts</span><span class="node-meta">3</span></div>
+    <div class="node file-node" id="n-core-import"   style="left:24%;  top:310px;" data-pkg="core"><span class="node-label">import-resolver.ts</span><span class="node-meta">2</span></div>
+    <div class="node file-node" id="n-core-analyzer" style="left:5%;   top:356px;" data-pkg="core"><span class="node-label">analyzer.ts</span><span class="node-meta">dep:4</span></div>
+
+    <!-- web files -->
+    <div class="node file-node" id="n-web-app"       style="left:41%;  top:310px;" data-pkg="web"><span class="node-label">App.tsx</span><span class="node-meta">dep:3</span></div>
+    <div class="node file-node" id="n-web-canvas"    style="left:52%;  top:310px;" data-pkg="web"><span class="node-label">GraphCanvas.tsx</span><span class="node-meta">2</span></div>
+    <div class="node file-node" id="n-web-panel"     style="left:44%;  top:356px;" data-pkg="web"><span class="node-label">NodePanel.tsx</span><span class="node-meta">dep:1</span></div>
+
+    <!-- cli files -->
+    <div class="node file-node" id="n-cli-index"     style="left:74%;  top:310px;" data-pkg="cli"><span class="node-label">index.ts</span><span class="node-meta">dep:2</span></div>
+    <div class="node file-node" id="n-cli-server"    style="left:84%;  top:310px;" data-pkg="cli"><span class="node-label">server.ts</span><span class="node-meta">dep:3</span></div>
+  </div>
+
+
+  <!-- ══════════ TAB 1: Logic ══════════ -->
+  <div class="tab-canvas" id="canvas-1">
+    <div class="canvas-bg"></div>
+    <div class="canvas-vignette"></div>
+
+    <svg class="edge-svg" id="svg-1"></svg>
+
+    <!-- Nodes positioned to simulate force-directed layout -->
+    <!-- core cluster (left-center) -->
+    <div class="node file-node" id="l-core-index"    style="left:28%; top:38%;" data-id="core-index"    onmouseenter="logicHover('core-index')"    onmouseleave="logicClear()"><span class="node-label">core/index.ts</span></div>
+    <div class="node file-node" id="l-core-graph"    style="left:16%; top:52%;" data-id="core-graph"    onmouseenter="logicHover('core-graph')"    onmouseleave="logicClear()"><span class="node-label">graph-builder.ts</span></div>
+    <div class="node file-node" id="l-core-import"   style="left:10%; top:38%;" data-id="core-import"   onmouseenter="logicHover('core-import')"   onmouseleave="logicClear()"><span class="node-label">import-resolver.ts</span></div>
+    <div class="node file-node" id="l-core-analyzer" style="left:22%; top:24%;" data-id="core-analyzer" onmouseenter="logicHover('core-analyzer')" onmouseleave="logicClear()"><span class="node-label">analyzer.ts</span></div>
+
+    <!-- web cluster (right-center) -->
+    <div class="node file-node" id="l-web-app"       style="left:58%; top:28%;" data-id="web-app"       onmouseenter="logicHover('web-app')"       onmouseleave="logicClear()"><span class="node-label">web/App.tsx</span></div>
+    <div class="node file-node" id="l-web-canvas"    style="left:50%; top:50%;" data-id="web-canvas"    onmouseenter="logicHover('web-canvas')"    onmouseleave="logicClear()"><span class="node-label">GraphCanvas.tsx</span></div>
+    <div class="node file-node" id="l-web-panel"     style="left:62%; top:58%;" data-id="web-panel"     onmouseenter="logicHover('web-panel')"     onmouseleave="logicClear()"><span class="node-label">NodePanel.tsx</span></div>
+
+    <!-- cli cluster (bottom-center) -->
+    <div class="node file-node" id="l-cli-index"     style="left:42%; top:72%;" data-id="cli-index"     onmouseenter="logicHover('cli-index')"     onmouseleave="logicClear()"><span class="node-label">cli/index.ts</span></div>
+    <div class="node file-node" id="l-cli-server"    style="left:54%; top:76%;" data-id="cli-server"    onmouseenter="logicHover('cli-server')"    onmouseleave="logicClear()"><span class="node-label">cli/server.ts</span></div>
+
+    <!-- dir nodes (outer) -->
+    <div class="node dir-node" id="l-dir-core" style="left:14%; top:14%;" data-id="dir-core" onmouseenter="logicHover('dir-core')" onmouseleave="logicClear()"><span class="node-label">packages/core/</span></div>
+    <div class="node dir-node" id="l-dir-web"  style="left:70%; top:18%;" data-id="dir-web"  onmouseenter="logicHover('dir-web')"  onmouseleave="logicClear()"><span class="node-label">packages/web/</span></div>
+    <div class="node dir-node" id="l-dir-cli"  style="left:60%; top:84%;" data-id="dir-cli"  onmouseenter="logicHover('dir-cli')"  onmouseleave="logicClear()"><span class="node-label">packages/cli/</span></div>
+  </div>
+
+
+  <!-- ══════════ TAB 2: Journey ══════════ -->
+  <div class="tab-canvas" id="canvas-2">
+    <div class="canvas-bg" style="background-image: radial-gradient(circle, rgba(0,255,136,0.04) 1px, transparent 1px); background-size:24px 24px;"></div>
+    <div class="canvas-vignette"></div>
+
+    <svg class="edge-svg" id="svg-2"></svg>
+
+    <!-- Same positions as Tab 1 -->
+    <div class="node file-node" id="j-core-index"    style="left:28%; top:38%;" data-id="core-index"><span class="node-label">core/index.ts</span></div>
+    <div class="node file-node" id="j-core-graph"    style="left:16%; top:52%;" data-id="core-graph"><span class="node-label">graph-builder.ts</span></div>
+    <div class="node file-node" id="j-core-import"   style="left:10%; top:38%;" data-id="core-import"><span class="node-label">import-resolver.ts</span></div>
+    <div class="node file-node" id="j-core-analyzer" style="left:22%; top:24%;" data-id="core-analyzer"><span class="node-label">analyzer.ts</span></div>
+    <div class="node file-node" id="j-web-app"       style="left:58%; top:28%;" data-id="web-app"><span class="node-label">web/App.tsx</span></div>
+    <div class="node file-node" id="j-web-canvas"    style="left:50%; top:50%;" data-id="web-canvas"><span class="node-label">GraphCanvas.tsx</span></div>
+    <div class="node file-node" id="j-web-panel"     style="left:62%; top:58%;" data-id="web-panel"><span class="node-label">NodePanel.tsx</span></div>
+    <div class="node file-node" id="j-cli-index"     style="left:42%; top:72%;" data-id="cli-index"><span class="node-label">cli/index.ts</span></div>
+    <div class="node file-node" id="j-cli-server"    style="left:54%; top:76%;" data-id="cli-server"><span class="node-label">cli/server.ts</span></div>
+    <div class="node dir-node"  id="j-dir-core"      style="left:14%; top:14%;" data-id="dir-core"><span class="node-label">packages/core/</span></div>
+    <div class="node dir-node"  id="j-dir-web"       style="left:70%; top:18%;" data-id="dir-web"><span class="node-label">packages/web/</span></div>
+    <div class="node dir-node"  id="j-dir-cli"       style="left:60%; top:84%;" data-id="dir-cli"><span class="node-label">packages/cli/</span></div>
+
+    <!-- E2E Panel -->
+    <div class="e2e-panel" id="e2e-panel">
+      <div class="e2e-panel-title">📍 E2E 追蹤路徑</div>
+      <div class="e2e-divider"></div>
+      <div class="e2e-step" id="ep-1">
+        <div class="e2e-step-main"><span class="e2e-step-num">①</span><span class="e2e-step-name">cli/index.ts</span></div>
+        <div class="e2e-step-tag" style="color:var(--amber)">(入口)</div>
+        <div class="e2e-arrow">↓ import</div>
+      </div>
+      <div class="e2e-step" id="ep-2">
+        <div class="e2e-step-main"><span class="e2e-step-num">②</span><span class="e2e-step-name">core/index.ts</span></div>
+        <div class="e2e-arrow">↓ import</div>
+      </div>
+      <div class="e2e-step" id="ep-3">
+        <div class="e2e-step-main"><span class="e2e-step-num">③</span><span class="e2e-step-name">graph-builder.ts</span></div>
+        <div class="e2e-arrow">↓ import → resolveImports()</div>
+      </div>
+      <div class="e2e-step" id="ep-4">
+        <div class="e2e-step-main"><span class="e2e-step-num">④</span><span class="e2e-step-name">import-resolver.ts</span></div>
+        <div class="e2e-arrow">↑ import (被引用)</div>
+      </div>
+      <div class="e2e-step" id="ep-5">
+        <div class="e2e-step-main"><span class="e2e-step-num">⑤</span><span class="e2e-step-name">GraphCanvas.tsx</span></div>
+        <div class="e2e-arrow">↑ import</div>
+      </div>
+      <div class="e2e-step" id="ep-6">
+        <div class="e2e-step-main"><span class="e2e-step-num">⑥</span><span class="e2e-step-name">App.tsx</span></div>
+        <div class="e2e-step-tag" style="color:var(--green)">(終點)</div>
+      </div>
+      <div class="e2e-footer">
+        <div>深度: <span id="ep-depth">0</span></div>
+        <div>節點: <span id="ep-nodes">0</span>/13</div>
+      </div>
+    </div>
+
+    <button class="replay-btn" id="replay-btn" onclick="startJourneyAnimation()">↺ 重播動畫</button>
+  </div>
+
+</div><!-- canvas-wrapper -->
+
+<!-- ── Footer ── -->
+<div class="footer">
+  <div class="footer-desc" id="footer-desc">
+    分層佈局讓你 30 秒看懂專案結構：3 個 package，9 個核心檔案，跨包依賴一目了然
+  </div>
+  <div class="footer-stats">
+    <div class="footer-stat">節點 <span class="footer-stat-val">13</span></div>
+    <div class="footer-stat">邊 <span class="footer-stat-val">12</span></div>
+    <div class="footer-stat" id="footer-extra" style="color:var(--cyan)">分層佈局</div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════ */
+function getCenter(el) {
+  const r = el.getBoundingClientRect();
+  const wr = el.closest('.tab-canvas').getBoundingClientRect();
+  return {
+    x: r.left - wr.left + r.width  / 2,
+    y: r.top  - wr.top  + r.height / 2
+  };
+}
+
+function nodeCenter(id) {
+  const el = document.getElementById(id);
+  if (!el) return {x:0, y:0};
+  return getCenter(el);
+}
+
+function makeLine(svg, x1,y1, x2,y2, opts={}) {
+  const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+  line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+  line.setAttribute('stroke', opts.color || '#3a3a5c');
+  line.setAttribute('stroke-width', opts.width || 1);
+  line.setAttribute('opacity', opts.opacity || 0.5);
+  if (opts.dash)    line.setAttribute('stroke-dasharray', opts.dash);
+  if (opts.id)      line.setAttribute('id', opts.id);
+  if (opts.classes) line.setAttribute('class', opts.classes);
+  // Arrowhead marker ref
+  if (opts.arrow)   line.setAttribute('marker-end', 'url(#arrow-' + opts.arrowColor + ')');
+  svg.appendChild(line);
+  return line;
+}
+
+function makePath(svg, d, opts={}) {
+  const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('d', d);
+  p.setAttribute('stroke', opts.color || '#3a3a5c');
+  p.setAttribute('stroke-width', opts.width || 1.5);
+  p.setAttribute('fill', 'none');
+  p.setAttribute('opacity', opts.opacity || 0.5);
+  if (opts.dash)    p.setAttribute('stroke-dasharray', opts.dash);
+  if (opts.id)      p.setAttribute('id', opts.id);
+  if (opts.classes) p.setAttribute('class', opts.classes);
+  if (opts.arrow)   p.setAttribute('marker-end', 'url(#arrow-' + opts.arrowColor + ')');
+  svg.appendChild(p);
+  return p;
+}
+
+function addArrowMarker(svg, id, color) {
+  let defs = svg.querySelector('defs');
+  if (!defs) { defs = document.createElementNS('http://www.w3.org/2000/svg','defs'); svg.prepend(defs); }
+  const marker = document.createElementNS('http://www.w3.org/2000/svg','marker');
+  marker.setAttribute('id', 'arrow-' + id);
+  marker.setAttribute('markerWidth', '8');
+  marker.setAttribute('markerHeight', '8');
+  marker.setAttribute('refX', '6');
+  marker.setAttribute('refY', '3');
+  marker.setAttribute('orient', 'auto');
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d', 'M0,0 L0,6 L7,3 z');
+  path.setAttribute('fill', color);
+  marker.appendChild(path);
+  defs.appendChild(marker);
+}
+
+function cubicPath(x1,y1, x2,y2) {
+  const cx1 = x1 + (x2-x1)*0.5;
+  const cy1 = y1;
+  const cx2 = x1 + (x2-x1)*0.5;
+  const cy2 = y2;
+  return `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`;
+}
+
+function pathLength(x1,y1,x2,y2){
+  return Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+}
+
+/* ═══════════════════════════════════════════════
+   TAB SWITCHING
+═══════════════════════════════════════════════ */
+const footerDescs = [
+  '分層佈局讓你 30 秒看懂專案結構：3 個 package，9 個核心檔案，跨包依賴一目了然',
+  '力導向佈局讓你探索依賴關係：hover 任何節點，整條依賴鏈即時亮起',
+  '資料旅程視角像講故事：從入口開始，一步步看資料怎麼流過整個系統'
+];
+const footerExtras = ['分層佈局', '力導向佈局 · 粒子流', '故事模式 · E2E 追蹤'];
+const footerExtraColors = ['var(--cyan)', 'var(--magenta)', 'var(--green-bright)'];
+
+let currentTab = 0;
+let journeyStarted = false;
+let journeyTimer = null;
+
+function switchTab(idx) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i===idx));
+  document.querySelectorAll('.tab-canvas').forEach((c,i) => c.classList.toggle('active', i===idx));
+  document.getElementById('footer-desc').textContent = footerDescs[idx];
+  const fe = document.getElementById('footer-extra');
+  fe.textContent = footerExtras[idx];
+  fe.style.color = footerExtraColors[idx];
+  currentTab = idx;
+
+  // Draw edges on first show
+  if (idx === 0 && !window._tab0Drawn) { drawTab0Edges(); window._tab0Drawn = true; }
+  if (idx === 1 && !window._tab1Drawn) { setTimeout(()=>{ drawTab1Edges(); spawnTab1Particles(); }, 80); window._tab1Drawn = true; }
+  if (idx === 2 && !window._tab2Drawn) {
+    setTimeout(()=>{ drawTab2Edges(); }, 80);
+    window._tab2Drawn = true;
+    if (!journeyStarted) { setTimeout(startJourneyAnimation, 1000); }
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   TAB 0 — STRUCTURAL EDGES
+═══════════════════════════════════════════════ */
+function drawTab0Edges() {
+  const svg = document.getElementById('svg-0');
+  addArrowMarker(svg, 'gray', '#3a3a5c');
+  addArrowMarker(svg, 'amber', '#ff8800');
+  addArrowMarker(svg, 'cyan', '#00d4ff');
+
+  // After brief delay to let layout settle
+  requestAnimationFrame(() => {
+    // root → core / web / cli
+    const root = nodeCenter('n-root');
+    ['n-core','n-web','n-cli'].forEach(id => {
+      const t = nodeCenter(id);
+      makeLine(svg, root.x, root.y+10, t.x, t.y-10, {color:'#2a2a4a', width:1.5, opacity:0.6, arrow:true, arrowColor:'gray'});
+    });
+
+    // core dir → core files
+    const core = nodeCenter('n-core');
+    ['n-core-index','n-core-graph','n-core-import','n-core-analyzer'].forEach(id => {
+      const t = nodeCenter(id);
+      makeLine(svg, core.x, core.y+10, t.x, t.y-8, {color:'#1a3a4a', width:1, opacity:0.4});
+    });
+
+    // web dir → web files
+    const web = nodeCenter('n-web');
+    ['n-web-app','n-web-canvas','n-web-panel'].forEach(id => {
+      const t = nodeCenter(id);
+      makeLine(svg, web.x, web.y+10, t.x, t.y-8, {color:'#1a3a4a', width:1, opacity:0.4});
+    });
+
+    // cli dir → cli files
+    const cli = nodeCenter('n-cli');
+    ['n-cli-index','n-cli-server'].forEach(id => {
+      const t = nodeCenter(id);
+      makeLine(svg, cli.x, cli.y+10, t.x, t.y-8, {color:'#1a3a4a', width:1, opacity:0.4});
+    });
+
+    // intra-core deps
+    function dep(a,b,dash,cross) {
+      const pa = nodeCenter(a), pb = nodeCenter(b);
+      const color = cross ? '#ff8800' : '#2a2a4a';
+      const opacity = cross ? 0.7 : 0.45;
+      const d = cubicPath(pa.x, pa.y, pb.x, pb.y);
+      makePath(svg, d, {color, width: cross ? 1.5 : 1, opacity, dash: dash ? '4,3' : null, arrow:true, arrowColor: cross ? 'amber' : 'gray'});
+    }
+    dep('n-core-index','n-core-graph');
+    dep('n-core-index','n-core-import');
+    dep('n-core-index','n-core-analyzer');
+    dep('n-core-graph','n-core-import');
+    dep('n-core-analyzer','n-core-graph');
+    dep('n-web-app','n-web-canvas');
+    dep('n-web-app','n-web-panel');
+    // cross-package — dashed amber
+    dep('n-web-canvas','n-core-index', true, true);
+    dep('n-web-panel','n-core-analyzer', true, true);
+    dep('n-cli-index','n-core-index', true, true);
+    dep('n-cli-index','n-cli-server');
+    dep('n-cli-server','n-core-index', true, true);
+
+    // Cross-package legend
+    const lg = document.createElementNS('http://www.w3.org/2000/svg','g');
+    lg.setAttribute('transform', 'translate(20, 20)');
+    const lbg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    lbg.setAttribute('x',0); lbg.setAttribute('y',0);
+    lbg.setAttribute('width',170); lbg.setAttribute('height',52);
+    lbg.setAttribute('rx',6); lbg.setAttribute('fill','rgba(10,10,15,0.7)');
+    lbg.setAttribute('stroke','rgba(255,255,255,0.07)'); lbg.setAttribute('stroke-width','1');
+    lg.appendChild(lbg);
+    function legendRow(y, dash, color, label) {
+      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1',10); line.setAttribute('y1',y);
+      line.setAttribute('x2',40); line.setAttribute('y2',y);
+      line.setAttribute('stroke',color); line.setAttribute('stroke-width',1.5);
+      if(dash) line.setAttribute('stroke-dasharray','4,3');
+      lg.appendChild(line);
+      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x',48); txt.setAttribute('y',y+4);
+      txt.setAttribute('fill','#9e9ec8'); txt.setAttribute('font-size','10');
+      txt.setAttribute('font-family','JetBrains Mono, monospace');
+      txt.textContent = label;
+      lg.appendChild(txt);
+    }
+    legendRow(17, false, '#2a2a4a', 'intra-package');
+    legendRow(35, true,  '#ff8800', 'cross-package');
+    svg.appendChild(lg);
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   TAB 0 — HOVER
+═══════════════════════════════════════════════ */
+const pkgMap = { core: 'core', web: 'web', cli: 'cli', root: null };
+
+function tab0HoverDir(pkg) {
+  document.querySelectorAll('#canvas-0 .file-node').forEach(el => {
+    if (!pkg || pkg === 'root') { el.classList.remove('lit'); return; }
+    el.classList.toggle('lit', el.dataset.pkg === pkg);
+  });
+  document.querySelectorAll('#canvas-0 .dir-node').forEach(el => {
+    el.classList.remove('hover-active');
+  });
+  const dirId = pkg === 'root' ? 'n-root' : 'n-' + pkg;
+  const dirEl = document.getElementById(dirId);
+  if (dirEl) dirEl.classList.add('hover-active');
+}
+function tab0ClearHover() {
+  document.querySelectorAll('#canvas-0 .file-node').forEach(el => el.classList.remove('lit'));
+  document.querySelectorAll('#canvas-0 .dir-node').forEach(el => el.classList.remove('hover-active'));
+}
+
+/* ═══════════════════════════════════════════════
+   TAB 1 — LOGIC EDGES + PARTICLES
+═══════════════════════════════════════════════ */
+const logicEdges = [
+  // [from-id, to-id, type, cross]
+  ['l-core-index',    'l-core-graph',    'import', false],
+  ['l-core-index',    'l-core-import',   'import', false],
+  ['l-core-index',    'l-core-analyzer', 'import', false],
+  ['l-core-graph',    'l-core-import',   'import', false],
+  ['l-core-analyzer', 'l-core-graph',    'call',   false],
+  ['l-web-app',       'l-web-canvas',    'import', false],
+  ['l-web-app',       'l-web-panel',     'import', false],
+  ['l-web-canvas',    'l-core-index',    'import', true],
+  ['l-web-panel',     'l-core-analyzer', 'import', true],
+  ['l-cli-index',     'l-core-index',    'import', true],
+  ['l-cli-index',     'l-cli-server',    'import', false],
+  ['l-cli-server',    'l-core-index',    'import', true],
+];
+
+// Adjacency for hover chain (forward + backward)
+const logicAdj = {};
+function buildAdj() {
+  logicEdges.forEach(([f,t]) => {
+    const fid = f.replace('l-','').replace(/-/g,'_');
+    const tid = t.replace('l-','').replace(/-/g,'_');
+    const fkey = f.substring(2).replace(/-/g,'_');
+    const tkey = t.substring(2).replace(/-/g,'_');
+    if (!logicAdj[fkey]) logicAdj[fkey] = { out:[], in:[] };
+    if (!logicAdj[tkey]) logicAdj[tkey] = { out:[], in:[] };
+    logicAdj[fkey].out.push(tkey);
+    logicAdj[tkey].in.push(fkey);
+  });
+}
+buildAdj();
+
+function getChain(startKey) {
+  const visited = new Set([startKey]);
+  const queue = [startKey];
+  while (queue.length) {
+    const cur = queue.shift();
+    const node = logicAdj[cur];
+    if (!node) continue;
+    [...node.out, ...node.in].forEach(k => {
+      if (!visited.has(k)) { visited.add(k); queue.push(k); }
+    });
+  }
+  return visited;
+}
+
+let logicEdgePaths = {}; // edgeKey -> svgPath element
+
+function drawTab1Edges() {
+  const svg = document.getElementById('svg-1');
+  addArrowMarker(svg, 'cyan-dim', '#0099cc');
+  addArrowMarker(svg, 'amber1',   '#ff8800');
+  addArrowMarker(svg, 'green-t1', '#00cc66');
+
+  logicEdges.forEach(([from,to,type,cross],i) => {
+    const pa = nodeCenter(from), pb = nodeCenter(to);
+    const color = cross ? '#ff8800' : (type==='call' ? '#00d4ff' : '#00cc66');
+    const opacity = 0.55;
+    const d = cubicPath(pa.x, pa.y, pb.x, pb.y);
+    const arrowKey = cross ? 'amber1' : (type==='call' ? 'cyan-dim' : 'green-t1');
+    const p = makePath(svg, d, {
+      color, width: cross ? 2 : 1.5, opacity,
+      dash: type==='call' ? '5,3' : null,
+      id: 'ledge-'+i,
+      arrow: true, arrowColor: arrowKey
+    });
+    const edgeKey = from.substring(2).replace(/-/g,'_') + '__' + to.substring(2).replace(/-/g,'_');
+    logicEdgePaths[edgeKey] = { el:p, from, to, type, cross };
+  });
+}
+
+function spawnTab1Particles() {
+  const canvas = document.getElementById('canvas-1');
+  // Only on import edges
+  logicEdges.filter(e=>e[2]==='import').forEach(([from,to,type,cross],i) => {
+    const pa = nodeCenter(from), pb = nodeCenter(to);
+    const color = cross ? '#ff8800' : '#00ff88';
+    for (let p=0; p<2; p++) {
+      const dot = document.createElement('div');
+      dot.className = 'particle' + (p===1?' p2':p===2?' p3':'');
+      dot.style.background = color;
+      dot.style.boxShadow = `0 0 6px ${color}`;
+      // Animate using CSS offset-path on the cubic bezier
+      const cx1 = pa.x + (pb.x-pa.x)*0.5, cy1 = pa.y;
+      const cx2 = cx1, cy2 = pb.y;
+      dot.style.offsetPath = `path('M ${pa.x} ${pa.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${pb.x} ${pb.y}')`;
+      dot.style.animationDelay = (p * 1.2 + i * 0.15) + 's';
+      dot.style.animationDuration = (2.0 + Math.random()*0.6) + 's';
+      canvas.appendChild(dot);
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   TAB 1 — HOVER CHAIN
+═══════════════════════════════════════════════ */
+function logicHover(rawId) {
+  // rawId is like 'core-index', 'web-app' etc
+  const key = rawId.replace(/-/g,'_');
+  const chain = getChain(key);
+  const chainNodeIds = new Set([...chain].map(k => 'l-' + k.replace(/_/g,'-')));
+
+  document.querySelectorAll('#canvas-1 .node').forEach(el => {
+    const inChain = chainNodeIds.has(el.id);
+    el.classList.toggle('faded', !inChain);
+    el.classList.toggle('highlighted', inChain);
+  });
+
+  // Dim/brighten edges
+  Object.entries(logicEdgePaths).forEach(([ek, {el, from, to}]) => {
+    const fromKey = from.substring(2).replace(/-/g,'_');
+    const toKey   = to.substring(2).replace(/-/g,'_');
+    const inChain = chain.has(fromKey) && chain.has(toKey);
+    el.setAttribute('opacity', inChain ? 0.95 : 0.04);
+    if (inChain) el.setAttribute('stroke', '#00ff88');
+  });
+}
+function logicClear() {
+  document.querySelectorAll('#canvas-1 .node').forEach(el => {
+    el.classList.remove('faded','highlighted');
+  });
+  Object.values(logicEdgePaths).forEach(({el, cross, type}) => {
+    const color = cross ? '#ff8800' : (type==='call' ? '#00d4ff' : '#00cc66');
+    el.setAttribute('opacity', 0.55);
+    el.setAttribute('stroke', color);
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   TAB 2 — JOURNEY EDGES
+═══════════════════════════════════════════════ */
+const journeyEdgesDef = [
+  // [from, to, cross]
+  ['j-core-index',    'j-core-graph',    false],
+  ['j-core-index',    'j-core-import',   false],
+  ['j-core-index',    'j-core-analyzer', false],
+  ['j-core-graph',    'j-core-import',   false],
+  ['j-core-analyzer', 'j-core-graph',    false],
+  ['j-web-app',       'j-web-canvas',    false],
+  ['j-web-app',       'j-web-panel',     false],
+  ['j-web-canvas',    'j-core-index',    true],
+  ['j-web-panel',     'j-core-analyzer', true],
+  ['j-cli-index',     'j-core-index',    true],
+  ['j-cli-index',     'j-cli-server',    false],
+  ['j-cli-server',    'j-core-index',    true],
+];
+
+let journeyEdgeEls = {}; // 'from__to' -> svg path
+
+function drawTab2Edges() {
+  const svg = document.getElementById('svg-2');
+  addArrowMarker(svg, 'j-dim', 'rgba(0,204,102,0.2)');
+  addArrowMarker(svg, 'j-bright', '#00ff88');
+
+  journeyEdgesDef.forEach(([from,to,cross],i) => {
+    const pa = nodeCenter(from), pb = nodeCenter(to);
+    const d = cubicPath(pa.x, pa.y, pb.x, pb.y);
+    const p = makePath(svg, d, {
+      color: 'rgba(0,204,102,0.12)', width:1.5, opacity:1,
+      id: 'jedge-'+i,
+      arrow: true, arrowColor: 'j-dim'
+    });
+    journeyEdgeEls[from+'__'+to] = { el:p, from, to };
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   TAB 2 — STAGGER ANIMATION
+═══════════════════════════════════════════════ */
+
+// Path: cli-index → core-index → core-graph → core-import → web-canvas → web-app
+const journeyPath = [
+  { nodeId: 'j-cli-index',   epId: 'ep-1', depth: 0, nodes: 1 },
+  { nodeId: 'j-core-index',  epId: 'ep-2', depth: 1, nodes: 2, edgeFrom:'j-cli-index',   edgeTo:'j-core-index'  },
+  { nodeId: 'j-core-graph',  epId: 'ep-3', depth: 2, nodes: 3, edgeFrom:'j-core-index',  edgeTo:'j-core-graph'  },
+  { nodeId: 'j-core-import', epId: 'ep-4', depth: 3, nodes: 4, edgeFrom:'j-core-graph',  edgeTo:'j-core-import' },
+  { nodeId: 'j-web-canvas',  epId: 'ep-5', depth: 4, nodes: 5, edgeFrom:'j-web-canvas',  edgeTo:'j-core-index'  },
+  { nodeId: 'j-web-app',     epId: 'ep-6', depth: 5, nodes: 6, edgeFrom:'j-web-app',     edgeTo:'j-web-canvas'  },
+];
+
+function resetJourney() {
+  // Reset all nodes
+  document.querySelectorAll('#canvas-2 .node').forEach(el => {
+    el.classList.remove('path-lit','pulse-once');
+    el.style.opacity = '';
+  });
+  // Reset all edges
+  Object.values(journeyEdgeEls).forEach(({el}) => {
+    el.setAttribute('stroke', 'rgba(0,204,102,0.12)');
+    el.setAttribute('opacity', 1);
+    el.setAttribute('marker-end', 'url(#arrow-j-dim)');
+    el.style.strokeDasharray = '';
+    el.style.strokeDashoffset = '';
+    el.style.animation = '';
+  });
+  // Reset E2E panel
+  document.querySelectorAll('.e2e-step').forEach(el => el.classList.remove('visible'));
+  document.getElementById('ep-depth').textContent = '0';
+  document.getElementById('ep-nodes').textContent = '0';
+  // Remove old particles
+  document.querySelectorAll('#canvas-2 .path-particle').forEach(el => el.remove());
+  // Hide replay
+  document.getElementById('replay-btn').classList.remove('visible');
+}
+
+function startJourneyAnimation() {
+  journeyStarted = true;
+  resetJourney();
+
+  // Clear any existing timers
+  if (journeyTimer) clearTimeout(journeyTimer);
+
+  const delays = [0, 350, 700, 1050, 1400, 1750];
+
+  journeyPath.forEach((step, i) => {
+    journeyTimer = setTimeout(() => {
+      // Light up node
+      const nodeEl = document.getElementById(step.nodeId);
+      if (nodeEl) {
+        nodeEl.classList.add('path-lit');
+        // Trigger pulse
+        nodeEl.classList.remove('pulse-once');
+        void nodeEl.offsetWidth; // reflow
+        nodeEl.classList.add('pulse-once');
+      }
+
+      // Animate edge leading to this node
+      if (step.edgeFrom && step.edgeTo) {
+        const key = step.edgeFrom + '__' + step.edgeTo;
+        const edgeData = journeyEdgeEls[key];
+        if (edgeData) {
+          const el = edgeData.el;
+          const pa = nodeCenter(step.edgeFrom), pb = nodeCenter(step.edgeTo);
+          const len = Math.ceil(Math.sqrt((pb.x-pa.x)**2+(pb.y-pa.y)**2) * 1.3);
+          el.setAttribute('stroke', '#00ff88');
+          el.setAttribute('stroke-width', '2.5');
+          el.setAttribute('opacity', '1');
+          el.setAttribute('marker-end', 'url(#arrow-j-bright)');
+          el.style.strokeDasharray = len;
+          el.style.strokeDashoffset = len;
+          el.style.transition = 'stroke-dashoffset 260ms ease-out';
+          requestAnimationFrame(()=>requestAnimationFrame(()=>{
+            el.style.strokeDashoffset = '0';
+          }));
+          // Spawn path particle after edge draws
+          setTimeout(()=>spawnPathParticle(step.edgeFrom, step.edgeTo), 280);
+        }
+      }
+
+      // Update E2E panel
+      const epEl = document.getElementById(step.epId);
+      if (epEl) epEl.classList.add('visible');
+      document.getElementById('ep-depth').textContent = step.depth;
+      document.getElementById('ep-nodes').textContent = step.nodes;
+
+      // Final step: show replay
+      if (i === journeyPath.length - 1) {
+        setTimeout(()=>{
+          document.getElementById('replay-btn').classList.add('visible');
+        }, 600);
+      }
+    }, delays[i]);
+  });
+}
+
+function spawnPathParticle(fromId, toId) {
+  const canvas = document.getElementById('canvas-2');
+  const pa = nodeCenter(fromId), pb = nodeCenter(toId);
+  const cx1 = pa.x + (pb.x-pa.x)*0.5, cy1 = pa.y;
+  const cx2 = cx1, cy2 = pb.y;
+  const pathStr = `M ${pa.x} ${pa.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${pb.x} ${pb.y}`;
+
+  for (let p=0; p<3; p++) {
+    const dot = document.createElement('div');
+    dot.className = 'path-particle' + (p===1?' pp2':p===2?' pp3':'');
+    dot.style.offsetPath = `path('${pathStr}')`;
+    dot.style.animationDelay = (p * 0.6) + 's';
+    dot.style.animationDuration = '1.8s';
+    dot.style.animationIterationCount = '3';
+    canvas.appendChild(dot);
+    // Remove after 6s
+    setTimeout(()=>dot.remove(), 6200);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  // Draw Tab 0 immediately (it's active)
+  setTimeout(() => {
+    drawTab0Edges();
+    window._tab0Drawn = true;
+  }, 100);
+});
+
+// Handle resize — redraw edges
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    ['svg-0','svg-1','svg-2'].forEach(id => {
+      const svg = document.getElementById(id);
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+    });
+    document.querySelectorAll('.particle,.path-particle').forEach(e=>e.remove());
+    window._tab0Drawn = false;
+    window._tab1Drawn = false;
+    window._tab2Drawn = false;
+
+    if (currentTab === 0) { drawTab0Edges(); window._tab0Drawn = true; }
+    if (currentTab === 1) { drawTab1Edges(); spawnTab1Particles(); window._tab1Drawn = true; }
+    if (currentTab === 2) {
+      drawTab2Edges(); window._tab2Drawn = true;
+      journeyStarted = false;
+      setTimeout(startJourneyAnimation, 400);
+    }
+  }, 200);
+});
+</script>
+</body>
+</html>

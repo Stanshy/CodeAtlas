@@ -186,3 +186,46 @@ export function safeValidateEndpointDescription(data: unknown) {
 export function safeValidateStepDetail(data: unknown) {
   return StepDetailSchema.safeParse(data);
 }
+
+// ---------------------------------------------------------------------------
+// AI Endpoint Detection — Sprint 24
+// ---------------------------------------------------------------------------
+
+/**
+ * AI Endpoint Detection Result Schema.
+ * Used by AI Fallback Adapter when rule-based adapters find no endpoints.
+ * AI analyzes source code to detect API endpoints across any framework.
+ */
+export const AIEndpointDetectionSchema = z.object({
+  endpoints: z.array(z.object({
+    /** HTTP method */
+    method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']),
+    /** API endpoint path, e.g. /api/users/:id */
+    path: z.string(),
+    /** Handler function or method name */
+    handler: z.string(),
+    /** File where the endpoint is defined */
+    filePath: z.string(),
+    /** Line number of the endpoint definition */
+    line: z.number().optional(),
+    /** Detected framework name */
+    framework: z.string().optional(),
+    /** AI confidence in this detection (0-1) */
+    confidence: z.number().min(0).max(1),
+  })),
+  /** Overall detected framework */
+  framework: z.string().optional(),
+  /** Programming language */
+  language: z.string().optional(),
+});
+export type AIEndpointDetectionResult = z.infer<typeof AIEndpointDetectionSchema>;
+
+/** Parse and validate an AIEndpointDetectionResult, throws ZodError on failure */
+export function validateAIEndpointDetection(data: unknown): AIEndpointDetectionResult {
+  return AIEndpointDetectionSchema.parse(data);
+}
+
+/** Safely parse an AIEndpointDetectionResult, returns { success, data?, error? } */
+export function safeValidateAIEndpointDetection(data: unknown) {
+  return AIEndpointDetectionSchema.safeParse(data);
+}

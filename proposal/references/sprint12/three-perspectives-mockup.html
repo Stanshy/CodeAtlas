@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeAtlas — Three Perspectives Mockup (Sprint 12)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root {
+  --bg-paper:        #fafafa;
+  --bg-grid:         #f0f0f0;
+  --grid-line:       #d8d8d8;
+  --grid-line-major: #c8c8c8;
+
+  --ink-primary:     #1a1a2e;
+  --ink-secondary:   #4a4a6a;
+  --ink-muted:       #8888aa;
+  --ink-faint:       #bbbbcc;
+
+  --border-default:  #d0d0d8;
+  --shadow-card:     0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+  --shadow-hover:    0 4px 16px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
+
+  /* System Framework — blue */
+  --sf-border:       #1565c0;
+  --sf-bg:           #e3f2fd;
+  --sf-accent:       #1976d2;
+  --sf-line:         #1e88e5;
+
+  /* Logic Operation — multi-color per category */
+  --lo-routes:       #1565c0;
+  --lo-services:     #7b1fa2;
+  --lo-controllers:  #e65100;
+  --lo-models:       #4e342e;
+  --lo-utils:        #546e7a;
+  --lo-middleware:   #00838f;
+
+  /* Data Journey — green */
+  --dj-border:       #2e7d32;
+  --dj-bg:           #e8f5e9;
+  --dj-accent:       #388e3c;
+  --dj-line:         #43a047;
+  --dj-glow:         rgba(46, 125, 50, 0.2);
+
+  --tab-height: 48px;
+  --header-height: 60px;
+  --font-ui: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+
+/* ============================================================
+   RESET + BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: var(--font-ui);
+  color: var(--ink-primary);
+  background: var(--bg-paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-width: 1200px;
+  overflow-x: auto;
+}
+
+/* ============================================================
+   GRID PAPER BACKGROUND
+   ============================================================ */
+.grid-bg {
+  background-color: var(--bg-paper);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(var(--grid-line-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-major) 1px, transparent 1px);
+  background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+  background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.app-header {
+  height: var(--header-height);
+  background: #ffffff;
+  border-bottom: 1.5px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.logo-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--ink-primary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icon svg { width: 18px; height: 18px; }
+
+.logo-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: var(--ink-primary);
+}
+
+.header-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border-default);
+  margin: 0 4px;
+}
+
+.header-path {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-muted);
+  background: var(--bg-grid);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  padding: 3px 8px;
+}
+
+.header-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sf-border);
+  background: var(--sf-bg);
+  border: 1px solid #90caf9;
+  border-radius: 4px;
+  padding: 2px 8px;
+  margin-left: auto;
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+.tab-bar {
+  height: var(--tab-height);
+  background: #ffffff;
+  border-bottom: 1.5px solid var(--border-default);
+  display: flex;
+  align-items: flex-end;
+  padding: 0 24px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  height: 40px;
+  padding: 0 20px;
+  border: 1.5px solid transparent;
+  border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  position: relative;
+  bottom: -1.5px;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  color: var(--ink-secondary);
+  background: var(--bg-grid);
+}
+
+.tab-btn.active {
+  background: #ffffff;
+  border-color: var(--border-default);
+  color: var(--ink-primary);
+  font-weight: 600;
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #ffffff;
+}
+
+.tab-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tab-dot.blue   { background: var(--sf-border); }
+.tab-dot.multi  { background: conic-gradient(var(--lo-routes) 0deg 120deg, var(--lo-services) 120deg 240deg, var(--lo-controllers) 240deg 360deg); }
+.tab-dot.green  { background: var(--dj-border); }
+
+.tab-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  background: var(--bg-grid);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 0 6px;
+  height: 18px;
+  line-height: 18px;
+}
+
+/* ============================================================
+   CANVAS AREA
+   ============================================================ */
+.canvas-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.perspective-panel {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+
+.perspective-panel.active {
+  display: flex;
+}
+
+/* ============================================================
+   ──────────────────────────────────────────────────────────
+   TAB 1: SYSTEM FRAMEWORK
+   ──────────────────────────────────────────────────────────
+   ============================================================ */
+#tab-sf {
+  flex-direction: column;
+}
+
+.sf-canvas {
+  flex: 1;
+  position: relative;
+}
+
+.sf-canvas svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Directory card node */
+.dir-card {
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+
+.dir-card .card-body {
+  fill: #ffffff;
+  stroke: var(--sf-border);
+  stroke-width: 1.5;
+  rx: 8;
+  ry: 8;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.08));
+  transition: stroke-width 0.2s;
+}
+
+.dir-card:hover .card-body,
+.dir-card.highlighted .card-body {
+  fill: var(--sf-bg);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 3px 8px rgba(21,101,192,0.2));
+}
+
+.dir-card.dimmed {
+  opacity: 0.25;
+}
+
+.dir-card .card-header-rect {
+  fill: var(--sf-border);
+}
+
+.sf-edge {
+  stroke: #9aa8bc;
+  stroke-width: 1.5;
+  fill: none;
+  transition: stroke 0.2s, stroke-width 0.2s, opacity 0.2s;
+}
+
+.sf-edge.highlighted {
+  stroke: var(--sf-line);
+  stroke-width: 2.5;
+  opacity: 1 !important;
+}
+
+.sf-edge.dimmed {
+  opacity: 0.12;
+}
+
+/* ============================================================
+   ──────────────────────────────────────────────────────────
+   TAB 2: LOGIC OPERATION
+   ──────────────────────────────────────────────────────────
+   ============================================================ */
+#tab-lo {
+  flex-direction: column;
+}
+
+.lo-canvas {
+  flex: 1;
+  position: relative;
+}
+
+.lo-canvas svg {
+  width: 100%;
+  height: 100%;
+}
+
+.lo-node {
+  cursor: pointer;
+  transition: opacity 0.25s, filter 0.25s;
+}
+
+.lo-node .lo-rect {
+  fill: #ffffff;
+  stroke-width: 1.5;
+  rx: 6;
+  ry: 6;
+  transition: fill 0.2s, stroke-width 0.2s;
+}
+
+.lo-node:hover .lo-rect {
+  stroke-width: 2;
+}
+
+.lo-node.active .lo-rect {
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.lo-node.active.entry-node .lo-rect {
+  stroke-width: 3;
+}
+
+.lo-node.dimmed {
+  opacity: 0.08;
+}
+
+.lo-node.faded {
+  opacity: 0.3;
+}
+
+.lo-edge {
+  stroke: #555;
+  stroke-width: 1.5;
+  fill: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.lo-edge.visible {
+  opacity: 1;
+}
+
+.lo-star {
+  fill: #f59e0b;
+  font-size: 10px;
+}
+
+/* Center hint text */
+.lo-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.lo-hint-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  letter-spacing: -0.5px;
+}
+
+.lo-hint-sub {
+  font-size: 14px;
+  color: var(--ink-muted);
+  margin-top: 6px;
+}
+
+.lo-hint-icon {
+  width: 40px;
+  height: 40px;
+  border: 2px dashed var(--ink-faint);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+/* Chain info panel */
+.lo-chain-info {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ffffff;
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 10px 20px;
+  box-shadow: var(--shadow-hover);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.lo-chain-info.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lo-chain-label {
+  font-weight: 600;
+  color: var(--ink-primary);
+}
+
+.lo-reset-btn {
+  background: var(--bg-grid);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--ink-secondary);
+  font-family: var(--font-ui);
+  pointer-events: auto;
+  transition: background 0.15s;
+}
+
+.lo-reset-btn:hover { background: #e8e8ef; }
+
+/* ============================================================
+   ──────────────────────────────────────────────────────────
+   TAB 3: DATA JOURNEY
+   ──────────────────────────────────────────────────────────
+   ============================================================ */
+#tab-dj {
+  flex-direction: row;
+}
+
+.dj-canvas {
+  flex: 1;
+  position: relative;
+}
+
+.dj-canvas svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Right info panel */
+.dj-panel {
+  width: 280px;
+  flex-shrink: 0;
+  background: #ffffff;
+  border-left: 1.5px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dj-panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-grid);
+}
+
+.dj-panel-header h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-primary);
+}
+
+.dj-panel-header p {
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
+.dj-steps-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.dj-step-item {
+  display: flex;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 4px;
+  opacity: 0.35;
+  transition: opacity 0.3s, background 0.3s;
+}
+
+.dj-step-item.active {
+  opacity: 1;
+  background: var(--dj-bg);
+  border: 1px solid #a5d6a7;
+}
+
+.dj-step-item.done {
+  opacity: 0.7;
+}
+
+.dj-step-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--border-default);
+  border: 1.5px solid var(--border-default);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--ink-muted);
+  transition: background 0.3s, border-color 0.3s, color 0.3s;
+}
+
+.dj-step-item.active .dj-step-num {
+  background: var(--dj-border);
+  border-color: var(--dj-border);
+  color: #ffffff;
+}
+
+.dj-step-item.done .dj-step-num {
+  background: #a5d6a7;
+  border-color: #81c784;
+  color: var(--dj-border);
+}
+
+.dj-step-body { flex: 1; }
+
+.dj-step-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-primary);
+}
+
+.dj-step-desc {
+  font-size: 10px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.dj-panel-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-default);
+}
+
+.dj-replay-btn {
+  width: 100%;
+  height: 36px;
+  background: var(--dj-border);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s, background 0.15s;
+  pointer-events: none;
+}
+
+.dj-replay-btn.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dj-replay-btn:hover { background: #1b5e20; }
+
+/* DJ node states */
+.dj-node {
+  cursor: pointer;
+  transition: opacity 0.25s;
+}
+
+.dj-node.inactive { opacity: 0.25; }
+
+.dj-node .dj-rect {
+  fill: #ffffff;
+  stroke: var(--border-default);
+  stroke-width: 1.5;
+  rx: 8;
+  transition: fill 0.35s, stroke 0.35s, stroke-width 0.35s;
+}
+
+.dj-node.entry .dj-rect {
+  stroke: var(--dj-accent);
+  stroke-width: 2;
+  fill: var(--dj-bg);
+}
+
+.dj-node.lit .dj-rect {
+  fill: var(--dj-bg);
+  stroke: var(--dj-border);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 2px 8px rgba(46,125,50,0.25));
+}
+
+.dj-node.current .dj-rect {
+  fill: var(--dj-bg);
+  stroke: var(--dj-border);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 12px rgba(46,125,50,0.4));
+}
+
+.dj-edge {
+  fill: none;
+  stroke: var(--dj-line);
+  stroke-width: 2;
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  transition: stroke-dashoffset 0.45s ease-in-out;
+}
+
+.dj-edge.drawn {
+  stroke-dashoffset: 0;
+}
+
+/* DJ initial hint */
+.dj-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.dj-hint-box {
+  background: #ffffff;
+  border: 2px dashed var(--dj-border);
+  border-radius: var(--radius-lg);
+  padding: 28px 40px;
+  text-align: center;
+  max-width: 340px;
+}
+
+.dj-hint-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--dj-border);
+  margin-bottom: 6px;
+}
+
+.dj-hint-sub {
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+/* ============================================================
+   MISC COMPONENTS
+   ============================================================ */
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--ink-secondary);
+  padding: 3px 0;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* SF bottom legend bar */
+.sf-legend-bar {
+  height: 44px;
+  background: #ffffff;
+  border-top: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+/* LO legend bar */
+.lo-legend-bar {
+  height: 44px;
+  background: #ffffff;
+  border-top: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+/* Tooltip */
+.tooltip {
+  position: fixed;
+  background: var(--ink-primary);
+  color: #fff;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  padding: 5px 10px;
+  border-radius: 5px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 1000;
+  white-space: nowrap;
+}
+
+.tooltip.visible { opacity: 1; }
+
+/* Node label text common */
+.node-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--ink-primary);
+}
+
+.node-sub {
+  font-size: 9px;
+  font-family: var(--font-ui);
+  fill: var(--ink-muted);
+}
+
+.node-badge {
+  font-size: 9px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header class="app-header">
+  <div class="logo-mark">
+    <div class="logo-icon">
+      <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="9" cy="4" r="2" fill="white"/>
+        <circle cx="3" cy="14" r="2" fill="white"/>
+        <circle cx="15" cy="14" r="2" fill="white"/>
+        <line x1="9" y1="6" x2="3" y2="12" stroke="white" stroke-width="1.5"/>
+        <line x1="9" y1="6" x2="15" y2="12" stroke="white" stroke-width="1.5"/>
+        <line x1="3" y1="14" x2="15" y2="14" stroke="white" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <span class="logo-name">CodeAtlas</span>
+  </div>
+  <div class="header-divider"></div>
+  <span class="header-path">~/projects/my-fullstack-app</span>
+  <span class="header-divider" style="margin-left:auto;"></span>
+  <span class="header-badge">Sprint 12 Mockup</span>
+</header>
+
+<!-- ============================================================
+     TAB BAR
+     ============================================================ -->
+<nav class="tab-bar" role="tablist">
+  <button class="tab-btn active" id="btn-sf" role="tab" onclick="switchTab('sf')">
+    <span class="tab-dot blue"></span>
+    系統框架
+    <span class="tab-count">13</span>
+  </button>
+  <button class="tab-btn" id="btn-lo" role="tab" onclick="switchTab('lo')">
+    <span class="tab-dot multi"></span>
+    邏輯運作
+    <span class="tab-count">42</span>
+  </button>
+  <button class="tab-btn" id="btn-dj" role="tab" onclick="switchTab('dj')">
+    <span class="tab-dot green"></span>
+    資料旅程
+    <span class="tab-count">3</span>
+  </button>
+</nav>
+
+<!-- ============================================================
+     CANVAS AREA
+     ============================================================ -->
+<div class="canvas-area grid-bg">
+
+  <!-- ──────────────────────────────────────────────────────────
+       TAB 1: SYSTEM FRAMEWORK
+       ────────────────────────────────────────────────────────── -->
+  <div class="perspective-panel active" id="tab-sf">
+    <div class="sf-canvas" id="sf-canvas">
+      <svg id="sf-svg" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="sf-arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#9aa8bc"/>
+          </marker>
+          <marker id="sf-arrow-hi" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#1e88e5"/>
+          </marker>
+        </defs>
+        <!-- Edges and nodes rendered by JS -->
+      </svg>
+    </div>
+    <div class="sf-legend-bar">
+      <div class="legend-row"><div class="legend-dot" style="background:#1565c0;border-radius:50%;"></div> 模組目錄</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#9aa8bc;border-radius:2px; width:18px; height:3px;"></div> 依賴箭頭</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#1e88e5;border-radius:2px; width:18px; height:3px;"></div> Hover 高亮路徑</div>
+      <span style="font-size:11px;color:var(--ink-faint);margin-left:auto;">Hover 目錄卡片查看連線</span>
+    </div>
+  </div>
+
+  <!-- ──────────────────────────────────────────────────────────
+       TAB 2: LOGIC OPERATION
+       ────────────────────────────────────────────────────────── -->
+  <div class="perspective-panel" id="tab-lo">
+    <div class="lo-canvas" id="lo-canvas">
+      <svg id="lo-svg" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="lo-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#1a1a2e"/>
+          </marker>
+        </defs>
+      </svg>
+      <!-- Hint overlay -->
+      <div class="lo-hint" id="lo-hint">
+        <div class="lo-hint-icon">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="8" stroke="#bbbbcc" stroke-width="1.5" stroke-dasharray="3 2"/>
+            <path d="M10 6v5M10 13v1" stroke="#bbbbcc" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="lo-hint-title">點擊任一節點查看呼叫鏈</div>
+        <div class="lo-hint-sub">★ 標示為推薦入口，任意節點皆可點擊</div>
+      </div>
+      <!-- Chain info bar -->
+      <div class="lo-chain-info" id="lo-chain-info">
+        <span class="lo-chain-label" id="lo-chain-label">用戶註冊流程</span>
+        <span id="lo-chain-count" style="color:var(--ink-muted);">8 個節點</span>
+        <button class="lo-reset-btn" onclick="resetLoSelection()">清除選取</button>
+      </div>
+    </div>
+    <div class="lo-legend-bar">
+      <div class="legend-row"><div class="legend-dot" style="background:#1565c0;"></div> routes</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#7b1fa2;"></div> services</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#e65100;"></div> controllers</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#4e342e;"></div> models</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#546e7a;"></div> utils</div>
+      <div class="legend-row"><div class="legend-dot" style="background:#00838f;"></div> middleware</div>
+      <span style="font-size:11px;color:var(--ink-faint);margin-left:auto;">點擊節點展開呼叫鏈 · 點擊空白重置</span>
+    </div>
+  </div>
+
+  <!-- ──────────────────────────────────────────────────────────
+       TAB 3: DATA JOURNEY
+       ────────────────────────────────────────────────────────── -->
+  <div class="perspective-panel" id="tab-dj">
+    <div class="dj-canvas" id="dj-canvas">
+      <svg id="dj-svg" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="dj-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#43a047"/>
+          </marker>
+        </defs>
+      </svg>
+      <!-- Initial hint (shown before selecting a journey) -->
+      <div class="dj-hint" id="dj-hint">
+        <div class="dj-hint-box">
+          <div class="dj-hint-title">選擇資料入口開始追蹤</div>
+          <div class="dj-hint-sub">點擊綠色框入口節點<br>觀察資料如何逐步流動</div>
+        </div>
+      </div>
+    </div>
+    <!-- Right panel -->
+    <div class="dj-panel">
+      <div class="dj-panel-header">
+        <h3>資料旅程步驟</h3>
+        <p id="dj-journey-name">請選擇入口</p>
+      </div>
+      <div class="dj-steps-list" id="dj-steps-list">
+        <!-- Steps rendered by JS -->
+      </div>
+      <div class="dj-panel-footer">
+        <button class="dj-replay-btn" id="dj-replay-btn" onclick="replayJourney()">重播此旅程</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.canvas-area -->
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+'use strict';
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+const $ = id => document.getElementById(id);
+
+function svgEl(tag, attrs = {}) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+/** Compute a smooth cubic bezier path between two rects */
+function edgePath(x1, y1, x2, y2) {
+  const mx = (x1 + x2) / 2;
+  return `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+}
+
+/** Elbow path for more structured layouts */
+function elbowPath(x1, y1, x2, y2) {
+  const my = y1 + (y2 - y1) * 0.5;
+  return `M ${x1} ${y1} L ${x1} ${my} L ${x2} ${my} L ${x2} ${y2}`;
+}
+
+/* ============================================================
+   TAB SWITCHING
+   ============================================================ */
+function switchTab(name) {
+  ['sf', 'lo', 'dj'].forEach(t => {
+    $('tab-' + t).classList.toggle('active', t === name);
+    $('btn-' + t).classList.toggle('active', t === name);
+  });
+}
+
+/* ============================================================
+   TOOLTIP HELPER
+   ============================================================ */
+const tip = $('tooltip');
+function showTip(e, text) {
+  tip.textContent = text;
+  tip.classList.add('visible');
+  moveTip(e);
+}
+function moveTip(e) {
+  tip.style.left = (e.clientX + 14) + 'px';
+  tip.style.top  = (e.clientY - 28) + 'px';
+}
+function hideTip() { tip.classList.remove('visible'); }
+
+/* ============================================================
+   ──────────────────────────────────────────────────────────
+   TAB 1: SYSTEM FRAMEWORK
+   ──────────────────────────────────────────────────────────
+   ============================================================ */
+
+/**
+ * Directory node definition
+ * { id, label, files, type, x, y, w, h }
+ * type: 'entry' | 'logic' | 'data' | 'support'
+ */
+const SF_NODES = [
+  // Top row — entry
+  { id: 'app',          label: 'app.ts',       files: '1 file',   type: 'entry',   x: 460, y: 40,  w: 160, h: 72 },
+  // Second row — routing
+  { id: 'routes',       label: 'routes/',      files: '8 files',  type: 'logic',   x: 200, y: 160, w: 150, h: 72 },
+  { id: 'api',          label: 'api/',         files: '6 files',  type: 'logic',   x: 720, y: 160, w: 150, h: 72 },
+  // Third row — logic
+  { id: 'middleware',   label: 'middleware/',  files: '4 files',  type: 'support', x: 60,  y: 290, w: 160, h: 72 },
+  { id: 'controllers',  label: 'controllers/', files: '6 files',  type: 'logic',   x: 270, y: 290, w: 160, h: 72 },
+  { id: 'hooks',        label: 'hooks/',       files: '5 files',  type: 'logic',   x: 610, y: 290, w: 150, h: 72 },
+  // Fourth row — services
+  { id: 'services',     label: 'services/',    files: '10 files', type: 'logic',   x: 360, y: 420, w: 160, h: 72 },
+  // Fifth row — data
+  { id: 'models',       label: 'models/',      files: '7 files',  type: 'data',    x: 200, y: 550, w: 150, h: 72 },
+  { id: 'db',           label: 'db/',          files: '3 files',  type: 'data',    x: 420, y: 550, w: 140, h: 72 },
+  { id: 'types',        label: 'types/',       files: '5 files',  type: 'data',    x: 620, y: 550, w: 140, h: 72 },
+  // Support column (right)
+  { id: 'utils',        label: 'utils/',       files: '12 files', type: 'support', x: 840, y: 350, w: 150, h: 72 },
+  { id: 'lib',          label: 'lib/',         files: '4 files',  type: 'support', x: 850, y: 480, w: 140, h: 72 },
+  { id: 'config',       label: 'config/',      files: '3 files',  type: 'support', x: 860, y: 150, w: 140, h: 72 },
+  // Tests
+  { id: 'tests',        label: 'tests/',       files: '15 files', type: 'support', x: 60,  y: 420, w: 160, h: 72 },
+];
+
+/**
+ * Edge definition { from, to }
+ * Each edge connects node ids by their bottom/top center
+ */
+const SF_EDGES = [
+  { from: 'app',         to: 'routes' },
+  { from: 'app',         to: 'api' },
+  { from: 'api',         to: 'routes' },
+  { from: 'routes',      to: 'middleware' },
+  { from: 'routes',      to: 'controllers' },
+  { from: 'controllers', to: 'services' },
+  { from: 'hooks',       to: 'services' },
+  { from: 'services',    to: 'models' },
+  { from: 'services',    to: 'lib' },
+  { from: 'services',    to: 'utils' },
+  { from: 'models',      to: 'db' },
+  { from: 'models',      to: 'types' },
+  { from: 'lib',         to: 'utils' },
+  { from: 'config',      to: 'services' },
+  { from: 'middleware',  to: 'controllers' },
+];
+
+const SF_TYPE_COLOR = {
+  entry:   { border: '#1565c0', bg: '#e3f2fd', badge: '#1565c0', badgeBg: '#bbdefb' },
+  logic:   { border: '#1565c0', bg: '#e3f2fd', badge: '#1565c0', badgeBg: '#bbdefb' },
+  data:    { border: '#0d47a1', bg: '#e8eaf6', badge: '#0d47a1', badgeBg: '#c5cae9' },
+  support: { border: '#546e7a', bg: '#eceff1', badge: '#546e7a', badgeBg: '#cfd8dc' },
+};
+
+const SF_TYPE_ICON = {
+  entry:   '⬡',
+  logic:   '◈',
+  data:    '◆',
+  support: '◇',
+};
+
+function buildSFGraph() {
+  const svg = $('sf-svg');
+  const container = $('sf-canvas');
+  const W = container.clientWidth || 1100;
+  const H = container.clientHeight || 580;
+
+  // Scale factor to fit
+  const allX = SF_NODES.map(n => n.x + n.w);
+  const allY = SF_NODES.map(n => n.y + n.h);
+  const contentW = Math.max(...allX) + 40;
+  const contentH = Math.max(...allY) + 40;
+  const scale = Math.min(W / contentW, (H - 60) / contentH, 1.0);
+  const offsetX = (W - contentW * scale) / 2;
+  const offsetY = 20;
+
+  function tx(x) { return x * scale + offsetX; }
+  function ty(y) { return y * scale + offsetY; }
+  function ts(v) { return v * scale; }
+
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.innerHTML = `
+    <defs>
+      <marker id="sf-arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#9aa8bc"/>
+      </marker>
+      <marker id="sf-arrow-hi" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#1e88e5"/>
+      </marker>
+    </defs>
+  `;
+
+  const nodeMap = {};
+  SF_NODES.forEach(n => { nodeMap[n.id] = n; });
+
+  // Adjacency for hover highlight
+  const nodeEdges = {}; // id -> [edge indices]
+  SF_NODES.forEach(n => { nodeEdges[n.id] = []; });
+  SF_EDGES.forEach((e, i) => {
+    nodeEdges[e.from].push(i);
+    nodeEdges[e.to].push(i);
+  });
+
+  // Draw edges first (below nodes)
+  const edgeEls = [];
+  SF_EDGES.forEach((e, i) => {
+    const fn = nodeMap[e.from];
+    const tn = nodeMap[e.to];
+    // from bottom center of fn, to top center of tn
+    const x1 = tx(fn.x + fn.w / 2);
+    const y1 = ty(fn.y + fn.h);
+    const x2 = tx(tn.x + tn.w / 2);
+    const y2 = ty(tn.y);
+    const path = svgEl('path', {
+      d: elbowPath(x1, y1, x2, y2),
+      class: 'sf-edge',
+      'marker-end': 'url(#sf-arrow)',
+      'data-idx': i,
+    });
+    svg.appendChild(path);
+    edgeEls.push(path);
+  });
+
+  // Draw nodes
+  const nodeEls = {};
+  SF_NODES.forEach(n => {
+    const c = SF_TYPE_COLOR[n.type];
+    const nx = tx(n.x), ny = ty(n.y);
+    const nw = ts(n.w), nh = ts(n.h);
+
+    const g = svgEl('g', { class: 'dir-card', 'data-id': n.id, cursor: 'pointer' });
+
+    // Shadow rect (offset)
+    const shadow = svgEl('rect', {
+      x: nx + 3, y: ny + 3,
+      width: nw, height: nh,
+      rx: 8, ry: 8,
+      fill: 'rgba(0,0,0,0.07)',
+    });
+    g.appendChild(shadow);
+
+    // Card background
+    const rect = svgEl('rect', {
+      x: nx, y: ny,
+      width: nw, height: nh,
+      rx: 8, ry: 8,
+      fill: '#ffffff',
+      stroke: c.border,
+      'stroke-width': 1.5,
+      class: 'card-body',
+    });
+    g.appendChild(rect);
+
+    // Top accent bar
+    const accentH = Math.max(4, ts(5));
+    const accent = svgEl('rect', {
+      x: nx + 1, y: ny + 1,
+      width: nw - 2, height: accentH,
+      rx: 7, ry: 7,
+      fill: c.border,
+      opacity: 0.15,
+    });
+    g.appendChild(accent);
+
+    // Icon dot
+    const dotR = ts(4);
+    const dot = svgEl('circle', {
+      cx: nx + ts(14), cy: ny + ts(18),
+      r: dotR,
+      fill: c.border,
+    });
+    g.appendChild(dot);
+
+    // Label
+    const label = svgEl('text', {
+      x: nx + ts(26), y: ny + ts(21),
+      class: 'node-name',
+      'font-size': Math.max(10, ts(11.5)),
+      fill: '#1a1a2e',
+    });
+    label.textContent = n.label;
+    g.appendChild(label);
+
+    // File count badge
+    const badgeX = nx + ts(12);
+    const badgeY = ny + ts(38);
+    const badgeW = ts(70);
+    const badgeH = ts(18);
+    const badgeRect = svgEl('rect', {
+      x: badgeX, y: badgeY,
+      width: badgeW, height: badgeH,
+      rx: 4, ry: 4,
+      fill: c.badgeBg,
+    });
+    g.appendChild(badgeRect);
+    const badgeText = svgEl('text', {
+      x: badgeX + badgeW / 2, y: badgeY + badgeH * 0.72,
+      class: 'node-badge',
+      'text-anchor': 'middle',
+      'font-size': Math.max(8, ts(9)),
+      fill: c.badge,
+    });
+    badgeText.textContent = n.files;
+    g.appendChild(badgeText);
+
+    // Hover interactions
+    g.addEventListener('mouseenter', e => {
+      highlightSFNode(n.id, nodeEdges, edgeEls, nodeEls);
+      showTip(e, n.label + '  ·  ' + n.files);
+    });
+    g.addEventListener('mousemove', moveTip);
+    g.addEventListener('mouseleave', () => {
+      resetSFHighlight(edgeEls, nodeEls);
+      hideTip();
+    });
+
+    svg.appendChild(g);
+    nodeEls[n.id] = { g, rect };
+  });
+}
+
+function highlightSFNode(nodeId, nodeEdges, edgeEls, nodeEls) {
+  const activeEdgeIdxs = new Set(nodeEdges[nodeId]);
+  const connectedNodes = new Set([nodeId]);
+  SF_EDGES.forEach((e, i) => {
+    if (activeEdgeIdxs.has(i)) {
+      connectedNodes.add(e.from);
+      connectedNodes.add(e.to);
+    }
+  });
+
+  edgeEls.forEach((el, i) => {
+    if (activeEdgeIdxs.has(i)) {
+      el.classList.remove('dimmed');
+      el.classList.add('highlighted');
+      el.setAttribute('marker-end', 'url(#sf-arrow-hi)');
+      el.style.stroke = '#1e88e5';
+    } else {
+      el.classList.add('dimmed');
+      el.classList.remove('highlighted');
+      el.setAttribute('marker-end', 'url(#sf-arrow)');
+      el.style.stroke = '';
+    }
+  });
+
+  for (const [id, { g }] of Object.entries(nodeEls)) {
+    if (connectedNodes.has(id)) {
+      g.classList.remove('dimmed');
+      g.classList.add('highlighted');
+    } else {
+      g.classList.add('dimmed');
+      g.classList.remove('highlighted');
+    }
+  }
+}
+
+function resetSFHighlight(edgeEls, nodeEls) {
+  edgeEls.forEach(el => {
+    el.classList.remove('dimmed', 'highlighted');
+    el.setAttribute('marker-end', 'url(#sf-arrow)');
+    el.style.stroke = '';
+  });
+  for (const { g } of Object.values(nodeEls)) {
+    g.classList.remove('dimmed', 'highlighted');
+  }
+}
+
+/* ============================================================
+   ──────────────────────────────────────────────────────────
+   TAB 2: LOGIC OPERATION
+   ──────────────────────────────────────────────────────────
+   ============================================================ */
+
+const LO_CATEGORY_COLOR = {
+  routes:      '#1565c0',
+  services:    '#7b1fa2',
+  controllers: '#e65100',
+  models:      '#4e342e',
+  utils:       '#546e7a',
+  middleware:  '#00838f',
+};
+
+const LO_CATEGORY_BG = {
+  routes:      '#e3f2fd',
+  services:    '#f3e5f5',
+  controllers: '#fff3e0',
+  models:      '#efebe9',
+  utils:       '#eceff1',
+  middleware:  '#e0f7fa',
+};
+
+// 42 nodes spread across the canvas
+const LO_NODES = [
+  // routes (8)
+  { id: 'r_users',       label: 'POST /users',         cat: 'routes',      x: 120, y: 80,  star: true  },
+  { id: 'r_products',    label: 'GET /products',        cat: 'routes',      x: 280, y: 55,  star: true  },
+  { id: 'r_auth',        label: 'POST /auth/login',     cat: 'routes',      x: 180, y: 155  },
+  { id: 'r_orders',      label: 'POST /orders',         cat: 'routes',      x: 60,  y: 210  },
+  { id: 'r_ws',          label: 'WS /ws',               cat: 'routes',      x: 340, y: 130, star: true  },
+  { id: 'r_profile',     label: 'GET /profile',         cat: 'routes',      x: 90,  y: 290  },
+  { id: 'r_search',      label: 'GET /search',          cat: 'routes',      x: 400, y: 80   },
+  { id: 'r_cart',        label: 'PUT /cart',            cat: 'routes',      x: 460, y: 165  },
+  // middleware (5)
+  { id: 'm_auth',        label: 'authMiddleware',       cat: 'middleware',  x: 200, y: 250  },
+  { id: 'm_cache',       label: 'cacheMiddleware',      cat: 'middleware',  x: 320, y: 220  },
+  { id: 'm_logger',      label: 'loggerMiddleware',     cat: 'middleware',  x: 140, y: 360  },
+  { id: 'm_ratelimit',   label: 'rateLimitMiddleware',  cat: 'middleware',  x: 50,  y: 430  },
+  { id: 'm_cors',        label: 'corsMiddleware',       cat: 'middleware',  x: 460, y: 260  },
+  // controllers (6)
+  { id: 'c_user',        label: 'UserController',       cat: 'controllers', x: 560, y: 90   },
+  { id: 'c_product',     label: 'ProductController',    cat: 'controllers', x: 580, y: 180  },
+  { id: 'c_order',       label: 'OrderController',      cat: 'controllers', x: 550, y: 270  },
+  { id: 'c_auth',        label: 'AuthController',       cat: 'controllers', x: 640, y: 350  },
+  { id: 'c_chat',        label: 'MessageRouter',        cat: 'controllers', x: 680, y: 155  },
+  { id: 'c_search',      label: 'SearchController',     cat: 'controllers', x: 700, y: 60   },
+  // services (10)
+  { id: 's_user',        label: 'UserService',          cat: 'services',    x: 780, y: 80   },
+  { id: 's_product',     label: 'ProductService',       cat: 'services',    x: 820, y: 180  },
+  { id: 's_order',       label: 'OrderService',         cat: 'services',    x: 800, y: 280  },
+  { id: 's_auth',        label: 'AuthService',          cat: 'services',    x: 750, y: 370  },
+  { id: 's_email',       label: 'emailService',         cat: 'services',    x: 860, y: 380  },
+  { id: 's_chat',        label: 'ChatService',          cat: 'services',    x: 870, y: 270  },
+  { id: 's_cache',       label: 'CacheService',         cat: 'services',    x: 900, y: 160  },
+  { id: 's_search',      label: 'SearchService',        cat: 'services',    x: 940, y: 80   },
+  { id: 's_notif',       label: 'NotifService',         cat: 'services',    x: 950, y: 290  },
+  { id: 's_payment',     label: 'PaymentService',       cat: 'services',    x: 980, y: 190  },
+  // models (7)
+  { id: 'mo_user',       label: 'UserModel',            cat: 'models',      x: 620, y: 470  },
+  { id: 'mo_product',    label: 'ProductModel',         cat: 'models',      x: 760, y: 470  },
+  { id: 'mo_order',      label: 'OrderModel',           cat: 'models',      x: 880, y: 470  },
+  { id: 'mo_msg',        label: 'MessageModel',         cat: 'models',      x: 1000, y: 450 },
+  { id: 'mo_cart',       label: 'CartModel',            cat: 'models',      x: 700, y: 550  },
+  { id: 'mo_session',    label: 'SessionModel',         cat: 'models',      x: 840, y: 550  },
+  { id: 'mo_audit',      label: 'AuditModel',           cat: 'models',      x: 960, y: 540  },
+  // utils (6)
+  { id: 'u_validate',    label: 'validateUser()',       cat: 'utils',       x: 260, y: 450  },
+  { id: 'u_format',      label: 'formatResponse()',     cat: 'utils',       x: 380, y: 510  },
+  { id: 'u_hash',        label: 'hashPassword()',       cat: 'utils',       x: 180, y: 530  },
+  { id: 'u_token',       label: 'generateToken()',      cat: 'utils',       x: 100, y: 490  },
+  { id: 'db_insert',     label: 'db.insert()',          cat: 'utils',       x: 480, y: 440  },
+  { id: 'db_query',      label: 'db.query()',           cat: 'utils',       x: 540, y: 530  },
+  { id: 'ws_bc',         label: 'ws.broadcast()',       cat: 'utils',       x: 420, y: 390  },
+];
+
+// Call chains { id, label, nodes: [id...] }
+const LO_CHAINS = [
+  {
+    id: 'chain_user',
+    label: '用戶註冊流程',
+    nodes: ['r_users', 'm_auth', 'c_user', 's_user', 'u_validate', 'mo_user', 'db_insert', 's_email'],
+    edges: [
+      ['r_users','m_auth'],['m_auth','c_user'],['c_user','s_user'],
+      ['s_user','u_validate'],['s_user','mo_user'],['mo_user','db_insert'],['s_user','s_email'],
+    ]
+  },
+  {
+    id: 'chain_product',
+    label: '商品查詢流程',
+    nodes: ['r_products', 'm_cache', 'c_product', 's_product', 'mo_product', 'db_query', 'u_format'],
+    edges: [
+      ['r_products','m_cache'],['m_cache','c_product'],['c_product','s_product'],
+      ['s_product','mo_product'],['mo_product','db_query'],['s_product','u_format'],
+    ]
+  },
+  {
+    id: 'chain_ws',
+    label: 'WebSocket 訊息流程',
+    nodes: ['r_ws', 'c_chat', 's_chat', 'mo_msg', 'db_insert', 'ws_bc'],
+    edges: [
+      ['r_ws','c_chat'],['c_chat','s_chat'],['s_chat','mo_msg'],['mo_msg','db_insert'],['s_chat','ws_bc'],
+    ]
+  },
+];
+
+let loSelectedChain = null;
+let loNodeEls = {};
+let loEdgeEls = {};
+
+function buildLOGraph() {
+  const svg = $('lo-svg');
+  const container = $('lo-canvas');
+  const W = container.clientWidth || 1100;
+  const H = container.clientHeight || 560;
+
+  // Scale to fit
+  const allX = LO_NODES.map(n => n.x + 110);
+  const allY = LO_NODES.map(n => n.y + 36);
+  const contentW = Math.max(...allX) + 30;
+  const contentH = Math.max(...allY) + 30;
+  const scale = Math.min(W / contentW, (H - 40) / contentH, 1.0);
+  const offsetX = (W - contentW * scale) / 2;
+  const offsetY = 20;
+
+  function tx(x) { return x * scale + offsetX; }
+  function ty(y) { return y * scale + offsetY; }
+  function ts(v) { return v * scale; }
+
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.innerHTML = `
+    <defs>
+      <marker id="lo-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#1a1a2e"/>
+      </marker>
+    </defs>
+  `;
+
+  loNodeEls = {};
+  loEdgeEls = {};
+
+  const nodeMap = {};
+  LO_NODES.forEach(n => { nodeMap[n.id] = n; });
+
+  // Build all possible edges for all chains (but hidden initially)
+  const allEdges = [];
+  LO_CHAINS.forEach(chain => {
+    chain.edges.forEach(([fid, tid]) => {
+      allEdges.push({ from: fid, to: tid, chainId: chain.id });
+    });
+  });
+
+  // Draw edges (initially invisible)
+  allEdges.forEach((e, i) => {
+    const fn = nodeMap[e.from];
+    const tn = nodeMap[e.to];
+    if (!fn || !tn) return;
+    const NW = 100, NH = 30;
+    const x1 = tx(fn.x + NW);
+    const y1 = ty(fn.y + NH / 2);
+    const x2 = tx(tn.x);
+    const y2 = ty(tn.y + NH / 2);
+    const path = svgEl('path', {
+      d: edgePath(x1, y1, x2, y2),
+      class: 'lo-edge',
+      'marker-end': 'url(#lo-arrow)',
+      'data-chain': e.chainId,
+      'data-from': e.from,
+      'data-to': e.to,
+    });
+    svg.appendChild(path);
+    const key = e.chainId + '_' + e.from + '_' + e.to;
+    loEdgeEls[key] = path;
+  });
+
+  // Draw nodes
+  LO_NODES.forEach(n => {
+    const NW = 110, NH = 32;
+    const color = LO_CATEGORY_COLOR[n.cat];
+    const bg = LO_CATEGORY_BG[n.cat];
+    const nx = tx(n.x), ny = ty(n.y);
+    const nw = ts(NW), nh = ts(NH);
+
+    const g = svgEl('g', { class: 'lo-node faded', 'data-id': n.id, 'data-cat': n.cat });
+
+    const rect = svgEl('rect', {
+      x: nx, y: ny,
+      width: nw, height: nh,
+      rx: 6, ry: 6,
+      fill: '#ffffff',
+      stroke: color,
+      'stroke-width': 1.5,
+      class: 'lo-rect',
+    });
+    g.appendChild(rect);
+
+    // Node label
+    const labelEl = svgEl('text', {
+      x: nx + ts(8) + (n.star ? ts(12) : 0),
+      y: ny + nh * 0.65,
+      'font-family': "'JetBrains Mono', monospace",
+      'font-size': Math.max(8, ts(9.5)),
+      'font-weight': '500',
+      fill: '#1a1a2e',
+    });
+    labelEl.textContent = n.label.length > 16 ? n.label.slice(0, 15) + '…' : n.label;
+    g.appendChild(labelEl);
+
+    // Star badge for recommended entry
+    if (n.star) {
+      const star = svgEl('text', {
+        x: nx + ts(5),
+        y: ny + nh * 0.68,
+        'font-size': Math.max(8, ts(9)),
+        fill: '#f59e0b',
+        class: 'lo-star',
+      });
+      star.textContent = '★';
+      g.appendChild(star);
+    }
+
+    // Click handler
+    g.addEventListener('click', e => {
+      e.stopPropagation();
+      selectLONode(n.id, nodeMap);
+    });
+    g.addEventListener('mouseenter', ev => showTip(ev, n.label + ' (' + n.cat + ')'));
+    g.addEventListener('mousemove', moveTip);
+    g.addEventListener('mouseleave', hideTip);
+
+    svg.appendChild(g);
+    loNodeEls[n.id] = g;
+  });
+
+  // Click background to reset
+  svg.addEventListener('click', () => resetLoSelection());
+}
+
+function selectLONode(nodeId, nodeMap) {
+  // Find which chain this node belongs to
+  let chain = null;
+  for (const c of LO_CHAINS) {
+    if (c.nodes.includes(nodeId)) { chain = c; break; }
+  }
+  if (!chain) {
+    // No chain — just highlight the node alone
+    chain = { id: '_single', label: nodeId, nodes: [nodeId], edges: [] };
+  }
+
+  loSelectedChain = chain;
+  const activeNodes = new Set(chain.nodes);
+
+  // Update node visibility
+  for (const [id, g] of Object.entries(loNodeEls)) {
+    g.classList.remove('faded', 'active', 'entry-node', 'dimmed');
+    if (activeNodes.has(id)) {
+      g.classList.add('active');
+      const rect = g.querySelector('.lo-rect');
+      if (rect) {
+        const color = LO_CATEGORY_COLOR[g.dataset.cat];
+        rect.setAttribute('fill', LO_CATEGORY_BG[g.dataset.cat]);
+        rect.setAttribute('stroke-width', id === nodeId ? 3 : 2.5);
+      }
+      if (id === nodeId) g.classList.add('entry-node');
+    } else {
+      g.classList.add('dimmed');
+      const rect = g.querySelector('.lo-rect');
+      if (rect) {
+        rect.setAttribute('fill', '#ffffff');
+        rect.setAttribute('stroke-width', 1.5);
+      }
+    }
+  }
+
+  // Show edges for this chain
+  for (const [key, el] of Object.entries(loEdgeEls)) {
+    if (key.startsWith(chain.id + '_')) {
+      el.classList.add('visible');
+    } else {
+      el.classList.remove('visible');
+    }
+  }
+
+  // Show hint chain info
+  $('lo-hint').style.opacity = '0';
+  $('lo-hint').style.pointerEvents = 'none';
+  $('lo-chain-label').textContent = chain.label;
+  $('lo-chain-count').textContent = chain.nodes.length + ' 個節點';
+  $('lo-chain-info').classList.add('visible');
+}
+
+function resetLoSelection() {
+  loSelectedChain = null;
+
+  for (const [id, g] of Object.entries(loNodeEls)) {
+    g.classList.remove('active', 'entry-node', 'dimmed');
+    g.classList.add('faded');
+    const rect = g.querySelector('.lo-rect');
+    if (rect) {
+      rect.setAttribute('fill', '#ffffff');
+      rect.setAttribute('stroke-width', 1.5);
+    }
+  }
+
+  for (const el of Object.values(loEdgeEls)) {
+    el.classList.remove('visible');
+  }
+
+  $('lo-hint').style.opacity = '1';
+  $('lo-chain-info').classList.remove('visible');
+}
+
+/* ============================================================
+   ──────────────────────────────────────────────────────────
+   TAB 3: DATA JOURNEY
+   ──────────────────────────────────────────────────────────
+   ============================================================ */
+
+const DJ_JOURNEYS = [
+  {
+    id: 'dj_users',
+    label: 'POST /api/users',
+    entryLabel: 'POST /api/users',
+    steps: [
+      { id: 'dj_u0', label: 'POST /api/users',   desc: 'HTTP Request 進入系統',                 x: 80,  y: 120 },
+      { id: 'dj_u1', label: 'JSON Parse',         desc: 'Request Body → Raw JSON Object',        x: 240, y: 120 },
+      { id: 'dj_u2', label: 'Schema Validate',    desc: 'Zod schema → validated DTO',            x: 400, y: 120 },
+      { id: 'dj_u3', label: 'authMiddleware',      desc: '驗證 JWT token，附加 ctx.user',         x: 560, y: 120 },
+      { id: 'dj_u4', label: 'UserController',     desc: 'Router → Controller.register()',        x: 560, y: 240 },
+      { id: 'dj_u5', label: 'Hash Password',      desc: 'bcrypt.hash() → hashed string',         x: 400, y: 240 },
+      { id: 'dj_u6', label: 'UserModel.save()',   desc: 'Model → DB transaction',                x: 240, y: 240 },
+      { id: 'dj_u7', label: 'db.insert()',         desc: 'SQL INSERT INTO users',                 x: 80,  y: 240 },
+      { id: 'dj_u8', label: 'sendWelcomeEmail()', desc: 'SES → welcome email queue',             x: 80,  y: 360 },
+      { id: 'dj_u9', label: 'Response 201',       desc: '{ id, email, token } → JSON',           x: 240, y: 360 },
+    ],
+    edges: [
+      ['dj_u0','dj_u1'],['dj_u1','dj_u2'],['dj_u2','dj_u3'],
+      ['dj_u3','dj_u4'],['dj_u4','dj_u5'],['dj_u5','dj_u6'],
+      ['dj_u6','dj_u7'],['dj_u7','dj_u8'],['dj_u7','dj_u9'],
+    ]
+  },
+  {
+    id: 'dj_products',
+    label: 'GET /api/products',
+    entryLabel: 'GET /api/products',
+    steps: [
+      { id: 'dj_p0', label: 'GET /api/products', desc: 'HTTP GET with query params',             x: 80,  y: 150 },
+      { id: 'dj_p1', label: 'Parse Filters',     desc: 'querystring → FilterDTO',                x: 250, y: 150 },
+      { id: 'dj_p2', label: 'cacheMiddleware',    desc: 'Redis HGET → cache hit/miss',           x: 420, y: 150 },
+      { id: 'dj_p3', label: 'ProductController', desc: '.list() 方法進入',                       x: 590, y: 150 },
+      { id: 'dj_p4', label: 'ProductService',    desc: '.search(filters) 業務邏輯',              x: 590, y: 280 },
+      { id: 'dj_p5', label: 'ProductModel.find',  desc: 'Mongoose .find() → cursor',            x: 420, y: 280 },
+      { id: 'dj_p6', label: 'db.query()',          desc: 'SELECT * FROM products WHERE…',        x: 250, y: 280 },
+      { id: 'dj_p7', label: 'formatResponse()',   desc: 'Array → PaginatedDTO',                  x: 80,  y: 280 },
+      { id: 'dj_p8', label: 'Response 200',       desc: '{ data[], total, page } → JSON',        x: 80,  y: 400 },
+    ],
+    edges: [
+      ['dj_p0','dj_p1'],['dj_p1','dj_p2'],['dj_p2','dj_p3'],
+      ['dj_p3','dj_p4'],['dj_p4','dj_p5'],['dj_p5','dj_p6'],
+      ['dj_p6','dj_p7'],['dj_p7','dj_p8'],
+    ]
+  },
+  {
+    id: 'dj_ws',
+    label: 'WebSocket /ws',
+    entryLabel: 'WS /ws',
+    steps: [
+      { id: 'dj_w0', label: 'WS Frame',          desc: 'WebSocket binary/text frame 接收',      x: 80,  y: 130 },
+      { id: 'dj_w1', label: 'Decode Payload',    desc: 'Buffer → MessagePayload object',         x: 250, y: 130 },
+      { id: 'dj_w2', label: 'Auth Check',        desc: 'socket.user → 驗證 session',             x: 420, y: 130 },
+      { id: 'dj_w3', label: 'MessageRouter',     desc: 'route by payload.type',                  x: 590, y: 130 },
+      { id: 'dj_w4', label: 'ChatService',       desc: '.process() → 業務處理',                  x: 590, y: 260 },
+      { id: 'dj_w5', label: 'MessageModel.save', desc: 'Model.create() → DB persist',            x: 420, y: 260 },
+      { id: 'dj_w6', label: 'db.insert()',        desc: 'INSERT INTO messages',                   x: 250, y: 260 },
+      { id: 'dj_w7', label: 'ws.broadcast()',    desc: '廣播給 room 所有 socket',                 x: 80,  y: 260 },
+      { id: 'dj_w8', label: 'ACK',               desc: '{ status: "ok", id } 回傳給發送方',       x: 80,  y: 380 },
+    ],
+    edges: [
+      ['dj_w0','dj_w1'],['dj_w1','dj_w2'],['dj_w2','dj_w3'],
+      ['dj_w3','dj_w4'],['dj_w4','dj_w5'],['dj_w5','dj_w6'],
+      ['dj_w6','dj_w7'],['dj_w7','dj_w8'],
+    ]
+  },
+];
+
+// Entry selection node positions (pre-journey selection overlay)
+const DJ_ENTRIES = [
+  { id: 'entry_users',    label: 'POST /api/users',    journeyId: 'dj_users',    x: 150, y: 180 },
+  { id: 'entry_products', label: 'GET /api/products',  journeyId: 'dj_products', x: 420, y: 180 },
+  { id: 'entry_ws',       label: 'WebSocket /ws',      journeyId: 'dj_ws',       x: 680, y: 180 },
+];
+
+let djCurrentJourney = null;
+let djAnimTimer = null;
+let djStepIndex = 0;
+let djNodeEls = {};
+let djEdgeEls = {};
+
+function buildDJGraph() {
+  renderDJEntries();
+}
+
+function renderDJEntries() {
+  const svg = $('dj-svg');
+  const container = $('dj-canvas');
+  const W = container.clientWidth || 820;
+  const H = container.clientHeight || 560;
+
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.innerHTML = `
+    <defs>
+      <marker id="dj-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#43a047"/>
+      </marker>
+    </defs>
+  `;
+
+  djNodeEls = {};
+  djEdgeEls = {};
+
+  // Center the 3 entries
+  const totalW = DJ_ENTRIES.length * 200 + (DJ_ENTRIES.length - 1) * 40;
+  const startX = (W - totalW) / 2;
+  const startY = (H - 80) / 2;
+
+  DJ_ENTRIES.forEach((e, i) => {
+    const ex = startX + i * 240;
+    const ey = startY;
+    const EW = 180, EH = 56;
+
+    const g = svgEl('g', { class: 'dj-node entry', 'data-id': e.id, cursor: 'pointer' });
+
+    const rect = svgEl('rect', {
+      x: ex, y: ey,
+      width: EW, height: EH,
+      rx: 10, ry: 10,
+      fill: '#e8f5e9',
+      stroke: '#2e7d32',
+      'stroke-width': 2,
+      class: 'dj-rect',
+    });
+    g.appendChild(rect);
+
+    // Pulsing ring
+    const pulse = svgEl('rect', {
+      x: ex - 4, y: ey - 4,
+      width: EW + 8, height: EH + 8,
+      rx: 14, ry: 14,
+      fill: 'none',
+      stroke: '#43a047',
+      'stroke-width': 1.5,
+      opacity: 0.4,
+    });
+    g.appendChild(pulse);
+
+    const label = svgEl('text', {
+      x: ex + EW / 2, y: ey + EH / 2 + 5,
+      'font-family': "'JetBrains Mono', monospace",
+      'font-size': 12,
+      'font-weight': '600',
+      fill: '#1b5e20',
+      'text-anchor': 'middle',
+    });
+    label.textContent = e.label;
+    g.appendChild(label);
+
+    const sub = svgEl('text', {
+      x: ex + EW / 2, y: ey + EH - 8,
+      'font-size': 10,
+      'font-family': "'Inter', sans-serif",
+      fill: '#388e3c',
+      'text-anchor': 'middle',
+      opacity: 0.7,
+    });
+    sub.textContent = '點擊開始追蹤';
+    g.appendChild(sub);
+
+    g.addEventListener('click', () => startDJJourney(e.journeyId));
+    g.addEventListener('mouseenter', ev => showTip(ev, e.label));
+    g.addEventListener('mousemove', moveTip);
+    g.addEventListener('mouseleave', hideTip);
+
+    svg.appendChild(g);
+  });
+
+  // Reset panel
+  $('dj-steps-list').innerHTML = '';
+  $('dj-journey-name').textContent = '請選擇入口';
+  $('dj-replay-btn').classList.remove('visible');
+  $('dj-hint').style.opacity = '1';
+}
+
+function startDJJourney(journeyId) {
+  // Clear existing timer
+  if (djAnimTimer) clearTimeout(djAnimTimer);
+
+  djCurrentJourney = DJ_JOURNEYS.find(j => j.id === journeyId);
+  if (!djCurrentJourney) return;
+
+  // Hide hint
+  $('dj-hint').style.opacity = '0';
+  $('dj-hint').style.pointerEvents = 'none';
+
+  // Update panel header
+  $('dj-journey-name').textContent = djCurrentJourney.label;
+  $('dj-replay-btn').classList.remove('visible');
+
+  // Build journey steps in panel
+  const list = $('dj-steps-list');
+  list.innerHTML = '';
+  djCurrentJourney.steps.forEach((step, i) => {
+    const item = document.createElement('div');
+    item.className = 'dj-step-item';
+    item.id = 'djstep_' + step.id;
+    item.innerHTML = `
+      <div class="dj-step-num">${i + 1}</div>
+      <div class="dj-step-body">
+        <div class="dj-step-name">${step.label}</div>
+        <div class="dj-step-desc">${step.desc}</div>
+      </div>
+    `;
+    list.appendChild(item);
+  });
+
+  // Render full journey graph (all nodes dimmed)
+  renderDJJourneyGraph(djCurrentJourney);
+
+  // Start animation
+  djStepIndex = 0;
+  animateDJStep();
+}
+
+function renderDJJourneyGraph(journey) {
+  const svg = $('dj-svg');
+  const container = $('dj-canvas');
+  const W = container.clientWidth || 820;
+  const H = container.clientHeight || 560;
+
+  // Scale to fit
+  const allX = journey.steps.map(n => n.x + 150);
+  const allY = journey.steps.map(n => n.y + 50);
+  const contentW = Math.max(...allX) + 40;
+  const contentH = Math.max(...allY) + 40;
+  const scale = Math.min(W / contentW, (H - 40) / contentH, 1.0);
+  const offsetX = (W - contentW * scale) / 2;
+  const offsetY = 20;
+
+  function tx(x) { return x * scale + offsetX; }
+  function ty(y) { return y * scale + offsetY; }
+  function ts(v) { return v * scale; }
+
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.innerHTML = `
+    <defs>
+      <marker id="dj-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#43a047"/>
+      </marker>
+    </defs>
+  `;
+
+  djNodeEls = {};
+  djEdgeEls = {};
+
+  const stepMap = {};
+  journey.steps.forEach(s => { stepMap[s.id] = s; });
+
+  const NW = 140, NH = 40;
+
+  // Draw all edges first (will be animated)
+  journey.edges.forEach(([fid, tid]) => {
+    const fn = stepMap[fid];
+    const tn = stepMap[tid];
+    if (!fn || !tn) return;
+    const x1 = tx(fn.x + NW);
+    const y1 = ty(fn.y + NH / 2);
+    const x2 = tx(tn.x);
+    const y2 = ty(tn.y + NH / 2);
+    const path = svgEl('path', {
+      d: edgePath(x1, y1, x2, y2),
+      class: 'dj-edge',
+      'marker-end': 'url(#dj-arrow)',
+      'data-from': fid,
+      'data-to': tid,
+      'stroke-dasharray': 300,
+      'stroke-dashoffset': 300,
+    });
+    svg.appendChild(path);
+    djEdgeEls[fid + '_' + tid] = path;
+  });
+
+  // Draw all nodes (dimmed)
+  journey.steps.forEach(step => {
+    const nx = tx(step.x), ny = ty(step.y);
+    const nw = ts(NW), nh = ts(NH);
+
+    const g = svgEl('g', { class: 'dj-node inactive', 'data-id': step.id });
+
+    const rect = svgEl('rect', {
+      x: nx, y: ny,
+      width: nw, height: nh,
+      rx: 8, ry: 8,
+      fill: '#ffffff',
+      stroke: '#ccc',
+      'stroke-width': 1.5,
+      class: 'dj-rect',
+    });
+    g.appendChild(rect);
+
+    const label = svgEl('text', {
+      x: nx + nw / 2, y: ny + nh * 0.55,
+      'font-family': "'JetBrains Mono', monospace",
+      'font-size': Math.max(9, ts(10)),
+      'font-weight': '500',
+      fill: '#aaa',
+      'text-anchor': 'middle',
+      class: 'dj-label-text',
+    });
+    label.textContent = step.label.length > 16 ? step.label.slice(0, 15) + '…' : step.label;
+    g.appendChild(label);
+
+    svg.appendChild(g);
+    djNodeEls[step.id] = g;
+  });
+}
+
+function animateDJStep() {
+  if (!djCurrentJourney) return;
+  const steps = djCurrentJourney.steps;
+  if (djStepIndex >= steps.length) {
+    // Done — show replay
+    $('dj-replay-btn').classList.add('visible');
+    // Mark last panel item as done
+    return;
+  }
+
+  const step = steps[djStepIndex];
+
+  // Activate node
+  const nodeG = djNodeEls[step.id];
+  if (nodeG) {
+    nodeG.classList.remove('inactive');
+    const isCurrent = true;
+    nodeG.classList.add(djStepIndex === steps.length - 1 ? 'lit' : 'current');
+    const rect = nodeG.querySelector('.dj-rect');
+    if (rect) {
+      rect.setAttribute('fill', '#e8f5e9');
+      rect.setAttribute('stroke', '#2e7d32');
+      rect.setAttribute('stroke-width', '2.5');
+    }
+    const label = nodeG.querySelector('.dj-label-text');
+    if (label) label.setAttribute('fill', '#1b5e20');
+  }
+
+  // Animate incoming edges (edges that end at this node)
+  djCurrentJourney.edges.forEach(([fid, tid]) => {
+    if (tid === step.id) {
+      const edgeEl = djEdgeEls[fid + '_' + tid];
+      if (edgeEl) {
+        // Animate stroke-dashoffset
+        edgeEl.setAttribute('stroke-dashoffset', 300);
+        edgeEl.style.transition = 'none';
+        requestAnimationFrame(() => {
+          edgeEl.style.transition = 'stroke-dashoffset 0.45s ease-in-out';
+          edgeEl.setAttribute('stroke-dashoffset', 0);
+        });
+      }
+    }
+  });
+
+  // Update panel — mark previous as done, current as active
+  if (djStepIndex > 0) {
+    const prevItem = $('djstep_' + steps[djStepIndex - 1].id);
+    if (prevItem) {
+      prevItem.classList.remove('active');
+      prevItem.classList.add('done');
+    }
+  }
+  const curItem = $('djstep_' + step.id);
+  if (curItem) {
+    curItem.classList.add('active');
+    curItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // Dim previous "current" nodes
+  if (djStepIndex > 0) {
+    const prevNode = djNodeEls[steps[djStepIndex - 1].id];
+    if (prevNode) {
+      prevNode.classList.remove('current');
+      prevNode.classList.add('lit');
+    }
+  }
+
+  djStepIndex++;
+  djAnimTimer = setTimeout(animateDJStep, 350);
+}
+
+function replayJourney() {
+  if (!djCurrentJourney) return;
+  if (djAnimTimer) clearTimeout(djAnimTimer);
+  $('dj-replay-btn').classList.remove('visible');
+
+  // Reset all step items
+  djCurrentJourney.steps.forEach(step => {
+    const item = $('djstep_' + step.id);
+    if (item) { item.classList.remove('active', 'done'); }
+  });
+
+  // Re-render graph
+  renderDJJourneyGraph(djCurrentJourney);
+
+  // Restart animation
+  djStepIndex = 0;
+  animateDJStep();
+}
+
+/* ============================================================
+   INIT ON LOAD
+   ============================================================ */
+window.addEventListener('DOMContentLoaded', () => {
+  buildSFGraph();
+  buildLOGraph();
+  buildDJGraph();
+});
+
+window.addEventListener('resize', () => {
+  buildSFGraph();
+  buildLOGraph();
+  if (djCurrentJourney) {
+    renderDJJourneyGraph(djCurrentJourney);
+  } else {
+    buildDJGraph();
+  }
+});
+</script>
+</body>
+</html>
