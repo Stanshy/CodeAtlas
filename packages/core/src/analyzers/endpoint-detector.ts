@@ -1,27 +1,31 @@
 /**
- * @codeatlas/core — API Endpoint Detector
+ * @codeatlas/core — API Endpoint Detector (Orchestrator)
  *
- * Sprint 13 / T2: Identifies API endpoint definitions (Express / Fastify) from
- * file source code using regex-based pattern matching, and builds request-chain
- * graphs by BFS-traversing `call` edges from each endpoint handler.
+ * Sprint 24 T7: Refactored to thin orchestrator using FrameworkAdapter plugins.
+ * All framework-specific logic has been moved to adapters/.
  *
- * Supported patterns:
- *   • Express Router: `router.(get|post|…)('/path', ...)`
- *   • Express App:    `app.(get|post|…)('/path', ...)`
- *   • Fastify shorthand: `fastify.(get|post|…)('/path', ...)`
- *   • Fastify route: `fastify.route({ method: …, url: …, handler: … })`
+ * The `detectEndpoints()` public API signature is unchanged.
+ * Set `LEGACY_ENDPOINT_DETECTION=true` env var to use the original code path.
  *
- * Non-web projects (no routes detected) return null from `detectEndpoints`.
+ * Original patterns (preserved in legacy path):
+ *   - Express Router: `router.(get|post|...)('/path', ...)`
+ *   - Express App:    `app.(get|post|...)('/path', ...)`
+ *   - Fastify shorthand: `fastify.(get|post|...)('/path', ...)`
+ *   - Fastify route: `fastify.route({ method: ..., url: ..., handler: ... })`
+ *   - Python decorators: `@router.get("/path")`, `@app.post("/path")`
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type { GraphNode, AnalysisResult } from '../types.js';
+import type { GraphNode, AnalysisResult, SummaryProvider } from '../types.js';
 import { classifyMethodRole } from '../ai/method-role-classifier.js';
+import { createDefaultRegistry } from './adapters/registry.js';
+import type { AdapterContext } from './adapters/types.js';
+import { AIFallbackAdapter } from './adapters/ai-fallback-adapter.js';
 
 // ---------------------------------------------------------------------------
-// Public types
+// Public types (unchanged)
 // ---------------------------------------------------------------------------
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
@@ -72,7 +76,165 @@ export interface EndpointGraph {
 }
 
 // ---------------------------------------------------------------------------
-// Internal constants
+// buildAdapterContext — shared context builder
+// ---------------------------------------------------------------------------
+
+/**
+ * Build an AdapterContext from an AnalysisResult.
+ *
+ * Pre-computes lookup maps (nodeMap, callAdjacency, functionsByLabel) so that
+ * individual adapters do not need to duplicate this work.
+ */
+export function buildAdapterContext(analysis: AnalysisResult): AdapterContext {
+  const { nodes, edges } = analysis.graph;
+
+  const nodeMap = new Map<string, GraphNode>(nodes.map((n) => [n.id, n]));
+
+  const callAdjacency = new Map<string, string[]>();
+  for (const edge of edges) {
+    if (edge.type !== 'call') continue;
+    const existing = callAdjacency.get(edge.source);
+    if (existing !== undefined) existing.push(edge.target);
+    else callAdjacency.set(edge.source, [edge.target]);
+  }
+
+  const functionNodes = nodes.filter(
+    (n) => (n.type === 'function' || n.type === 'class') && n.metadata.parentFileId !== undefined,
+  );
+
+  const functionsByLabel = new Map<string, GraphNode[]>();
+  for (const fn of functionNodes) {
+    const key = fn.label.replace(/\(\)$/, '');
+    const existing = functionsByLabel.get(key);
+    if (existing !== undefined) existing.push(fn);
+    else functionsByLabel.set(key, [fn]);
+  }
+
+  return { analysis, nodeMap, callAdjacency, functionsByLabel, functionNodes };
+}
+
+// ---------------------------------------------------------------------------
+// Public API — thin orchestrator
+// ---------------------------------------------------------------------------
+
+/**
+ * Detect API endpoints across all file nodes in the analysis result and
+ * build a request-chain graph.
+ *
+ * Returns `null` when no endpoints are found (non-web / non-API projects).
+ *
+ * Sprint 24: delegates to FrameworkAdapter plugins via AdapterRegistry.
+ * Set `LEGACY_ENDPOINT_DETECTION=true` to use the original monolithic code path.
+ */
+export function detectEndpoints(analysis: AnalysisResult): EndpointGraph | null {
+  // Rollback flag — use legacy monolithic code path
+  if (process.env.LEGACY_ENDPOINT_DETECTION === 'true') {
+    return legacyDetectEndpoints(analysis);
+  }
+
+  const registry = createDefaultRegistry();
+  const ctx = buildAdapterContext(analysis);
+  const matched = registry.getMatchedAdapters(analysis);
+
+  const endpoints: ApiEndpoint[] = [];
+  const chains: EndpointChain[] = [];
+
+  for (const adapter of matched) {
+    const eps = adapter.extractEndpoints(ctx);
+    for (const ep of eps) {
+      // Deduplicate by endpoint id — keep first occurrence
+      if (!endpoints.some((e) => e.id === ep.id)) {
+        endpoints.push(ep);
+      }
+    }
+    chains.push(...adapter.buildChains(eps, ctx));
+  }
+
+  // If no adapters matched or no endpoints found, fall back to legacy path
+  // (covers Python projects where no concrete Python adapter is registered yet)
+  if (endpoints.length === 0) {
+    return legacyDetectEndpoints(analysis);
+  }
+
+  return { endpoints, chains };
+}
+
+// ---------------------------------------------------------------------------
+// Public API — async orchestrator (with AI fallback)
+// ---------------------------------------------------------------------------
+
+/**
+ * Async version of `detectEndpoints()` that includes the AI fallback path.
+ *
+ * Flow:
+ * 1. Run the sync adapter pipeline (same as `detectEndpoints()`)
+ * 2. If no endpoints found and an AI provider is available, delegate to
+ *    `AIFallbackAdapter.extractEndpointsAsync()` for AI-powered detection
+ * 3. If AI is not configured or fails, return null (static degradation)
+ *
+ * Sprint 24 T18: server.ts should call this instead of the sync version.
+ *
+ * @param analysis  The analysis result from the core engine
+ * @param provider  Optional AI provider for fallback detection
+ * @returns EndpointGraph or null
+ */
+export async function detectEndpointsAsync(
+  analysis: AnalysisResult,
+  provider?: SummaryProvider | null,
+): Promise<EndpointGraph | null> {
+  // Rollback flag — use legacy monolithic code path (sync, no AI)
+  if (process.env.LEGACY_ENDPOINT_DETECTION === 'true') {
+    return legacyDetectEndpoints(analysis);
+  }
+
+  const registry = createDefaultRegistry();
+  const ctx = buildAdapterContext(analysis);
+  const matched = registry.getMatchedAdapters(analysis);
+
+  const endpoints: ApiEndpoint[] = [];
+  const chains: EndpointChain[] = [];
+
+  for (const adapter of matched) {
+    // Skip AI fallback in sync pass — handled separately below
+    if (adapter.name === 'ai-fallback') continue;
+
+    const eps = adapter.extractEndpoints(ctx);
+    for (const ep of eps) {
+      if (!endpoints.some((e) => e.id === ep.id)) {
+        endpoints.push(ep);
+      }
+    }
+    chains.push(...adapter.buildChains(eps, ctx));
+  }
+
+  // If rule-based adapters found endpoints, return them
+  if (endpoints.length > 0) {
+    return { endpoints, chains };
+  }
+
+  // Layer 2: AI Fallback — only when no rule-based adapter found endpoints
+  if (provider) {
+    const aiFallback = registry.getAdapterByName('ai-fallback');
+    if (aiFallback && aiFallback instanceof AIFallbackAdapter) {
+      aiFallback.setProvider(provider);
+      const aiEndpoints = await aiFallback.extractEndpointsAsync(ctx);
+      if (aiEndpoints.length > 0) {
+        const aiChains = aiFallback.buildChains(aiEndpoints, ctx);
+        return { endpoints: aiEndpoints, chains: aiChains };
+      }
+    }
+  }
+
+  // Layer 3: Static degradation — fall back to legacy path
+  return legacyDetectEndpoints(analysis);
+}
+
+// ===========================================================================
+// Legacy code path — full original implementation preserved as rollback
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// Internal constants (legacy)
 // ---------------------------------------------------------------------------
 
 /** HTTP methods we recognise (lower-case, as they appear in source). */
@@ -85,7 +247,7 @@ const HTTP_METHODS_RE = 'get|post|put|delete|patch';
 const MAX_CHAIN_DEPTH = 10;
 
 // ---------------------------------------------------------------------------
-// Regex patterns
+// Regex patterns (legacy)
 // ---------------------------------------------------------------------------
 
 /**
@@ -145,7 +307,7 @@ const ROUTE_BLOCK_URL_RE = /url\s*:\s*['"`]([^'"`]+)['"`]/i;
 const ROUTE_BLOCK_HANDLER_RE = /handler\s*:\s*([A-Za-z_$][\w$]*)/i;
 
 // ---------------------------------------------------------------------------
-// Internal helpers
+// Internal helpers (legacy)
 // ---------------------------------------------------------------------------
 
 /**
@@ -356,7 +518,7 @@ function extractEndpointsFromSource(
 }
 
 // ---------------------------------------------------------------------------
-// Chain building
+// Chain building (legacy)
 // ---------------------------------------------------------------------------
 
 /**
@@ -376,16 +538,6 @@ function nodeToChainStep(node: GraphNode): ChainStep {
   };
 }
 
-/**
- * BFS from a handler function node, following `call` edges.
- *
- * Returns an ordered array of ChainSteps (the handler itself is NOT included
- * — it is already represented by the endpoint entry).
- *
- * Stops when:
- *   • All reachable nodes have been visited
- *   • Depth reaches MAX_CHAIN_DEPTH
- */
 /**
  * Find the narrowest named function node that encloses the given line
  * in the specified file. Used for anonymous inline handlers.
@@ -417,6 +569,16 @@ function findEnclosingFunction(
   return best;
 }
 
+/**
+ * BFS from a handler function node, following `call` edges.
+ *
+ * Returns an ordered array of ChainSteps (the handler itself is NOT included
+ * — it is already represented by the endpoint entry).
+ *
+ * Stops when:
+ *   - All reachable nodes have been visited
+ *   - Depth reaches MAX_CHAIN_DEPTH
+ */
 function buildChainSteps(
   handlerNodeId: string,
   nodeMap: Map<string, GraphNode>,
@@ -455,7 +617,7 @@ function buildChainSteps(
 }
 
 // ---------------------------------------------------------------------------
-// Python chain-step filter — skip sets for noise suppression
+// Python chain-step filter — skip sets for noise suppression (legacy)
 // ---------------------------------------------------------------------------
 
 /**
@@ -639,7 +801,7 @@ const PYTHON_SKIP_RECEIVERS = new Set<string>([
 ]);
 
 // ---------------------------------------------------------------------------
-// Python file scanner (disk-based, for projects not in the JS/TS graph)
+// Python file scanner (legacy)
 // ---------------------------------------------------------------------------
 
 /**
@@ -706,7 +868,7 @@ function classifyStepRole(step: ChainStep): { role: string; roleConfidence: numb
  *   6. Skip single-character identifiers (loop variables, etc.).
  *   7. Skip ALL-CAPS identifiers (constants, not calls).
  *
- * Target: ≤10 steps per chain for a typical FastAPI endpoint.
+ * Target: <=10 steps per chain for a typical FastAPI endpoint.
  */
 function buildPythonChainSteps(
   source: string,
@@ -920,16 +1082,15 @@ function buildPythonChains(
 }
 
 // ---------------------------------------------------------------------------
-// Public API
+// Legacy public API (complete original implementation)
 // ---------------------------------------------------------------------------
 
 /**
- * Detect API endpoints across all file nodes in the analysis result and
- * build a request-chain graph.
- *
- * Returns `null` when no endpoints are found (non-web / non-API projects).
+ * Original monolithic detectEndpoints implementation.
+ * Preserved as rollback path (LEGACY_ENDPOINT_DETECTION=true) and fallback
+ * when no adapter matches (e.g. Python projects without a registered adapter).
  */
-export function detectEndpoints(analysis: AnalysisResult): EndpointGraph | null {
+function legacyDetectEndpoints(analysis: AnalysisResult): EndpointGraph | null {
   const { nodes, edges } = analysis.graph;
 
   // --- Build fast-lookup maps ---

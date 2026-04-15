@@ -282,6 +282,11 @@ export function applyPerspective(
   directoryGraph?: DirectoryGraph,
   endpointGraph?: EndpointGraph,
 ): { nodes: GraphNode[]; edges: GraphEdge[] } {
+  // Sprint 24: system-framework without directory data → return empty (no fallback)
+  if (perspective === 'system-framework' && (!directoryGraph || directoryGraph.nodes.length === 0)) {
+    return { nodes: [], edges: [] };
+  }
+
   // Sprint 12: system-framework with directory data → use directory-level graph
   if (perspective === 'system-framework' && directoryGraph && directoryGraph.nodes.length > 0) {
     // Convert DirectoryGraph nodes to GraphNode format so the rest of the pipeline
